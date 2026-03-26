@@ -1,0 +1,250 @@
+@{
+    var title = ViewBag.Title ?? nameof(Compost);
+}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - Compost</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        [data-bs-theme="dark"] .bg-light { background-color: #2b3035 !important; }
+        [data-bs-theme="dark"] .text-dark { color: #f8f9fa !important; }
+        [data-bs-theme="dark"] .sidebar { background-color: #212529 !important; border-color: #373b3e !important; }
+        [data-bs-theme="dark"] .card { background-color: #212529; border-color: #373b3e; }
+        [data-bs-theme="dark"] .table { color: #e9ecef; }
+        [data-bs-theme="dark"] .node-label { fill: #f8f9fa !important; }
+        [data-bs-theme="dark"] #mindmap-container { --map-bg: linear-gradient(135deg, #1a1c1e 0%, #2b3035 100%); }
+        
+        .sidebar { transition: all 0.3s; }
+        .nav-link:hover { background-color: rgba(0, 0, 0, 0.06); border-radius: 0.25rem; }
+        .sidebar .menu-section { font-size: 0.7rem; letter-spacing: 0.05em; padding: 0.5rem 0.75rem 0.25rem; }
+        [data-bs-theme="light"] .sidebar .menu-section { color: #495057; }
+        [data-bs-theme="dark"] .sidebar .menu-section { color: #adb5bd; }
+        [data-bs-theme="light"] .text-dark { color: #212529 !important; }
+        /* Module Theme Variables - Light */
+        :root, [data-bs-theme="light"] {
+            --theme-dashboard: #198754;
+            --theme-contexts: #9b7ede;
+            --theme-mindmaps: #ff6b35;
+            --theme-kanban: #ffc107;
+            --theme-transcription: #0d6efd;
+            --theme-snippets: #6c757d;
+            --theme-patterns: #9b7ede;
+        }
+        /* Module Theme Variables - Dark */
+        [data-bs-theme="dark"] {
+            --theme-dashboard: #198754;
+            --theme-contexts: #b19cd9;
+            --theme-mindmaps: #ff6b35;
+            --theme-kanban: #ffc107;
+            --theme-transcription: #0d6efd;
+            --theme-snippets: #6c757d;
+            --theme-patterns: #b19cd9;
+        }
+        /* Module Theme Utilities */
+        .bg-theme-dashboard    { background-color: var(--theme-dashboard) !important; }
+        .bg-theme-contexts     { background-color: var(--theme-contexts) !important; }
+        .bg-theme-mindmaps     { background-color: var(--theme-mindmaps) !important; }
+        .bg-theme-kanban       { background-color: var(--theme-kanban) !important; }
+        .bg-theme-transcription { background-color: var(--theme-transcription) !important; }
+        .bg-theme-snippets     { background-color: var(--theme-snippets) !important; }
+        .bg-theme-patterns     { background-color: var(--theme-patterns) !important; }
+        .text-on-theme-dashboard, .text-on-theme-contexts, .text-on-theme-mindmaps,
+        .text-on-theme-transcription, .text-on-theme-snippets, .text-on-theme-patterns { color: #fff !important; }
+        .text-on-theme-kanban { color: #212529 !important; }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="bg-body-tertiary">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="~/">
+                <i class="fas fa-leaf me-2"></i>Compost
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link px-3 text-white-50" id="themeToggle" href="#" title="Toggle Dark/Light Mode">
+                            <i class="fas fa-moon"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="~/"><i class="fas fa-home me-1"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="~/Admin"><i class="fas fa-cog me-1"></i>Admin</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Left Sidebar Menu -->
+            <nav class="col-md-2 d-none d-md-block bg-white sidebar vh-100 border-end pt-3">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item mb-2">
+                            <a class="nav-link @(Context.Request.Path == "/" ? "active bg-theme-dashboard text-on-theme-dashboard rounded" : "text-dark")" href="~/">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item mt-2"><span class="menu-section">Workflow</span></li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/Contexts") ? "active bg-theme-contexts text-on-theme-contexts rounded" : "text-dark")" href="/Projects/List">
+                                <i class="fas fa-folder-open me-2"></i>Projects
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/MindMap") ? "active bg-theme-mindmaps text-on-theme-mindmaps rounded" : "text-dark")" href="/MindMap">
+                                <i class="fas fa-brain me-2"></i>Mind Maps
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link @(Context.Request.Path.ToString().StartsWith("/Kanban") ? "active bg-theme-kanban text-on-theme-kanban rounded" : "text-dark")" href="/Kanban">
+                                <i class="fas fa-columns me-2"></i>Kanban Board
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/Transcription") ? "active bg-theme-transcription text-on-theme-transcription rounded" : "text-dark")" href="/Transcription">
+                                <i class="fas fa-microphone me-2"></i>Transcription
+                            </a>
+                        </li>
+                        <li class="nav-item mt-2"><span class="menu-section">Library</span></li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/Snippets") ? "active bg-theme-snippets text-on-theme-snippets rounded" : "text-dark")" href="/Snippets">
+                                <i class="fas fa-code me-2"></i>Snippets
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/Patterns") ? "active bg-theme-patterns text-on-theme-patterns rounded" : "text-dark")" href="/Patterns">
+                                <i class="fas fa-project-diagram me-2"></i>Patterns
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Quick Stats Widget -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Quick Stats</h6>
+                        <div class="text-center mt-2">
+                            <div class="display-6 text-success">@(ViewBag.TotalContexts ?? 0)</div>
+                            <small class="text-muted">Total Contexts</small>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-10 ms-sm-auto px-md-4 py-4">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-info-circle me-2 text-success" id="toastIcon"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                Action completed successfully.
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery (Required for Validation) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Common JS Utilities -->
+    <script>
+        // Global Toast Helper
+        function showToast(message, title = 'Notification', type = 'success') {
+            try {
+                const toastEl = document.getElementById('liveToast');
+                if (!toastEl) return;
+                
+                document.getElementById('toastMessage').textContent = message;
+                document.getElementById('toastTitle').textContent = title;
+                const icon = document.getElementById('toastIcon');
+                
+                if (type === 'danger') {
+                    icon.className = 'fas fa-exclamation-circle me-2 text-danger';
+                } else if (type === 'warning') {
+                    icon.className = 'fas fa-exclamation-triangle me-2 text-warning';
+                } else {
+                    icon.className = 'fas fa-check-circle me-2 text-success';
+                }
+
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            } catch (e) {
+                console.error('Toast failed:', e);
+            }
+        }
+
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-bs-theme', savedTheme);
+        if (themeToggle) updateToggleIcon(savedTheme);
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentTheme = html.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                html.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateToggleIcon(newTheme);
+            });
+        }
+
+        function updateToggleIcon(theme) {
+            const icon = themeToggle?.querySelector('i');
+            if (!icon) return;
+            if (theme === 'dark') {
+                icon.className = 'fas fa-sun';
+            } else {
+                icon.className = 'fas fa-moon';
+            }
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

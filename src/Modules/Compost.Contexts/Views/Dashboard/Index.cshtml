@@ -1,0 +1,387 @@
+@model Compost.Contexts.Controllers.DashboardViewModel
+@using Compost.Kanban.Models
+@using Compost.Core.Models
+@using OrchardCore.ContentManagement
+
+@{
+    ViewData["Title"] = "Dashboard - Compost";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Dashboard</h1>
+        <div class="d-flex gap-2">
+            <a href="/Projects/Create" class="btn btn-success">
+                <i class="fas fa-plus"></i> Create Project
+            </a>
+            <a href="/Projects/TreeView" class="btn btn-primary">
+                <i class="fas fa-list"></i> View Projects
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@Model.TotalProjects</h4>
+                            <p class="card-text">Total Projects</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-folder fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@Model.ActiveProjects</h4>
+                            <p class="card-text">Active</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-play fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@Model.TrackingProjects</h4>
+                            <p class="card-text">Tracking</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@Model.TotalTimeSpent.ToString("hh\\:mm\\:ss")</h4>
+                            <p class="card-text">Total Time</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hourglass-half fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Active Context Message -->
+    @if (Model.ActiveProjects == 0)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">No Active Project</h5>
+                        <p class="card-text">Create a new project or activate an existing one to start tracking your work.</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="/Projects/Create" class="btn btn-primary">Create Project</a>
+                            <a href="/Projects/TreeView" class="btn btn-secondary">View Projects</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Quick Access Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-sitemap me-2"></i> Tree View
+                    </h5>
+                    <p class="card-text">Hierarchical Project View</p>
+                    <a href="/Projects/TreeView" class="btn btn-outline-primary">Preview</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-columns me-2"></i> Kanban Board
+                    </h5>
+                    <p class="card-text">Task Management Board</p>
+                    <a href="/Kanban" class="btn btn-outline-success">Preview</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latest Items from Each Module -->
+    <div class="row">
+        <!-- Latest Contexts -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-folder me-2"></i> Other Projects
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.LatestProjects.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Repository</th>
+                                        <th>Branch</th>
+                                        <th>Time</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var project in Model.LatestProjects)
+                                    {
+                                        <tr>
+                                            <td>@project.Name</td>
+                                            <td>@project.RepositoryName</td>
+                                            <td>@project.CurrentBranch</td>
+                                            <td>@TimeSpan.FromSeconds(project.TotalTimeSpentSeconds).ToString("hh\\:mm\\:ss")</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    @if (!project.IsActive)
+                                                    {
+                                                        <form action="/Projects/Switch/@project.Id" method="post" style="display:inline;">
+                                                            <button type="submit" class="btn btn-outline-success btn-sm">Activate</button>
+                                                        </form>
+                                                    }
+                                                    <a href="/Projects/Edit/@project.Id" class="btn btn-outline-primary btn-sm">Edit</a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No projects found. <a href="/Projects/Create">Create your first project</a> to get started.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Mind Maps -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-project-diagram me-2 text-primary"></i> Latest Mind Maps
+                    </h5>
+                    <a href="/MindMap" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.LatestMindMaps.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var map in Model.LatestMindMaps)
+                            {
+                                <a href="/MindMap/ViewMap/@map.Id" class="list-group-item list-group-item-action p-3">
+                                    <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0 text-primary">@map.Name</h6>
+                                        <small class="text-muted">@map.UpdatedAt.ToString("MMM dd, HH:mm")</small>
+                                    </div>
+                                    <p class="mb-1 small text-muted">@map.NodeCount nodes • @(map.Description?.Length > 80 ? map.Description[..80] + "..." : map.Description ?? "No description")</p>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center">
+                            <p class="text-muted mb-0">No mind maps found. <a href="/MindMap">Create your first mind map</a>.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Kanban Cards -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-columns me-2 text-success"></i> Latest Kanban Cards
+                    </h5>
+                    <a href="/Kanban" class="btn btn-sm btn-outline-success">View Board</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.LatestKanbanCards.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var card in Model.LatestKanbanCards.Cast<ContentItem>())
+                            {
+                                var part = card.As<KanbanCardPart>();
+                                <div class="list-group-item p-3">
+                                    <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0">@card.DisplayText</h6>
+                                        <span class="badge bg-@(part?.Status switch { KanbanStatus.Done => "success", KanbanStatus.InProgress => "primary", KanbanStatus.InReview => "info", _ => "secondary" })">@part?.Status</span>
+                                    </div>
+                                    <p class="mb-0 small text-muted">
+                                        @((card.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "").Length > 100 
+                                            ? (card.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "").Substring(0, 100) + "..." 
+                                            : card.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "No description")
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center">
+                            <p class="text-muted mb-0">No Kanban cards found.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Snippets -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-code me-2 text-info"></i> Latest Snippets
+                    </h5>
+                    <a href="/Snippets" class="btn btn-sm btn-outline-info">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.LatestSnippets.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var snippet in Model.LatestSnippets.Cast<ContentItem>())
+                            {
+                                <a href="/Snippets/Edit/@snippet.ContentItemId" class="list-group-item list-group-item-action p-3">
+                                    <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0">@snippet.DisplayText</h6>
+                                        <small class="text-muted">@snippet.CreatedUtc?.ToString("MMM dd")</small>
+                                    </div>
+                                    <p class="mb-0 small text-muted">
+                                        <span class="badge bg-light text-dark border me-1">@snippet.Content.CodeSnippetPart?.Language</span>
+                                        @((snippet.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "").Length > 80 
+                                            ? (snippet.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "").Substring(0, 80) + "..." 
+                                            : snippet.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "No description")
+                                    </p>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center">
+                            <p class="text-muted mb-0">No snippets found. <a href="/Snippets/Create">Create your first snippet</a>.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Patterns -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shapes me-2 text-warning"></i> Latest Patterns
+                    </h5>
+                    <a href="/Patterns" class="btn btn-sm btn-outline-warning">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.LatestPatterns.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var pattern in Model.LatestPatterns.Cast<ContentItem>())
+                            {
+                                <a href="/Patterns/Detail/@pattern.ContentItemId" class="list-group-item list-group-item-action p-3">
+                                    <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0 text-warning">@pattern.DisplayText</h6>
+                                        <small class="text-muted">@pattern.CreatedUtc?.ToString("MMM dd")</small>
+                                    </div>
+                                    <p class="mb-0 small text-muted">
+                                        @((pattern.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "").Length > 100 
+                                            ? (pattern.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "").Substring(0, 100) + "..." 
+                                            : pattern.Content.MarkdownBodyPart?.Markdown?.ToString() ?? "No description")
+                                    </p>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center">
+                            <p class="text-muted mb-0">No patterns found. <a href="/Patterns/Create">Add your first pattern</a>.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Transcriptions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-microphone me-2 text-danger"></i> Latest Transcriptions
+                    </h5>
+                    <a href="/Transcription" class="btn btn-sm btn-outline-danger">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.LatestTranscriptions.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var meeting in Model.LatestTranscriptions.Cast<Meeting>())
+                            {
+                                <a href="/Transcription/Meeting/@meeting.Id" class="list-group-item list-group-item-action p-3">
+                                    <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0">@meeting.Title</h6>
+                                        <small class="text-muted">@meeting.StartedAt.ToString("MMM dd")</small>
+                                    </div>
+                                    <div class="small text-muted mb-1">
+                                        <i class="fas fa-clock fs-xs me-1"></i> @TimeSpan.FromSeconds(meeting.DurationSeconds).ToString(@"mm\:ss")
+                                        <span class="mx-1">•</span>
+                                        <i class="fas fa-tasks fs-xs me-1"></i> @meeting.ActionItems.Count tasks
+                                    </div>
+                                    @{
+                                        var fullTranscript = string.Join(" ", meeting.Transcript.Take(2).Select(s => s.Text));
+                                        var preview = fullTranscript.Length > 100 ? fullTranscript[..100] + "..." : fullTranscript;
+                                    }
+                                    <p class="mb-0 small text-truncate">@(string.IsNullOrEmpty(preview) ? "No transcript available yet." : preview)</p>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center">
+                            <p class="text-muted mb-0">No transcriptions found. <a href="/Transcription">Start recording</a>.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

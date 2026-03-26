@@ -1,0 +1,94 @@
+@using Compost.Transcription.Models
+@model MeetingPart
+
+<div class="form-group">
+    <label asp-for="Title" class="control-label"></label>
+    <input asp-for="Title" class="form-control" />
+    <span asp-validation-for="Title" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <label asp-for="WorkContextId" class="control-label">Work Project</label>
+    <select asp-for="WorkContextId" class="form-control" asp-items="ViewBag.WorkContexts">
+        <option value="">Select a context...</option>
+    </select>
+    <span asp-validation-for="WorkContextId" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <label asp-for="Notes" class="control-label">Meeting Notes</label>
+    <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+    <span asp-validation-for="Notes" class="text-danger"></span>
+</div>
+
+<div class="form-group">
+    <label asp-for="Summary" class="control-label">Meeting Summary</label>
+    <textarea asp-for="Summary" class="form-control" rows="4"></textarea>
+    <span asp-validation-for="Summary" class="text-danger"></span>
+</div>
+
+<div class="form-check">
+    <input asp-for="AutoExtractMindMapNodes" class="form-check-input" />
+    <label asp-for="AutoExtractMindMapNodes" class="form-check-label">Auto-extract mind map nodes from transcript</label>
+</div>
+
+<div class="form-check">
+    <input asp-for="AutoExtractActionItems" class="form-check-input" />
+    <label asp-for="AutoExtractActionItems" class="form-check-label">Auto-extract action items from transcript</label>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.TranscriptText))
+{
+    <div class="form-group">
+        <label class="control-label">Transcript Preview</label>
+        <div class="border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
+            <pre class="mb-0">@Model.TranscriptText</pre>
+        </div>
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="control-label">Action Items (@Model.ActionItems?.Count ?? 0)</label>
+            @if (Model.ActionItems?.Any() == true)
+            {
+                <ul class="list-group">
+                    @foreach (var item in Model.ActionItems)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>@item.Title</span>
+                            <span class="badge bg-@(item.Priority == "High" ? "danger" : item.Priority == "Medium" ? "warning" : "info") rounded-pill">@item.Priority</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-muted">No action items extracted yet.</p>
+            }
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="control-label">Mind Map Nodes (@Model.ExtractedNodes?.Count ?? 0)</label>
+            @if (Model.ExtractedNodes?.Any() == true)
+            {
+                <ul class="list-group">
+                    @foreach (var node in Model.ExtractedNodes)
+                    {
+                        <li class="list-group-item">
+                            <strong>@node.Title</strong>
+                            <br>
+                            <small class="text-muted">@node.NodeType</small>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-muted">No mind map nodes extracted yet.</p>
+            }
+        </div>
+    </div>
+</div>

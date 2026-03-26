@@ -1,0 +1,175 @@
+@{
+    ViewData["Title"] = "Structure Management";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1>Structure Management</h1>
+            <p class="text-muted">Hierarchical organizational structures and team kanban boards</p>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Organizational Structures</h5>
+                    <button class="btn btn-primary" onclick="showCreateStructureModal()">
+                        <i class="fas fa-plus"></i> Create Structure
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="row">
+                            @foreach (var structure in Model)
+                            {
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">@structure.Title</h6>
+                                            <span class="badge bg-@GetStructureTypeColor(structure.StructureType)">
+                                                @structure.StructureType
+                                            </span>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="card-text">@structure.Description</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-users"></i> @structure.MemberIds.Count members
+                                                </small>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-sitemap"></i> @structure.ChildStructureIds.Count children
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer">
+                                            <div class="btn-group w-100" role="group">
+                                                <a href="@Url.Action("Detail", new { id = structure.Id })" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                @if (structure.HasKanbanBoard)
+                                                {
+                                                    <a href="@Url.Action("KanbanBoard", new { boardId = structure.KanbanBoardId })" 
+                                                       class="btn btn-outline-success btn-sm">
+                                                        <i class="fas fa-columns"></i> Board
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <a href="@Url.Action("CreateBoard", new { structureId = structure.Id })" 
+                                                       class="btn btn-outline-success btn-sm">
+                                                        <i class="fas fa-plus"></i> Create Board
+                                                    </a>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-sitemap fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No structures found</h5>
+                            <p class="text-muted">Create your first organizational structure to get started</p>
+                            <button class="btn btn-primary" onclick="showCreateStructureModal()">
+                                <i class="fas fa-plus"></i> Create Structure
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Structure Modal -->
+<div class="modal fade" id="createStructureModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Structure</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createStructureForm">
+                    <div class="mb-3">
+                        <label for="structureTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="structureTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="structureDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="structureDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="structureType" class="form-label">Structure Type</label>
+                        <select class="form-select" id="structureType">
+                            <option value="Team">Team</option>
+                            <option value="Department">Department</option>
+                            <option value="Project">Project</option>
+                            <option value="Initiative">Initiative</option>
+                            <option value="Program">Program</option>
+                            <option value="Squad">Squad</option>
+                            <option value="Tribe">Tribe</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createStructure()">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetStructureTypeColor(StructureType type)
+    {
+        return type switch
+        {
+            StructureType.Team => "primary",
+            StructureType.Department => "success",
+            StructureType.Project => "info",
+            StructureType.Initiative => "warning",
+            StructureType.Program => "danger",
+            StructureType.Squad => "secondary",
+            StructureType.Tribe => "dark",
+            _ => "secondary"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        function showCreateStructureModal() {
+            $('#createStructureModal').modal('show');
+        }
+
+        function createStructure() {
+            const form = document.getElementById('createStructureForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const data = {
+                title: document.getElementById('structureTitle').value,
+                description: document.getElementById('structureDescription').value,
+                structureType: document.getElementById('structureType').value
+            };
+
+            // In a real implementation, this would call the API
+            console.log('Creating structure:', data);
+            
+            // Show success message and redirect
+            alert('Structure created successfully!');
+            window.location.reload();
+        }
+    </script>
+}

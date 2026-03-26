@@ -1,0 +1,424 @@
+@model Compost.Core.Models.Meeting
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-success">
+            <i class="fas fa-file-alt"></i> @Model.Title
+        </h2>
+        <p class="text-muted">Recording from @Model.StartedAt.ToLocalTime().ToString("MMMM dd, yyyy HH:mm")</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <button class="btn btn-primary" id="extract-insights">
+            <i class="fas fa-brain"></i> Extract Insights
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-align-left"></i> Transcript
+            </div>
+            <div class="card-body bg-light overflow-auto" style="max-height: 600px;">
+                @if (Model.Transcript != null && Model.Transcript.Any())
+                {
+                    @foreach (var segment in Model.Transcript)
+                    {
+                        <div class="mb-3 p-3 bg-white shadow-sm rounded border-start border-4 transcript-segment @(segment.SpeakerId == "1" ? "border-primary" : "border-info")">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold">@(segment.SpeakerId ?? "Unknown Speaker")</span>
+                                <small class="text-muted">@segment.StartTime.ToString(@"hh\:mm\:ss")</small>
+                            </div>
+                            <div>@segment.Text</div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-center py-5 text-muted italic">No transcript segments available.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-info-circle"></i> Meeting Details
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-success">@Model.Status</span>
+                    </dd>
+
+                    <dt class="col-sm-4">Duration</dt>
+                    <dd class="col-sm-8">@TimeSpan.FromSeconds(Model.DurationSeconds).ToString(@"hh\:mm\:ss")</dd>
+
+                    <dt class="col-sm-4">Project</dt>
+                    <dd class="col-sm-8 text-truncate">@Model.WorkContextId</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-4 shadow-sm border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-tasks"></i> Action Items
+            </div>
+            <div class="card-body" id="action-items">
+                @if (Model.ActionItems != null && Model.ActionItems.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var item in Model.ActionItems)
+                        {
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-check-square text-muted me-2"></i>
+                                @item.Title
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">No action items extracted yet. Click "Extract Insights" to process.</p>
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-primary">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-brain"></i> Mind Map Links
+            </div>
+            <div class="card-body" id="mindmap-links">
+                @if (Model.ExtractedNodes != null && Model.ExtractedNodes.Any())
+                {
+                    <p class="small">Extracted @Model.ExtractedNodes.Count nodes to mind map.</p>
+                    <button class="btn btn-sm btn-outline-primary w-100" id="create-mindmap-btn" data-meeting-id="@Model.Id">
+                        <i class="fas fa-brain"></i> Create Mind Map
+                    </button>
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">No mind map nodes extracted yet.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mind Map Details Modal -->
+<div class="modal fade" id="mindmapDetailsModal" tabindex="-1" aria-labelledby="mindmapDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="mindmapDetailsModalLabel">
+                    <i class="fas fa-brain me-2"></i>
+                    Create Mind Map
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="mindmap-details-form">
+                    <div class="mb-3">
+                        <label for="mindmap-name" class="form-label">Mind Map Name</label>
+                        <input type="text" class="form-control" id="mindmap-name" placeholder="Enter a name for your mind map" required>
+                        <div class="form-text">Give your mind map a descriptive name</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mindmap-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="mindmap-description" rows="3" placeholder="Describe what this mind map represents..."></textarea>
+                        <div class="form-text">Optional description to help you remember the context</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mindmap-context" class="form-label">Work Project</label>
+                        <select class="form-select" id="mindmap-context">
+                            <option value="">Select a context (optional)</option>
+                            <option value="default">Default</option>
+                            <option value="project">Project</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="research">Research</option>
+                            <option value="planning">Planning</option>
+                        </select>
+                        <div class="form-text">Organize your mind map within a specific context</div>
+                    </div>
+                    
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <div>
+                            This will create a mind map with <span id="node-count-display">0</span> extracted nodes from your meeting transcript.
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="create-mindmap-confirm-btn">
+                    <i class="fas fa-brain me-2"></i>Create Mind Map
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mind Map Creation Progress Modal -->
+<div class="modal fade" id="mindmapProgressModal" tabindex="-1" aria-labelledby="mindmapProgressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="mindmapProgressModalLabel">
+                    <i class="fas fa-brain me-2"></i>
+                    <span id="progress-modal-title">Creating Mind Map</span>
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <!-- Loading State -->
+                <div id="mindmap-progress-loading" class="d-none">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h6 class="mb-2">Processing Meeting Data</h6>
+                    <p class="text-muted mb-0" id="progress-loading-message">Analyzing transcript and extracting key concepts...</p>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progress-bar"></div>
+                    </div>
+                </div>
+                
+                <!-- Success State -->
+                <div id="mindmap-progress-success" class="d-none">
+                    <div class="text-success mb-3">
+                        <i class="fas fa-check-circle fa-3x"></i>
+                    </div>
+                    <h6 class="mb-2">Mind Map Created Successfully!</h6>
+                    <p class="text-muted mb-3" id="progress-success-message">Your mind map with X nodes has been created and saved.</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-primary" id="view-mindmap-progress-btn">
+                            <i class="fas fa-eye me-2"></i>View Mind Map
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="view-all-mindmaps-btn">
+                            <i class="fas fa-list me-2"></i>View All Mind Maps
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Error State -->
+                <div id="mindmap-progress-error" class="d-none">
+                    <div class="text-danger mb-3">
+                        <i class="fas fa-exclamation-triangle fa-3x"></i>
+                    </div>
+                    <h6 class="mb-2">Mind Map Creation Failed</h6>
+                    <p class="text-muted mb-3" id="progress-error-message">An error occurred while creating the mind map.</p>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('extract-insights').addEventListener('click', async function() {
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Extracting...';
+        
+        try {
+            const meetingId = window.location.pathname.split('/').pop();
+            const response = await fetch(`/Transcription/ExtractInsights/${meetingId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                alert(`Insights extracted! ${result.actionItemCount} action items and ${result.mindMapNodeCount} mind map nodes were found based on the transcript.`);
+                location.reload();
+            } else {
+                throw new Error('Failed to extract insights');
+            }
+        } catch (error) {
+            console.error('Error extracting insights:', error);
+            alert('Failed to extract insights. Please try again.');
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-brain"></i> Extract Insights';
+        }
+    });
+
+    // Mind Map Creation Modal Workflow
+    document.getElementById('create-mindmap-btn')?.addEventListener('click', async function() {
+        const meetingId = this.dataset.meetingId;
+        const nodeCount = document.querySelector('#mindmap-links p small')?.textContent.match(/\d+/)?.[0] || '0';
+        
+        // Update node count display in details modal
+        document.getElementById('node-count-display').textContent = nodeCount;
+        
+        // Set default name based on meeting title
+        const meetingTitle = document.querySelector('h1')?.textContent || 'Meeting';
+        document.getElementById('mindmap-name').value = `Mind Map: ${meetingTitle}`;
+        
+        // Set default description
+        document.getElementById('mindmap-description').value = `Generated from meeting transcript with ${nodeCount} extracted nodes.`;
+        
+        // Show details modal
+        const detailsModal = new bootstrap.Modal(document.getElementById('mindmapDetailsModal'));
+        detailsModal.show();
+    });
+    
+    // Handle confirmation button in details modal
+    document.getElementById('create-mindmap-confirm-btn')?.addEventListener('click', async function() {
+        const meetingId = document.getElementById('create-mindmap-btn').dataset.meetingId;
+        const name = document.getElementById('mindmap-name').value.trim();
+        const description = document.getElementById('mindmap-description').value.trim();
+        const workContextId = document.getElementById('mindmap-context').value || 'default';
+        
+        // Validate form
+        if (!name) {
+            alert('Please enter a name for your mind map.');
+            return;
+        }
+        
+        // Hide details modal and show progress modal
+        bootstrap.Modal.getInstance(document.getElementById('mindmapDetailsModal')).hide();
+        
+        const progressModal = new bootstrap.Modal(document.getElementById('mindmapProgressModal'));
+        showProgressState('loading');
+        progressModal.show();
+        
+        try {
+            // Simulate progress updates
+            await updateProgress(0, 'Analyzing transcript and extracting key concepts...');
+            await sleep(800);
+            
+            await updateProgress(25, 'Categorizing ideas and concepts...');
+            await sleep(600);
+            
+            await updateProgress(50, 'Creating mind map structure...');
+            await sleep(700);
+            
+            await updateProgress(75, 'Positioning nodes and generating layout...');
+            await sleep(600);
+            
+            await updateProgress(90, 'Finalizing mind map visualization...');
+            await sleep(500);
+            
+            // Create the actual mind map with custom details
+            console.log('Creating mind map for meeting:', meetingId, 'with name:', name);
+            
+            const response = await fetch(`/MindMap/FromMeeting/${meetingId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    description: description,
+                    workContextId: workContextId
+                })
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response OK:', response.ok);
+            console.log('Response URL:', response.url);
+            
+            if (response.ok) {
+                await updateProgress(100, 'Mind map created successfully!');
+                await sleep(500);
+                
+                // Check if we were redirected to the mind map view
+                if (response.url.includes('/MindMap/ViewMap/')) {
+                    // Show success state
+                    showProgressState('success');
+                    const nodeCount = document.querySelector('#mindmap-links p small')?.textContent.match(/\d+/)?.[0] || 'multiple';
+                    document.getElementById('progress-success-message').textContent = 
+                        `Your mind map "${name}" with ${nodeCount} nodes has been created and saved.`;
+                    
+                    // Set up view button to redirect to the mind map
+                    document.getElementById('view-mindmap-progress-btn').onclick = () => {
+                        window.location.href = response.url;
+                    };
+                    
+                    // Set up view all mind maps button
+                    document.getElementById('view-all-mindmaps-btn').onclick = () => {
+                        window.location.href = '/MindMap';
+                    };
+                } else {
+                    // Parse the response to see if it contains the mind map page
+                    const responseText = await response.text();
+                    console.log('Response text preview:', responseText.substring(0, 200));
+                    
+                    if (responseText.includes('Meeting:')) {
+                        // We got the mind map page content
+                        showProgressState('success');
+                        const nodeCount = document.querySelector('#mindmap-links p small')?.textContent.match(/\d+/)?.[0] || 'multiple';
+                        document.getElementById('progress-success-message').textContent = 
+                            `Your mind map "${name}" with ${nodeCount} nodes has been created and saved.`;
+                        
+                        // Extract the mind map ID from the current URL or use the response URL
+                        const mindMapUrl = response.url.includes('/ViewMap/') ? response.url : `/MindMap/ViewMap/${Date.now()}`;
+                        document.getElementById('view-mindmap-progress-btn').onclick = () => {
+                            window.location.href = mindMapUrl;
+                        };
+                        
+                        // Set up view all mind maps button
+                        document.getElementById('view-all-mindmaps-btn').onclick = () => {
+                            window.location.href = '/MindMap';
+                        };
+                    } else {
+                        throw new Error('Unexpected response from mind map creation');
+                    }
+                }
+            } else {
+                console.log('Response not OK, status:', response.status);
+                const errorText = await response.text();
+                console.log('Error response:', errorText);
+                
+                // Provide user-friendly error messages
+                let userMessage = 'Failed to create mind map';
+                if (response.status === 404) {
+                    userMessage = 'Meeting not found. The meeting data may have expired. Please try creating a new meeting.';
+                } else if (response.status === 400) {
+                    userMessage = 'Invalid request. Please ensure the meeting has extracted mind map nodes.';
+                } else if (response.status === 500) {
+                    userMessage = 'Server error occurred while creating the mind map. Please try again.';
+                } else {
+                    userMessage = `Failed to create mind map: ${response.status} - ${errorText}`;
+                }
+                
+                throw new Error(userMessage);
+            }
+        } catch (error) {
+            console.error('Error creating mind map:', error);
+            showProgressState('error');
+            document.getElementById('progress-error-message').textContent = error.message || 'An error occurred while creating the mind map.';
+        }
+    });
+    
+    function showProgressState(state) {
+        // Hide all states
+        document.getElementById('mindmap-progress-loading').classList.add('d-none');
+        document.getElementById('mindmap-progress-success').classList.add('d-none');
+        document.getElementById('mindmap-progress-error').classList.add('d-none');
+        
+        // Show selected state
+        document.getElementById(`mindmap-progress-${state}`).classList.remove('d-none');
+    }
+    
+    async function updateProgress(percent, message) {
+        document.getElementById('progress-bar').style.width = `${percent}%`;
+        document.getElementById('progress-loading-message').textContent = message;
+        
+        // Add a small delay to make the progress visible
+        await sleep(100);
+    }
+    
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+</script>

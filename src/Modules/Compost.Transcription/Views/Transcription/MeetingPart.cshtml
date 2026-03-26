@@ -1,0 +1,209 @@
+@using Compost.Transcription.Models
+@model MeetingPart
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-microphone me-2"></i>@Model.Title
+        </h5>
+        <span class="badge bg-@(Model.Status == "Completed" ? "success" : Model.Status == "Recording" ? "danger" : Model.Status == "Processing" ? "warning" : "secondary")">
+            @Model.Status
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                @if (!string.IsNullOrEmpty(Model.Summary))
+                {
+                    <div class="mb-3">
+                        <h6>Summary</h6>
+                        <p class="text-muted">@Model.Summary</p>
+                    </div>
+                }
+
+                @if (Model.StartedAt.HasValue)
+                {
+                    <div class="mb-3">
+                        <h6>Meeting Details</h6>
+                        <p class="text-muted small mb-1">
+                            <i class="fas fa-calendar me-1"></i>
+                            Started: @Model.StartedAt.Value.ToString("f")
+                        </p>
+                        @if (Model.EndedAt.HasValue)
+                        {
+                            <p class="text-muted small mb-1">
+                                <i class="fas fa-calendar-check me-1"></i>
+                                Ended: @Model.EndedAt.Value.ToString("f")
+                            </p>
+                        }
+                        @if (Model.DurationSeconds > 0)
+                        {
+                            <p class="text-muted small mb-1">
+                                <i class="fas fa-clock me-1"></i>
+                                Duration: @TimeSpan.FromSeconds(Model.DurationSeconds).ToString(@"hh\:mm\:ss")
+                            </p>
+                        }
+                        @if (Model.TranscriptionCompletedAt.HasValue)
+                        {
+                            <p class="text-muted small">
+                                <i class="fas fa-closed-captioning me-1"></i>
+                                Transcription completed: @Model.TranscriptionCompletedAt.Value.ToString("f")
+                            </p>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div class="mb-3">
+                        <h6>Notes</h6>
+                        <p>@Model.Notes</p>
+                    </div>
+                }
+            </div>
+            <div class="col-md-4">
+                <div class="text-center mb-3">
+                    <div class="display-6 text-primary">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="text-muted small">Meeting ID</div>
+                    <div class="font-monospace small">@Model.MeetingId</div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.ActionItems?.Any() == true || Model.ExtractedNodes?.Any() == true)
+        {
+            <div class="row mt-4">
+                @if (Model.ActionItems?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-tasks me-1"></i> Action Items (@Model.ActionItems.Count)</h6>
+                        <div class="list-group list-group-flush">
+                            @foreach (var item in Model.ActionItems.Take(5))
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">@item.Title</h6>
+                                            @if (!string.IsNullOrEmpty(item.Description))
+                                            {
+                                                <p class="text-muted small mb-1">@item.Description</p>
+                                            }
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            @if (string.IsNullOrEmpty(item.KanbanCardId))
+                                            {
+                                                <button class="btn btn-sm btn-outline-primary promote-kanban-btn me-2" 
+                                                        data-meeting-id="@Model.MeetingId" 
+                                                        data-action-item-id="@item.Id" 
+                                                        data-project-id="@Model.WorkContextId"
+                                                        title="Promote to Kanban">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <a href="/Kanban/Index/@item.KanbanCardId" class="btn btn-sm btn-success me-2" title="View Kanban Card">
+                                                    <i class="fas fa-check"></i>
+                                                </a>
+                                            }
+                                            <span class="badge bg-@(item.Priority == "High" ? "danger" : item.Priority == "Medium" ? "warning" : "info") rounded-pill">
+                                                @item.Priority
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.ActionItems.Count > 5)
+                            {
+                                <div class="text-center mt-2">
+                                    <small class="text-muted">...and @(Model.ActionItems.Count - 5) more</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Model.ExtractedNodes?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-project-diagram me-1"></i> Mind Map Nodes (@Model.ExtractedNodes.Count)</h6>
+                        <div class="list-group list-group-flush">
+                            @foreach (var node in Model.ExtractedNodes.Take(5))
+                            {
+                                <div class="list-group-item px-0">
+                                    <h6 class="mb-1">@node.Title</h6>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-light text-dark me-2">@node.NodeType</span>
+                                        @if (!string.IsNullOrEmpty(node.Description))
+                                        {
+                                            <small class="text-muted text-truncate">@node.Description</small>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.ExtractedNodes.Count > 5)
+                            {
+                                <div class="text-center mt-2">
+                                    <small class="text-muted">...and @(Model.ExtractedNodes.Count - 5) more</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.TranscriptText))
+        {
+            <div class="mt-4">
+                <h6><i class="fas fa-align-left me-1"></i> Full Transcript</h6>
+                <div class="border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
+                    <pre class="mb-0 small">@Model.TranscriptText</pre>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.promote-kanban-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const meetingId = this.dataset.meetingId;
+            const actionItemId = this.dataset.actionItemId;
+            const projectId = this.dataset.projectId;
+            
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            
+            try {
+                const response = await fetch(`/Transcription/PromoteToKanban`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        meetingId: meetingId,
+                        actionItemId: actionItemId,
+                        projectId: projectId
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    this.outerHTML = `<a href="/Kanban/Index/${result.cardId}" class="btn btn-sm btn-success me-2" title="View Kanban Card"><i class="fas fa-check"></i></a>`;
+                    alert('Action item promoted to Kanban card with full transcript attached!');
+                } else {
+                    const error = await response.text();
+                    throw new Error(error || 'Failed to promote action item');
+                }
+            } catch (error) {
+                console.error('Error promoting to Kanban:', error);
+                alert('Failed to promote action item: ' + error.message);
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-external-link-alt"></i>';
+            }
+        });
+    });
+</script>

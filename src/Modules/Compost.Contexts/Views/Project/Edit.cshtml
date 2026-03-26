@@ -1,0 +1,189 @@
+@model Compost.Contexts.ViewModels.EditContextViewModel
+
+@{
+    ViewBag.Title = "Edit Project";
+    var totalTime = TimeSpan.FromSeconds(Model.TotalTimeSpentSeconds);
+}
+
+<div class="container-fluid">
+    <h1>Edit Project: @Model.Name</h1>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-8">
+            <form asp-action="Edit" asp-controller="Project" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <i class="fab fa-github"></i> Repository Information
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="RepositoryName" class="form-label"></label>
+                            <input asp-for="RepositoryName" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="RepositoryUrl" class="form-label"></label>
+                            <input asp-for="RepositoryUrl" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CurrentBranch" class="form-label"></label>
+                            <input asp-for="CurrentBranch" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Tags" class="form-label"></label>
+                    <input asp-for="Tags" class="form-control" />
+                    <div class="form-text">Separate tags with commas</div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Status" class="form-label"></label>
+                    <select asp-for="Status" class="form-select">
+                        <option value="To Do">To Do</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                        <option value="Blocked">Blocked</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="ParentContextId" class="form-label"></label>
+                            <select asp-for="ParentContextId" class="form-select">
+                                <option value="">(None - Root Project)</option>
+                                @foreach (var context in ViewBag.AllContexts as List<Compost.Core.Models.Project> ?? [])
+                                {
+                                    @if (context.Id != Model.Id)
+                                    {
+                                        <option value="@context.Id">@context.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="DisplayOrder" class="form-label"></label>
+                            <input asp-for="DisplayOrder" type="number" class="form-control" />
+                            <div class="form-text">Lower numbers appear first in lists</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Total Time Spent</label>
+                    <div class="form-control-plaintext">
+                        <span class="badge bg-info fs-6">@totalTime.ToString("hh\\:mm\\:ss")</span>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success ms-2">Currently Active</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <a asp-action="TreeView" asp-controller="Project" class="btn btn-secondary">Back to Projects</a>
+                </div>
+            </form>
+
+            <form asp-action="Delete" asp-controller="Project" asp-route-id="@Model.Id" method="post" class="mt-2" onsubmit="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i> Delete Project
+                </button>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-check-square"></i> Testing Steps
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush mb-3">
+                        @foreach (var step in Model.TestingSteps)
+                        {
+                            <li class="list-group-item">@step</li>
+                        }
+                    </ul>
+                    <form asp-action="AddTestingStep" asp-controller="Project" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="input-group">
+                            <input type="text" name="step" class="form-control" placeholder="Add testing step..." required />
+                            <button type="submit" class="btn btn-outline-primary">Add</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-question-circle"></i> Open Questions
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush mb-3">
+                        @foreach (var question in Model.OpenQuestions.Where(q => !q.IsResolved))
+                        {
+                            <div class="list-group-item">
+                                <p>@question.Question</p>
+                                <form asp-action="ResolveQuestion" asp-controller="Project" method="post" class="mt-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                    <input type="hidden" name="questionId" value="@question.Id" />
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" name="answer" class="form-control" placeholder="Answer..." required />
+                                        <button type="submit" class="btn btn-outline-success">Resolve</button>
+                                    </div>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                    <form asp-action="AddQuestion" asp-controller="Project" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="input-group">
+                            <input type="text" name="question" class="form-control" placeholder="Add question..." required />
+                            <button type="submit" class="btn btn-outline-primary">Add</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

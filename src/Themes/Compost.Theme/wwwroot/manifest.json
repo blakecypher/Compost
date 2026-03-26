@@ -1,0 +1,147 @@
+{
+  "name": "Compost - Development Workflow",
+  "short_name": "Compost",
+  "description": "Modern development workflow management system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["productivity", "developer", "workflow"],
+  "screenshots": [
+    {
+      "src": "/Compost.Theme/images/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop view of Compost application"
+    },
+    {
+      "src": "/Compost.Theme/images/screenshot-mobile.png",
+      "sizes": "375x667",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile view of Compost application"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/Compost.Theme/images/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/Compost.Theme/images/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mind Maps",
+      "short_name": "Mind Maps",
+      "description": "Create and manage mind maps",
+      "url": "/MindMap",
+      "icons": [
+        {
+          "src": "/Compost.Theme/images/shortcut-mindmap.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Kanban Board",
+      "short_name": "Kanban",
+      "description": "View kanban board",
+      "url": "/Kanban",
+      "icons": [
+        {
+          "src": "/Compost.Theme/images/shortcut-kanban.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Code Snippets",
+      "short_name": "Snippets",
+      "description": "Browse code snippets",
+      "url": "/Snippets",
+      "icons": [
+        {
+          "src": "/Compost.Theme/images/shortcut-snippets.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+compost",
+      "url": "/handler?proto=%s"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

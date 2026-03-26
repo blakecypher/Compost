@@ -1,0 +1,312 @@
+@model List<Compost.Core.Models.Project>
+
+@{
+    ViewBag.Title = "Projects";
+    
+    var rootProjects = Model.Where(p => string.IsNullOrEmpty(p.ParentProjectId)).OrderBy(p => p.DisplayOrder).ToList();
+    
+    Func<string, List<Compost.Core.Models.Project>> getChildren = parentId =>
+        Model.Where(p => p.ParentProjectId == parentId).OrderBy(p => p.DisplayOrder).ToList();
+}
+
+    <div class="header-section mb-4">
+        <h1 class="text-theme-contexts">
+            <i class="fas fa-sitemap me-2"></i>Projects
+        </h1>
+        <p class="lead text-secondary">Organize your projects hierarchically. Drag and drop to structure your work.</p>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Tip:</strong> Drag a context onto another to make it a child. Drag to the root area to make it a top-level context.
+    </div>
+
+    <div class="mb-3 d-flex gap-2">
+        <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-success">
+            <i class="fas fa-plus"></i> Create Project
+        </a>
+    </div>
+
+    <div class="tree-container p-3 bg-light rounded" id="tree-root"
+         ondragover="dragOver(event)" 
+         ondrop="dragDropRoot(event)">
+        
+        @if (rootProjects.Any())
+        {
+            @foreach (var project in rootProjects)
+            {
+                @RenderTreeNode(project, 0)
+            }
+        }
+        else
+        {
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-tree fa-3x mb-3"></i>
+                <p>No projects yet. <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts">Create your first project</a> to get started.</p>
+            </div>
+        }
+    </div>
+
+@functions {
+
+    private Microsoft.AspNetCore.Html.IHtmlContent RenderTreeNode(Compost.Core.Models.Project project, int level)
+    {
+        var children = Model.Where(c => c.ParentProjectId == project.Id).OrderBy(c => c.DisplayOrder).ToList();
+        var hasChildren = children.Any();
+        var isActive = project.IsActive;
+        
+        var content = new Microsoft.AspNetCore.Html.HtmlContentBuilder();
+        
+        // Start tree node div
+        content.AppendHtml($"<div class=\"tree-node {(hasChildren ? "has-children" : "")} {(isActive ? "active-context" : "")}\" data-context-id=\"{project.Id}\" data-parent-id=\"{project.ParentProjectId}\" style=\"margin-left: {level * 30}px\">");
+        
+        // Start content div
+        content.AppendHtml($"<div class=\"tree-node-content d-flex align-items-center p-2 border rounded mb-2\" draggable=\"true\" ondragstart=\"dragStart(event, '{project.Id}')\" ondragover=\"dragOver(event)\" ondrop=\"dragDrop(event, '{project.Id}')\" ondragleave=\"dragLeave(event)\">");
+        
+        // Toggle button or spacer
+        if (hasChildren)
+        {
+            content.AppendHtml($"<button type=\"button\" class=\"btn btn-sm btn-link p-0 me-2\" onclick=\"toggleNode('{project.Id}')\" style=\"width: 24px;\"><i class=\"fas fa-chevron-down\" id=\"icon-{project.Id}\"></i></button>");
+        }
+        else
+        {
+            content.AppendHtml("<span style='width: 24px;'></span>");
+        }
+        
+        // Main content
+        content.AppendHtml("<div class=\"flex-grow-1\">");
+        content.AppendHtml("<div class=\"d-flex align-items-center\">");
+        
+        if (isActive)
+        {
+            content.AppendHtml("<span class=\"badge bg-success me-2\">Active</span>");
+        }
+        
+        content.AppendHtml($"<strong>{project.Name}</strong>");
+        
+        if (!string.IsNullOrEmpty(project.CurrentBranch))
+        {
+            content.AppendHtml($"<span class=\"badge bg-info ms-2\">{project.CurrentBranch}</span>");
+        }
+        
+        content.AppendHtml("</div>");
+        
+        if (!string.IsNullOrEmpty(project.Description))
+        {
+            content.AppendHtml($"<small class=\"text-muted d-block\">{project.Description}</small>");
+        }
+        
+        content.AppendHtml("<div class=\"mt-1\">");
+        
+        foreach (var tag in project.Tags?.Take(3) ?? new List<string>())
+        {
+            content.AppendHtml($"<span class=\"badge bg-light text-dark me-1\">{tag}</span>");
+        }
+        
+        if ((project.Tags?.Count ?? 0) > 3)
+        {
+            if (project.Tags != null) content.AppendHtml($"<span class=\"badge bg-light text-dark\">+{project.Tags.Count - 3}</span>");
+        }
+        
+        content.AppendHtml("</div></div>");
+        
+        // Action buttons
+        content.AppendHtml("<div class=\"btn-group ms-2\">");
+        content.AppendHtml($"<a href=\"/Projects/Edit/{project.Id}\" class=\"btn btn-sm btn-outline-primary\" title=\"Edit\"><i class=\"fas fa-edit\"></i></a>");
+        
+        if (!isActive)
+        {
+            content.AppendHtml($"<form action=\"/Projects/Switch/{project.Id}\" method=\"post\" style=\"display:inline;\"><input type=\"hidden\" name=\"__RequestVerificationToken\" value=\"{Html.AntiForgeryToken()}\" /><button type=\"submit\" class=\"btn btn-sm btn-outline-success\" title=\"Activate\"><i class=\"fas fa-play\"></i></button></form>");
+        }
+        
+        content.AppendHtml($"<a href=\"/Projects/Create?parentId={project.Id}\" class=\"btn btn-sm btn-outline-secondary\" title=\"Add Child\"><i class=\"fas fa-plus\"></i></a>");
+        content.AppendHtml("</div></div>");
+        
+        // Children
+        if (hasChildren)
+        {
+            content.AppendHtml($"<div class=\"tree-children\" id=\"children-{project.Id}\">");
+            foreach (var child in children)
+            {
+                content.AppendHtml(RenderTreeNode(child, level + 1));
+            }
+            content.AppendHtml("</div>");
+        }
+        
+        // End tree node div
+        content.AppendHtml("</div>");
+        
+        return content;
+    }
+}
+
+@section Scripts {
+    <script>
+        let draggedId = null;
+        
+        function dragStart(event, id) {
+            draggedId = id;
+            event.dataTransfer.setData('text/plain', id);
+            event.dataTransfer.effectAllowed = 'move';
+        }
+        
+        function dragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            
+            const target = event.currentTarget;
+            if (target.classList.contains('tree-node-content')) {
+                target.classList.add('drag-over');
+            }
+        }
+        
+        function dragLeave(event) {
+            const target = event.currentTarget;
+            target.classList.remove('drag-over');
+        }
+        
+        async function dragDrop(event, targetId) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const target = event.currentTarget;
+            target.classList.remove('drag-over');
+            
+            if (draggedId === targetId) return;
+            
+            if (isDescendant(draggedId, targetId)) {
+                alert('Cannot move a parent context into its own child');
+                return;
+            }
+            
+            await updateParent(draggedId, targetId);
+        }
+        
+        async function dragDropRoot(event) {
+            event.preventDefault();
+            
+            const target = event.target.closest('.tree-node-content');
+            if (target) return;
+            
+            await updateParent(draggedId, null);
+        }
+        
+        function isDescendant(parentId, childId) {
+            const parent = document.querySelector(`[data-context-id="${parentId}"]`);
+            if (!parent) return false;
+            
+            const children = parent.querySelectorAll('.tree-node');
+            return Array.from(children).some(child => 
+                child.getAttribute('data-context-id') === childId
+            );
+        }
+        
+        async function updateParent(projectId, parentId) {
+            try {
+                const formData = new FormData();
+                formData.append('projectId', projectId);
+                if (parentId) {
+                    formData.append('parentId', parentId);
+                }
+                
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) {
+                    formData.append('__RequestVerificationToken', token.value);
+                }
+                
+                const response = await fetch('/Projects/UpdateParent', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to update: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function toggleNode(id) {
+            const children = document.getElementById('children-' + id);
+            const icon = document.getElementById('icon-' + id);
+            
+            if (children.classList.contains('collapsed')) {
+                children.classList.remove('collapsed');
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                children.classList.add('collapsed');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            }
+        }
+    </script>
+}
+
+<style>
+    .tree-container {
+        min-height: 400px;
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-light);
+    }
+    
+    .tree-node-content {
+        cursor: grab;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: var(--bg-secondary) !important;
+        border: 2px solid var(--border-medium) !important;
+        border-top: 4px solid var(--theme-contexts) !important;
+        color: var(--text-primary);
+        border-radius: 16px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .tree-node-content:hover {
+        box-shadow: 0 12px 24px rgba(155, 126, 222, 0.25), 0 6px 12px rgba(0, 0, 0, 0.2);
+        transform: translateY(-3px) scale(1.02);
+        border-color: var(--theme-contexts) !important;
+        background: var(--bg-tertiary) !important;
+    }
+
+    [data-bs-theme="dark"] .tree-node-content:hover {
+        box-shadow: 0 12px 24px rgba(155, 126, 222, 0.35), 0 8px 16px rgba(0, 0, 0, 0.5);
+    }
+    
+    .tree-node-content.drag-over {
+        border-color: var(--theme-contexts) !important;
+        background-color: var(--bg-secondary) !important;
+        box-shadow: 0 0 0 2px var(--theme-contexts);
+    }
+    
+    .tree-node-content:active {
+        cursor: grabbing;
+    }
+    
+    .tree-children {
+        display: block;
+    }
+    
+    .tree-children.collapsed {
+        display: none;
+    }
+    
+    .active-context .tree-node-content {
+        border-color: var(--theme-contexts) !important;
+        border-width: 3px !important;
+        background: var(--bg-tertiary) !important;
+        box-shadow: 0 6px 16px rgba(155, 126, 222, 0.2);
+    }
+
+    .tree-node-content strong {
+        color: var(--text-primary);
+    }
+</style>

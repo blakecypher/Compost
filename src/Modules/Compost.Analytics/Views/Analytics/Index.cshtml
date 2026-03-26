@@ -1,0 +1,465 @@
+@model Compost.Analytics.ViewModels.AnalyticsDashboardViewModel
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-chart-line me-2"></i>
+            Analytics Dashboard
+        </h1>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline" id="refresh-data">
+                <i class="fas fa-sync-alt"></i>
+                Refresh
+            </button>
+            <button class="btn btn-primary" id="export-data">
+                <i class="fas fa-download"></i>
+                Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="text-uppercase text-muted text-xs font-weight-bold">Mind Maps</h5>
+                            <div class="h2 mb-0 font-weight-bold text-primary">@Model.SummaryStats.TotalMindMaps</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-project-diagram fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-success">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="text-uppercase text-muted text-xs font-weight-bold">Kanban Cards</h5>
+                            <div class="h2 mb-0 font-weight-bold text-success">@Model.SummaryStats.TotalKanbanCards</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-columns fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-info">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="text-uppercase text-muted text-xs font-weight-bold">Code Snippets</h5>
+                            <div class="h2 mb-0 font-weight-bold text-info">@Model.SummaryStats.TotalSnippets</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-code fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-warning">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="text-uppercase text-muted text-xs font-weight-bold">Patterns</h5>
+                            <div class="h2 mb-0 font-weight-bold text-warning">@Model.SummaryStats.TotalPatterns</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shapes fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Velocity Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Team Velocity</h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline dropdown-toggle" type="button" id="velocity-period" data-bs-toggle="dropdown">
+                            Last 12 Weeks
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" data-period="4">Last 4 Weeks</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="8">Last 8 Weeks</a></li>
+                            <li><a class="dropdown-item" href="#" data-period="12">Last 12 Weeks</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="velocityChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pattern Usage Chart -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold">Pattern Usage</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="patternUsageChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Module Usage and Activity -->
+    <div class="row mb-4">
+        <!-- Module Usage Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold">Module Usage</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="moduleUsageChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold">Daily Activity (Last 30 Days)</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Tables -->
+    <div class="row">
+        <!-- Top Patterns Table -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold">Top Used Patterns</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Pattern</th>
+                                    <th>Category</th>
+                                    <th>Usage Count</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var pattern in Model.PatternUsageData.Patterns.Take(10))
+                                {
+                                    <tr>
+                                        <td>@pattern.PatternName</td>
+                                        <td><span class="badge bg-secondary">@pattern.Category</span></td>
+                                        <td>@pattern.UsageCount</td>
+                                        <td>
+                                            <i class="fas fa-arrow-up text-success"></i>
+                                            <span class="text-success">+@(pattern.UsageCount / 10)</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity Table -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold">Recent Activity</h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Sample Activity</h6>
+                                    <p class="text-muted mb-0">@DateTime.Now.AddDays(-i).ToString("MMM dd, yyyy")</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Chart configurations
+        const chartDefaults = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        };
+
+        // Velocity Chart
+        const velocityCtx = document.getElementById('velocityChart').getContext('2d');
+        const velocityChart = new Chart(velocityCtx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.VelocityData.WeeklyVelocities.Select(v => v.Week))),
+                datasets: [{
+                    label: 'Story Points',
+                    data: @Html.Raw(Json.Serialize(Model.VelocityData.WeeklyVelocities.Select(v => v.StoryPoints))),
+                    borderColor: 'rgb(37, 99, 235)',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Completed Cards',
+                    data: @Html.Raw(Json.Serialize(Model.VelocityData.WeeklyVelocities.Select(v => v.CompletedCards))),
+                    borderColor: 'rgb(22, 163, 74)',
+                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                ...chartDefaults,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Pattern Usage Chart
+        const patternCtx = document.getElementById('patternUsageChart').getContext('2d');
+        const patternChart = new Chart(patternCtx, {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.PatternUsageData.Patterns.Select(p => p.PatternName))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(Model.PatternUsageData.Patterns.Select(p => p.UsageCount))),
+                    backgroundColor: [
+                        '#2563eb', '#16a34a', '#ea580c', '#dc2626', 
+                        '#7c3aed', '#0891b2', '#ca8a04', '#be185d'
+                    ]
+                }]
+            },
+            options: chartDefaults
+        });
+
+        // Module Usage Chart
+        const moduleCtx = document.getElementById('moduleUsageChart').getContext('2d');
+        const moduleChart = new Chart(moduleCtx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.ModuleUsageData.ModuleStats.Select(m => m.ModuleName))),
+                datasets: [{
+                    label: 'Content Count',
+                    data: @Html.Raw(Json.Serialize(Model.ModuleUsageData.ModuleStats.Select(m => m.ContentCount))),
+                    backgroundColor: @Html.Raw(Json.Serialize(Model.ModuleUsageData.ModuleStats.Select(m => m.Color)))
+                }]
+            },
+            options: {
+                ...chartDefaults,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Activity Chart
+        const activityCtx = document.getElementById('activityChart').getContext('2d');
+        const activityChart = new Chart(activityCtx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.ActivityData.DailyActivities.Select(a => a.Date))),
+                datasets: [{
+                    label: 'Mind Maps',
+                    data: @Html.Raw(Json.Serialize(Model.ActivityData.DailyActivities.Select(a => a.MindMaps))),
+                    borderColor: 'rgb(37, 99, 235)',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Kanban Cards',
+                    data: @Html.Raw(Json.Serialize(Model.ActivityData.DailyActivities.Select(a => a.KanbanCards))),
+                    borderColor: 'rgb(22, 163, 74)',
+                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Snippets',
+                    data: @Html.Raw(Json.Serialize(Model.ActivityData.DailyActivities.Select(a => a.Snippets))),
+                    borderColor: 'rgb(8, 145, 178)',
+                    backgroundColor: 'rgba(8, 145, 178, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Patterns',
+                    data: @Html.Raw(Json.Serialize(Model.ActivityData.DailyActivities.Select(a => a.Patterns))),
+                    borderColor: 'rgb(234, 88, 12)',
+                    backgroundColor: 'rgba(234, 88, 12, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                ...chartDefaults,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Refresh data functionality
+        document.getElementById('refresh-data').addEventListener('click', function() {
+            const btn = this;
+            const icon = btn.querySelector('i');
+            
+            // Show loading state
+            btn.disabled = true;
+            icon.className = 'fas fa-spinner fa-spin';
+            
+            // Simulate data refresh
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+
+        // Export functionality
+        document.getElementById('export-data').addEventListener('click', function() {
+            const data = {
+                summary: @Html.Raw(Json.Serialize(Model.SummaryStats)),
+                velocity: @Html.Raw(Json.Serialize(Model.VelocityData)),
+                patterns: @Html.Raw(Json.Serialize(Model.PatternUsageData)),
+                modules: @Html.Raw(Json.Serialize(Model.ModuleUsageData)),
+                activity: @Html.Raw(Json.Serialize(Model.ActivityData)),
+                exportedAt: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `compost-analytics-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Period selector for velocity chart
+        document.querySelectorAll('#velocity-period + .dropdown-menu a').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const period = this.dataset.period;
+                document.getElementById('velocity-period').textContent = `Last ${period} Weeks`;
+                
+                // Update chart data based on period
+                // This would require an API call to get filtered data
+                console.log(`Loading velocity data for last ${period} weeks`);
+            });
+        });
+    </script>
+}
+
+<style>
+.border-left-primary {
+    border-left: 4px solid #2563eb !important;
+}
+
+.border-left-success {
+    border-left: 4px solid #16a34a !important;
+}
+
+.border-left-info {
+    border-left: 4px solid #0891b2 !important;
+}
+
+.border-left-warning {
+    border-left: 4px solid #ea580c !important;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content {
+    background: #f9fafb;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border-left: 3px solid #2563eb;
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 0 10px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .h2 {
+        font-size: 1.5rem;
+    }
+}
+</style>

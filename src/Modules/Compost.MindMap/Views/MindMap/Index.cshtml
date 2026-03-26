@@ -1,0 +1,198 @@
+@model List<Compost.MindMap.Models.MindMapCollection>
+
+@{
+    ViewBag.Title = "Mind Maps";
+}
+
+<style>
+    /* Force Kanban orange/yellow theme for MindMap primary elements */
+    .text-primary {
+        color: #ff6b35 !important;
+    }
+    .btn-primary {
+        background: #ff6b35 !important;
+        border-color: #ff6b35 !important;
+        color: #ffffff !important;
+    }
+    .btn-primary:hover {
+        background: #ff8555 !important;
+        border-color: #ff8555 !important;
+        color: #ffffff !important;
+    }
+    .btn-outline-primary {
+        color: #ff6b35 !important;
+        border-color: #ff6b35 !important;
+    }
+    .btn-outline-primary:hover {
+        background: #ff6b35 !important;
+        color: #ffffff !important;
+    }
+    
+    /* Style cards similar to Kanban cards */
+    .mindmap-card {
+        border-top: 4px solid #ffc107 !important;
+        transition: transform 0.1s, box-shadow 0.2s;
+        background: var(--bs-body-bg) !important;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    .mindmap-card:hover {
+        transform: translateY(-2px);
+    }
+    [data-bs-theme="light"] .mindmap-card:hover {
+        box-shadow: 0 10px 20px rgba(255, 107, 53, 0.2), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    [data-bs-theme="dark"] .mindmap-card:hover {
+        box-shadow: 0 10px 20px rgba(255, 107, 53, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Remove default bg-primary from card headers */
+    [data-bs-theme="dark"] .mindmap-card-header {
+        background-color: #2d2d2d !important;
+        color: #d4d4d8 !important;
+        border-bottom: 1px solid #444444 !important;
+    }
+    [data-bs-theme="light"] .mindmap-card-header {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-primary">
+            <i class="fas fa-brain"></i> Mind Maps
+        </h2>
+        <p class="text-muted">Procedural flow visualization from text, transcripts, and requirements.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Import" class="btn btn-outline-secondary">
+            <i class="fas fa-file-import"></i> Import
+        </a>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Mind Map
+        </a>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form asp-action="Search" method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search mind maps, nodes, tags..." value="@ViewBag.SearchQuery" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Node Type</label>
+                <select name="nodeType" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="Idea">💡 Idea</option>
+                    <option value="Requirement">📋 Requirement</option>
+                    <option value="Question">❓ Question</option>
+                    <option value="Action">⚡ Action</option>
+                    <option value="Decision">✅ Decision</option>
+                    <option value="Risk">⚠️ Risk</option>
+                    <option value="Note">📝 Note</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>Search
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a asp-action="Index" class="btn btn-outline-secondary w-100">Clear</a>
+            </div>
+        </form>
+        @if (ViewBag.TotalResults != null)
+        {
+            <div class="mt-2 text-muted">
+                <small>Found <strong>@ViewBag.TotalResults</strong> results</small>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info text-center py-5">
+        <i class="fas fa-project-diagram fa-3x mb-3 text-info"></i>
+        <h4>No Mind Maps Yet</h4>
+        <p>Create your first mind map from text, meeting transcripts, or requirements.</p>
+        <a asp-action="Create" class="btn btn-primary">Get Started</a>
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var mindMap in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm mindmap-card">
+                    <div class="card-header mindmap-card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-project-diagram"></i> @mindMap.Name</span>
+                        <span class="badge bg-light text-dark">@mindMap.Nodes.Count nodes</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">@mindMap.Description</p>
+                        <div class="d-flex flex-wrap gap-1 mb-3">
+                            @foreach (var nodeType in mindMap.Nodes.Select(n => n.NodeType).Distinct().Take(5))
+                            {
+                                <span class="badge bg-light text-dark">@nodeType</span>
+                            }
+                        </div>
+                        <div class="text-muted small">
+                            <i class="fas fa-clock"></i> Created @mindMap.CreatedAt.ToString("MMM dd, yyyy")
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="ViewMap" asp-route-id="@mindMap.Id" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <div class="btn-group" role="group">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="/MindMap/Export/@mindMap.Id/json">
+                                                <i class="fas fa-file-code text-primary"></i> JSON
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/MindMap/Export/@mindMap.Id/markdown">
+                                                <i class="fas fa-file-alt text-info"></i> Markdown
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <a asp-action="Stats" asp-route-id="@mindMap.Id" class="btn btn-sm btn-outline-info" title="Statistics">
+                                    <i class="fas fa-chart-bar"></i>
+                                </a>
+                                <form asp-action="Clone" asp-route-id="@mindMap.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-info" title="Clone Map">
+                                        <i class="fas fa-clone"></i>
+                                    </button>
+                                </form>
+                                <form asp-action="Delete" asp-route-id="@mindMap.Id" method="post" onsubmit="return confirm('Delete this mind map?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

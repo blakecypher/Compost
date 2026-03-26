@@ -1,0 +1,429 @@
+@using Compost.Core.Models
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+@{
+    Layout = "_Layout";
+    ViewBag.Title = "New Recording";
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-primary">
+            <i class="fas fa-microphone"></i> New Recording
+        </h2>
+        <p class="text-muted">Record your session. Real-time transcription will appear below.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-cog"></i> Session Info
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Meeting Title</label>
+                    <input type="text" id="meetingTitle" class="form-control" placeholder="e.g., Standup Meeting" value="Meeting @DateTime.Now.ToString("yyyy-MM-dd HH:mm")" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Project</label>
+                    <select id="projectId" class="form-select">
+                        @foreach (var context in ViewBag.WorkContexts as List<Project> ?? [])
+                        {
+                            <option value="@context.Id" selected="@(context.Id == ViewBag.SelectedContextId)">@context.Name</option>
+                        }
+                    </select>
+                </div>
+                <hr />
+                <div class="text-center">
+                    <div id="recording-timer" class="display-6 mb-3 fw-bold">00:00:00</div>
+                    <button id="start-btn" class="btn btn-danger btn-lg w-100 mb-2 shadow-sm">
+                        <i class="fas fa-circle me-1"></i> Start Recording
+                    </button>
+                    <button id="stop-btn" class="btn btn-secondary btn-lg w-100 shadow-sm" disabled>
+                        <i class="fas fa-square me-1"></i> Stop & Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <i class="fas fa-users"></i> Speakers Detected
+            </div>
+            <div class="card-body" id="speaker-list">
+                <p class="text-muted small">Speakers will appear here during recording.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-align-left me-1"></i> Live Transcript</span>
+                <span class="badge bg-success" id="status-badge">Ready</span>
+            </div>
+            <div class="card-body overflow-auto p-0" id="transcript-container" style="height: 500px;">
+                <div id="transcript-content" class="p-3">
+                    <p class="text-muted text-center italic mt-5 mt-md-10">Transcript will appear here once you start recording...</p>
+                </div>
+            </div>
+            <div class="card-footer text-muted small">
+                <i class="fas fa-info-circle me-1"></i> Using browser MediaRecorder API. Processing via internal TranscriptionService.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let startTime;
+    let timerInterval;
+    let isRecording = false;
+    let connection;
+    let currentMeetingId;
+
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const timerDisplay = document.getElementById('recording-timer');
+    const statusBadge = document.getElementById('status-badge');
+    const transcriptContent = document.getElementById('transcript-content');
+    
+    let currentInterimDiv = null;
+    // Initialize SignalR connection
+    connection = new signalR.HubConnectionBuilder()
+        .withUrl('/TranscriptionHub')
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('ReceiveTranscriptSegment', (segment) => {
+        if (segment.isInterim) {
+            updateInterimBlock(segment.text);
+        } else {
+            // Remove any existing interim block when a final segment arrives
+            if (currentInterimDiv) {
+                currentInterimDiv.remove();
+                currentInterimDiv = null;
+            }
+            appendTranscriptBlock(segment.text, segment.confidence, segment.startTime);
+        }
+    });
+
+    connection.on('ReceiveRecordingStatus', (status, message) => {
+        console.log('Received recording status:', status, message);
+        updateStatus(status, message);
+        
+        // Auto-leave group when processing is completed
+        if (status === 'completed' && currentMeetingId) {
+            console.log('Processing completed, leaving group in 1 second...');
+            setTimeout(async () => {
+                await connection.invoke('LeaveMeeting', currentMeetingId);
+            }, 1000);
+        }
+    });
+
+    connection.on('ReceiveTimerUpdate', (elapsed) => {
+        timerDisplay.textContent = elapsed;
+    });
+
+    async function startConnection() {
+        try {
+            await connection.start();
+            console.log('SignalR Connected.');
+        } catch (err) {
+            console.error('SignalR Connection Error: ', err);
+            setTimeout(startConnection, 5000);
+        }
+    }
+
+    startConnection();
+
+    // Check for MediaRecorder support
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        console.log('MediaRecorder API supported');
+    } else {
+        alert('MediaRecorder API is not supported in this browser. Please use Chrome, Firefox, or Edge.');
+        startBtn.disabled = true;
+    }
+
+    function updateInterimBlock(text) {
+        if (!text || text.trim() === '') return;
+        
+        if (!currentInterimDiv) {
+            currentInterimDiv = document.createElement('div');
+            currentInterimDiv.className = 'transcript-line mb-2 p-2 rounded shadow-sm border-start border-secondary border-4 opacity-75';
+            
+            if (document.documentElement.getAttribute('data-bs-theme') === 'dark') {
+                currentInterimDiv.classList.add('bg-dark', 'text-white');
+            } else {
+                currentInterimDiv.classList.add('bg-white');
+            }
+            
+            transcriptContent.appendChild(currentInterimDiv);
+        }
+        
+        currentInterimDiv.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="line-text flex-grow-1 fst-italic text-muted">${text}...</span>
+                <small class="text-muted ms-2">recognizing</small>
+            </div>
+        `;
+        transcriptContent.parentElement.scrollTop = transcriptContent.parentElement.scrollHeight;
+    }
+
+    function appendTranscriptBlock(text, confidence, startTime) {
+        const p = document.createElement('div');
+        p.className = 'transcript-line mb-2 p-2 rounded shadow-sm border-start border-primary border-4';
+        
+        // Use theme-aware background class
+        if (document.documentElement.getAttribute('data-bs-theme') === 'dark') {
+            p.classList.add('bg-dark', 'text-white');
+        } else {
+            p.classList.add('bg-white');
+        }
+        
+        const time = new Date().toLocaleTimeString();
+        const confidenceClass = confidence > 0.9 ? 'text-success' : confidence > 0.7 ? 'text-warning' : 'text-danger';
+        
+        p.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="line-text flex-grow-1">${text}</span>
+                <small class="text-muted ms-2">${time}</small>
+            </div>
+            <small class="${confidenceClass} d-block mt-1">Confidence: ${(confidence * 100).toFixed(1)}%</small>
+        `;
+        transcriptContent.appendChild(p);
+        transcriptContent.parentElement.scrollTop = transcriptContent.parentElement.scrollHeight;
+    }
+
+    function updateStatus(status, message) {
+        statusBadge.textContent = message || status;
+        
+        switch(status.toLowerCase()) {
+            case 'recording':
+                statusBadge.className = 'badge bg-danger pulse';
+                break;
+            case 'processing':
+                statusBadge.className = 'badge bg-warning';
+                break;
+            case 'completed':
+                statusBadge.className = 'badge bg-success';
+                // Redirect to list view after 2 seconds
+                console.log('Transcription completed! Redirecting to list view...');
+                setTimeout(() => {
+                    window.location.href = '/Transcription';
+                }, 2000);
+                break;
+            case 'error':
+                statusBadge.className = 'badge bg-danger';
+                break;
+            default:
+                statusBadge.className = 'badge bg-secondary';
+        }
+    }
+
+    startBtn.onclick = async () => {
+        try {
+            // Clear previous transcript
+            transcriptContent.innerHTML = '';
+            audioChunks = [];
+            
+            // Get microphone access
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 16000
+                } 
+            });
+            
+            // Create MediaRecorder
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+            
+            mediaRecorder.ondataavailable = async (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                    
+                    // Send to server via SignalR if connection is active
+                    if (connection.state === signalR.HubConnectionState.Connected && currentMeetingId) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64 = reader.result.split(',')[1];
+                            connection.invoke('SendAudioChunk', currentMeetingId, base64);
+                        };
+                        reader.readAsDataURL(event.data);
+                    }
+                }
+            };
+            
+            mediaRecorder.onstop = async () => {
+                // Combine audio chunks and send to server
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                await uploadAudio(audioBlob);
+                
+                // Stop all tracks
+                stream.getTracks().forEach(track => track.stop());
+            };
+            
+            // Start recording
+            mediaRecorder.start(1000); // Collect data every second
+            startTime = Date.now();
+            startTimer();
+            isRecording = true;
+            
+            // Start meeting on server
+            const meetingData = {
+                title: document.getElementById('meetingTitle').value,
+                projectId: document.getElementById('projectId').value
+            };
+            
+            const response = await fetch('/Transcription/StartRecording', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    '@tokens.HeaderName': '@tokens.RequestToken'
+                },
+                body: JSON.stringify(meetingData)
+            });
+            
+            if (response.ok) {
+                const meeting = await response.json();
+                currentMeetingId = meeting.id;
+                await connection.invoke('JoinMeeting', currentMeetingId);
+                updateStatus('recording', 'Recording');
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            } else {
+                throw new Error('Failed to start recording');
+            }
+            
+        } catch (err) {
+            console.error('Error starting recording:', err);
+            if (err.name === 'NotAllowedError') {
+                alert('Microphone access denied. Please allow microphone access to use transcription.');
+            } else {
+                alert('Failed to start recording: ' + err.message);
+            }
+        }
+    };
+
+    stopBtn.onclick = async () => {
+        isRecording = false;
+        
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        
+        stopTimer();
+        updateStatus('processing', 'Processing...');
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        
+        // Call backend to stop recording and trigger processing
+        if (currentMeetingId) {
+            try {
+                const response = await fetch('/Transcription/StopRecording', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': '@tokens.RequestToken'
+                    },
+                    body: JSON.stringify({ meetingId: currentMeetingId })
+                });
+                
+                if (response.ok) {
+                    console.log('Recording stopped successfully');
+                } else {
+                    console.error('Failed to stop recording');
+                }
+            } catch (error) {
+                console.error('Error stopping recording:', error);
+            }
+        }
+    };
+
+    async function uploadAudio(audioBlob) {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+        formData.append('meetingId', currentMeetingId);
+        
+        try {
+            const response = await fetch('/Transcription/UploadAudio', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                console.log('Audio uploaded successfully');
+                // Server will process and send updates via SignalR
+            } else {
+                throw new Error('Failed to upload audio');
+            }
+        } catch (err) {
+            console.error('Error uploading audio:', err);
+            updateStatus('error', 'Upload failed');
+        }
+    }
+
+    function startTimer() {
+        if(timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const h = Math.floor(elapsed / 3600000).toString().padStart(2, '0');
+            const m = Math.floor((elapsed % 3600000) / 60000).toString().padStart(2, '0');
+            const s = Math.floor((elapsed % 60000) / 1000).toString().padStart(2, '0');
+            timerDisplay.textContent = `${h}:${m}:${s}`;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+</script>
+
+<style>
+    .pulse {
+        animation: pulse-animation 2s infinite;
+    }
+
+    @@keyframes pulse-animation {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .transcript-line {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .transcript-line:hover {
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Dark mode specific styles */
+    [data-bs-theme="dark"] .transcript-line {
+        background-color: var(--bs-gray-800) !important;
+        border-left-color: var(--bs-primary) !important;
+    }
+    
+    [data-bs-theme="dark"] .transcript-line:hover {
+        box-shadow: 0 2px 8px rgba(255,255,255,0.1);
+    }
+    
+    /* Light mode specific styles */
+    [data-bs-theme="light"] .transcript-line {
+        background-color: var(--bs-white) !important;
+    }
+</style>
+}

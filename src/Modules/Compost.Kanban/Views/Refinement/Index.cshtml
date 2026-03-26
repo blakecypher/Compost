@@ -1,0 +1,194 @@
+@using Compost.Kanban.Models
+@using OrchardCore.ContentManagement
+@model OrchardCore.ContentManagement.ContentItem
+
+@{
+    var part = Model.As<TreeNodePart>();
+}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden refinement-card">
+                <div class="card-header py-3 border-0 refinement-header">
+                    <h5 class="mb-0 fw-bold refinement-title"><i class="fas fa-sitemap mt-1 me-2"></i> Requirement Info</h5>
+                </div>
+                <div class="card-body refinement-body">
+                    <h3 class="fw-bold refinement-title">@Model.DisplayText</h3>
+                    <div class="mb-3 refinement-badge refinement-badge-priority">@part.Priority Priority</div>
+                    <div class="mb-3 refinement-badge refinement-badge-complexity">@part.Complexity Complexity</div>
+                    
+                    <hr class="refinement-hr" />
+                    
+                    <h6 class="fw-bold small text-uppercase mb-3 refinement-muted">Acceptance Criteria</h6>
+                    <ul class="list-unstyled small" id="ac-list">
+                        @foreach (var ac in part.AcceptanceCriteria)
+                        {
+                            <li class="mb-2 refinement-text"><i class="fas fa-check-circle me-2 text-success"></i> @ac</li>
+                        }
+                    </ul>
+
+                    <h6 class="fw-bold small text-uppercase mt-4 mb-3 refinement-muted">Technical Details</h6>
+                    <ul class="list-unstyled small" id="tech-list">
+                        @foreach (var tech in part.TechnicalRequirements)
+                        {
+                            <li class="mb-2 refinement-text"><i class="fas fa-cog me-2 text-muted"></i> @tech</li>
+                        }
+                    </ul>
+                </div>
+                <div class="card-footer border-0 py-3 refinement-footer">
+                    @if (!part.IsPromotedToKanban)
+                    {
+                        <button id="promote-btn" class="w-100 fw-bold rounded-pill btn btn-theme-mindmaps py-2 shadow-sm">
+                            <i class="fas fa-rocket me-2"></i> Promote to Kanban
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="small mb-0 rounded-3 refinement-promoted-banner">
+                            <i class="fas fa-info-circle me-1"></i> This requirement has been promoted.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4 h-100 flex-column refinement-assistant-card" style="min-height: 600px;">
+                <div class="card-header py-3 border-bottom d-flex justify-content-between align-items-center refinement-assistant-header">
+                    <h5 class="mb-0 fw-bold refinement-assistant-title"><i class="fas fa-magic me-2"></i> Refinement Assistant</h5>
+                    <span class="refinement-status-badge">AI Online</span>
+                </div>
+                
+                <div id="chat-container" class="card-body overflow-auto p-4 refinement-chat-container" style="flex: 1;">
+                    <div class="chat-message assistant mb-4">
+                        <div class="d-flex align-items-start">
+                            <div class="rounded-circle p-2 me-3 shadow-sm refinement-avatar-assistant">
+                                <i class="fas fa-robot fa-fw"></i>
+                            </div>
+                            <div class="message-content p-3 rounded-4 shadow-sm refinement-message-assistant" style="max-width: 80%;">
+                                <p class="mb-0">Hello! I've analyzed this requirement. Based on the description, I suggest we break this down into smaller tasks. What specific technical challenges are you concerned about?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer p-3 border-top refinement-assistant-footer">
+                    <div class="input-group">
+                        <input type="text" id="chat-input" class="border-0 rounded-start-pill px-4 refinement-input" placeholder="Ask a question or provide more detail..." />
+                        <button id="send-btn" class="btn rounded-end-pill px-4 btn-theme-kanban shadow-sm">
+                            <i class="fas fa-paper-plane text-dark"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .message-content {
+        position: relative;
+    }
+    .chat-message.user .d-flex {
+        flex-direction: row-reverse;
+    }
+    #chat-container {
+        scrollbar-width: thin;
+    }
+    #chat-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    #chat-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #chat-container::-webkit-scrollbar-thumb {
+        background: var(--border-medium);
+        border-radius: 4px;
+    }
+    #chat-container::-webkit-scrollbar-thumb:hover {
+        background: var(--theme-kanban);
+    }
+</style>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatContainer = document.getElementById('chat-container');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const promoteBtn = document.getElementById('promote-btn');
+
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            // Add user message to UI
+            addMessageToUI(text, 'user');
+            chatInput.value = '';
+
+            try {
+                const response = await fetch('/Kanban/Refinement/AddMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ id: '@Model.ContentItemId', message: text })
+                });
+                const data = await response.json();
+                addMessageToUI(data.response, 'assistant');
+            } catch (err) {
+                console.error('Error sending message:', err);
+            }
+        }
+
+        function addMessageToUI(text, role) {
+            const div = document.createElement('div');
+            div.className = 'chat-message ' + role + ' mb-4 animate__animated animate__fadeInUp anim-duration-300';
+            
+            const isAssistant = role === 'assistant';
+            const icon = isAssistant ? 'fa-robot' : 'fa-user';
+            const avatarClass = isAssistant ? 'refinement-avatar-assistant' : 'refinement-avatar-user';
+            const messageClass = isAssistant ? 'refinement-message-assistant' : 'refinement-message-user';
+            
+            div.innerHTML = 
+                '<div class="d-flex align-items-start ' + (!isAssistant ? 'flex-row-reverse' : '') + '">' +
+                    '<div class="rounded-circle p-2 shadow-sm ' + (isAssistant ? 'me-3 ' : 'ms-3 ') + avatarClass + '">' +
+                        '<i class="fas ' + icon + ' fa-fw"></i>' +
+                    '</div>' +
+                    '<div class="message-content p-3 rounded-4 shadow-sm ' + messageClass + '" style="max-width: 80%;">' +
+                        '<p class="mb-0">' + text + '</p>' +
+                    '</div>' +
+                '</div>';
+            
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        sendBtn.onclick = sendMessage;
+        chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+
+        if (promoteBtn) {
+            promoteBtn.onclick = async () => {
+                if (!confirm('Are you sure you want to promote this requirement to Kanban cards?')) return;
+                
+                promoteBtn.disabled = true;
+                promoteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Promoting...';
+                
+                try {
+                    const response = await fetch('/Kanban/Refinement/Promote?id=@Model.ContentItemId', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Successfully created ' + data.count + ' Kanban cards!');
+                        window.location.href = '/Kanban';
+                    }
+                } catch (err) {
+                    console.error('Error promoting:', err);
+                    promoteBtn.disabled = false;
+                    promoteBtn.innerHTML = '<i class="fas fa-rocket me-2"></i> Promote to Kanban';
+                }
+            };
+        }
+    });
+</script>

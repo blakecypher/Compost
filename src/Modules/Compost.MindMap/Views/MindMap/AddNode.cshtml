@@ -1,0 +1,146 @@
+@using Compost.MindMap.Models
+@model Compost.MindMap.ViewModels.MindMapNodeViewModel
+
+@{
+    ViewBag.Title = "Add Node";
+    var parentId = ViewBag.ParentNodeId as string;
+    var existingNodes = ViewBag.ExistingNodes as List<MindMapNode>;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Add Node
+                    </h2>
+                    <p class="text-muted">Add a new node to mind map: <strong>@ViewBag.MindMapName</strong></p>
+                    @if (!string.IsNullOrEmpty(parentId))
+                    {
+                        var parent = existingNodes?.FirstOrDefault(n => n.Id == parentId);
+                        if (parent != null)
+                        {
+                            <p class="small text-info">
+                                <i class="fas fa-sitemap me-1"></i>Parent: @parent.Text
+                            </p>
+                        }
+                    }
+                </div>
+                <a asp-action="ViewMap" asp-route-id="@Model.MindMapId" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Map
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Node Details</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AddNode" asp-route-id="@Model.MindMapId" method="post">
+                        <input type="hidden" asp-for="MindMapId" />
+                        <input type="hidden" asp-for="ParentNodeId" />
+
+                        <div class="mb-3">
+                            <label asp-for="Text" class="form-label">Node Text <span class="text-danger">*</span></label>
+                            <input asp-for="Text" class="form-control" placeholder="Enter node text..." />
+                            <span asp-validation-for="Text" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="NodeType" class="form-label">Node Type <span class="text-danger">*</span></label>
+                                    <select asp-for="NodeType" class="form-select">
+                                        <option value="Idea">💡 Idea</option>
+                                        <option value="Requirement">📋 Requirement</option>
+                                        <option value="Question">❓ Question</option>
+                                        <option value="Action">⚡ Action</option>
+                                        <option value="Decision">✅ Decision</option>
+                                        <option value="Risk">⚠️ Risk</option>
+                                        <option value="Note">📝 Note</option>
+                                    </select>
+                                    <span asp-validation-for="NodeType" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ParentNodeId" class="form-label">Parent Node (Optional)</label>
+                                    <select asp-for="ParentNodeId" class="form-select">
+                                        <option value="">-- Root Level --</option>
+                                        @foreach (var node in existingNodes ?? [])
+                                        {
+                                            <option value="@node.Id">@node.Text (@node.NodeType)</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PositionX" class="form-label">Position X</label>
+                                    <input asp-for="PositionX" type="number" class="form-control" step="10" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PositionY" class="form-label">Position Y</label>
+                                    <input asp-for="PositionY" type="number" class="form-control" step="10" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Tags" class="form-label">Tags (comma-separated)</label>
+                            <input asp-for="Tags" class="form-control" placeholder="tag1, tag2, tag3" />
+                            <div class="form-text">Add tags to categorize this node</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SourceText" class="form-label">Source/Notes</label>
+                            <textarea asp-for="SourceText" class="form-control" rows="3" placeholder="Additional context or source information..."></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Add Node
+                            </button>
+                            <a asp-action="ViewMap" asp-route-id="@Model.MindMapId" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Node Types Guide</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><span class="badge bg-success">💡 Idea</span> - General concept or thought</li>
+                        <li class="mb-2"><span class="badge bg-primary">📋 Requirement</span> - Must-have feature or spec</li>
+                        <li class="mb-2"><span class="badge bg-warning">❓ Question</span> - Open question to resolve</li>
+                        <li class="mb-2"><span class="badge bg-purple">⚡ Action</span> - Task or action item</li>
+                        <li class="mb-2"><span class="badge bg-info">✅ Decision</span> - Made decision</li>
+                        <li class="mb-2"><span class="badge bg-danger">⚠️ Risk</span> - Potential issue or risk</li>
+                        <li class="mb-2"><span class="badge bg-secondary">📝 Note</span> - General information</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

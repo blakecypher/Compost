@@ -1,0 +1,282 @@
+@model Compost.Core.Models.StructureNode
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index")">Structures</a></li>
+                    <li class="breadcrumb-item active">@Model.Title</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">@Model.Title</h5>
+                    <div>
+                        <span class="badge bg-@GetStructureTypeColor(Model.StructureType) me-2">
+                            @Model.StructureType
+                        </span>
+                        @if (Model.HasKanbanBoard)
+                        {
+                            <a href="@Url.Action("KanbanBoard", new { boardId = Model.KanbanBoardId })" 
+                               class="btn btn-success btn-sm">
+                                <i class="fas fa-columns"></i> View Board
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>@Model.Description</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6>Structure Information</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span><i class="fas fa-users"></i> Members</span>
+                                    <span class="badge bg-primary rounded-pill">@Model.MemberIds.Count</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span><i class="fas fa-sitemap"></i> Child Structures</span>
+                                    <span class="badge bg-info rounded-pill">@Model.ChildStructureIds.Count</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span><i class="fas fa-tasks"></i> Kanban Cards</span>
+                                    <span class="badge bg-success rounded-pill">@Model.KanbanCardIds.Count</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span><i class="fas fa-bullseye"></i> Objectives</span>
+                                    <span class="badge bg-warning rounded-pill">@Model.Objectives.Count</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Key Performance Indicators</h6>
+                            @if (Model.KPIs.Any())
+                            {
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var kpi in Model.KPIs)
+                                    {
+                                        <li class="list-group-item">@kpi</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted">No KPIs defined</p>
+                            }
+                        </div>
+                    </div>
+
+                    @if (Model.Objectives.Any())
+                    {
+                        <div class="mt-4">
+                            <h6>Objectives</h6>
+                            <div class="row">
+                                @foreach (var objective in Model.Objectives)
+                                {
+                                    <div class="col-md-6 mb-2">
+                                        <div class="card bg-light">
+                                            <div class="card-body py-2">
+                                                <small>@objective</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        @if (!Model.HasKanbanBoard)
+                        {
+                            <a href="@Url.Action("CreateBoard", new { structureId = Model.Id })" 
+                               class="btn btn-success">
+                                <i class="fas fa-plus"></i> Create Kanban Board
+                            </a>
+                        }
+                        
+                        <a href="@Url.Action("PromoteToKanban", new { structureId = Model.Id })" 
+                           class="btn btn-primary">
+                            <i class="fas fa-arrow-up"></i> Promote to Kanban Cards
+                        </a>
+                        
+                        <button class="btn btn-outline-secondary" onclick="showAddChildModal()">
+                            <i class="fas fa-plus"></i> Add Child Structure
+                        </button>
+                        
+                        <button class="btn btn-outline-info" onclick="showEditModal()">
+                            <i class="fas fa-edit"></i> Edit Structure
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.Metadata != null)
+            {
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Metadata</h6>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(Model.Metadata.LeadId))
+                        {
+                            <p><strong>Lead ID:</strong> @Model.Metadata.LeadId</p>
+                        }
+                        @if (Model.Metadata.Budget.HasValue)
+                        {
+                            <p><strong>Budget:</strong> @Model.Metadata.Budget.Value.ToString("C")</p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Metadata.Timeline))
+                        {
+                            <p><strong>Timeline:</strong> @Model.Metadata.Timeline</p>
+                        }
+                        @if (Model.Metadata.ExternalDependencies.Any())
+                        {
+                            <p><strong>External Dependencies:</strong></p>
+                            <ul class="list-unstyled">
+                                @foreach (var dep in Model.Metadata.ExternalDependencies)
+                                {
+                                    <li><i class="fas fa-link"></i> @dep</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.ChildStructureIds.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Child Structures</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (var childId in Model.ChildStructureIds)
+                            {
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Child Structure @childId</h6>
+                                            <p class="card-text text-muted">Child structure details would be loaded here</p>
+                                        </div>
+                                        <div class="card-footer">
+                                            <a href="@Url.Action("Detail", new { id = childId })" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add Child Structure Modal -->
+<div class="modal fade" id="addChildModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Child Structure</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addChildForm">
+                    <div class="mb-3">
+                        <label for="childStructureId" class="form-label">Child Structure ID</label>
+                        <input type="text" class="form-control" id="childStructureId" required>
+                        <div class="form-text">Enter the ID of the structure to add as a child</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addChildStructure()">Add Child</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetStructureTypeColor(StructureType type)
+    {
+        return type switch
+        {
+            StructureType.Team => "primary",
+            StructureType.Department => "success",
+            StructureType.Project => "info",
+            StructureType.Initiative => "warning",
+            StructureType.Program => "danger",
+            StructureType.Squad => "secondary",
+            StructureType.Tribe => "dark",
+            _ => "secondary"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        function showAddChildModal() {
+            $('#addChildModal').modal('show');
+        }
+
+        function addChildStructure() {
+            const childId = document.getElementById('childStructureId').value;
+            if (!childId) {
+                alert('Please enter a child structure ID');
+                return;
+            }
+
+            // Call the AddChild action
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '@Url.Action("AddChild")';
+            
+            const parentInput = document.createElement('input');
+            parentInput.type = 'hidden';
+            parentInput.name = 'parentStructureId';
+            parentInput.value = '@Model.Id';
+            
+            const childInput = document.createElement('input');
+            childInput.type = 'hidden';
+            childInput.name = 'childStructureId';
+            childInput.value = childId;
+            
+            form.appendChild(parentInput);
+            form.appendChild(childInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function showEditModal() {
+            alert('Edit functionality would be implemented here');
+        }
+    </script>
+}

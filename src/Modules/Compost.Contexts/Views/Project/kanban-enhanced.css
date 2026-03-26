@@ -1,0 +1,30 @@
+/* Enhanced Kanban Card Styles */
+.kanban-card.context-card {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-medium);
+    border-top: 4px solid var(--theme-contexts) !important;
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    cursor: grab;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kanban-card.context-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 16px 32px rgba(155, 126, 222, 0.3), 0 8px 16px rgba(0, 0, 0, 0.25);
+    border-color: var(--theme-contexts);
+    background: var(--bg-tertiary);
+}
+
+[data-bs-theme="dark"] .kanban-card.context-card:hover {
+    box-shadow: 0 16px 32px rgba(155, 126, 222, 0.4), 0 10px 20px rgba(0, 0, 0, 0.6);
+}
+
+.kanban-card.context-card.active {
+    border-color: var(--theme-contexts);
+    border-width: 3px;
+    background: var(--bg-tertiary);
+    box-shadow: 0 8px 20px rgba(155, 126, 222, 0.25);
+}

@@ -1,0 +1,166 @@
+@model Compost.Snippets.ViewModels.SnippetViewModel
+    
+    @{
+        ViewData["Title"] = "Create Snippet";
+    }
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Create Snippet</h2>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label">Title</label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Language" class="form-label">Language</label>
+                            <select asp-for="Language" class="form-select" id="language-select">
+                                <option value="csharp">C#</option>
+                                <option value="javascript">JavaScript (React)</option>
+                                <option value="typescript">TypeScript</option>
+                                <option value="python">Python</option>
+                                <option value="sql">SQL (PostgreSQL, MSSQL)</option>
+                                <option value="clickhouse">ClickHouse SQL</option>
+                                <option value="json">JSON</option>
+                                <option value="xml">XML</option>
+                                <option value="html">HTML</option>
+                                <option value="css">CSS</option>
+                            </select>
+                            <span asp-validation-for="Language" class="text-danger"></span>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label asp-for="Code" class="form-label">Code</label>
+                            <div id="monaco-editor-container" style="height: 500px; border: 1px solid #ccc;"></div>
+                            <input type="hidden" asp-for="Code" id="code-hidden-input" />
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header">Metadata</div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label asp-for="Category" class="form-label">Category</label>
+                                    <input asp-for="Category" class="form-control" placeholder="e.g. Utility, Component, Query" />
+                                    <span asp-validation-for="Category" class="text-danger"></span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="Tags" class="form-label">Tags (comma separated)</label>
+                                    <input asp-for="Tags" class="form-control" placeholder="caching, redis, async" />
+                                    <span asp-validation-for="Tags" class="text-danger"></span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="ProjectName" class="form-label">Project</label>
+                                    <input asp-for="ProjectName" class="form-control" />
+                                    <span asp-validation-for="ProjectName" class="text-danger"></span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="RelatedPatternId" class="form-label">Related Architectural Pattern</label>
+                                    <select asp-for="RelatedPatternId" class="form-select" asp-items="@(new SelectList(Model.AvailablePatterns, "Key", "Value"))">
+                                        <option value="">-- None --</option>
+                                    </select>
+                                    <span asp-validation-for="RelatedPatternId" class="text-danger"></span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="Description" class="form-label">Description / Usage Notes</label>
+                                    <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Create Snippet</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+        
+        require(['vs/editor/editor.main'], function() {
+            var languageSelect = document.getElementById('language-select');
+            var codeInput = document.getElementById('code-hidden-input');
+            
+            // Map our language values to Monaco language IDs
+            var languageMap = {
+                'csharp': 'csharp',
+                'javascript': 'javascript',
+                'typescript': 'typescript',
+                'python': 'python',
+                'sql': 'sql',
+                'clickhouse': 'sql', // Monaco doesn't have ClickHouse specific, use SQL
+                'json': 'json',
+                'xml': 'xml',
+                'html': 'html',
+                'css': 'css'
+            };
+            
+            // Determine theme based on current data-bs-theme
+            var isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            var editorTheme = isDarkMode ? 'vs-dark' : 'vs';
+
+            var editor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+                value: codeInput.value || '// Enter your code here',
+                language: languageMap[languageSelect.value] || 'plaintext',
+                theme: editorTheme,
+                automaticLayout: true,
+                minimap: { enabled: true }
+            });
+            
+            // Listen for theme changes
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                        var newTheme = isDark ? 'vs-dark' : 'vs';
+                        monaco.editor.setTheme(newTheme);
+                    }
+                });
+            });
+            
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-bs-theme']
+            });
+            
+            // Update editor language when select changes
+            languageSelect.addEventListener('change', function() {
+                var newLang = languageMap[this.value] || 'plaintext';
+                monaco.editor.setModelLanguage(editor.getModel(), newLang);
+            });
+            
+            // Sync content to hidden input on change
+            editor.onDidChangeModelContent(function(e) {
+                codeInput.value = editor.getValue();
+            });
+            
+            // Ensure initial value is set correctly if coming from validation error
+            if (codeInput.value) {
+                editor.setValue(codeInput.value);
+            } else {
+                // Set default value to input if empty
+                 codeInput.value = editor.getValue();
+            }
+        });
+    </script>

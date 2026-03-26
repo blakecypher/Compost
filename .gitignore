@@ -33,3 +33,9 @@ src/Modules/Compost.Transcription/bin/
 src/Modules/Compost.Transcription/obj/
 
 .idea/
+
+src/Compost.Web/App_Data/Sites/Default/yessql.db
+
+src/Compost.Web/App_Data/logs/internal-nlog.txt
+
+src/Compost.Web/App_Data/Sites/Default/DataProtection-Keys/

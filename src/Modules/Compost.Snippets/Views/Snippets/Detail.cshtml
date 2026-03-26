@@ -1,0 +1,119 @@
+@using System.Net
+@using Compost.Snippets.Models
+@using OrchardCore.ContentManagement
+@model ContentItem
+@{
+    var snippet = Model.As<CodeSnippetPart>();
+    var lang = snippet?.Language ?? "text";
+    var langLower = lang.ToLowerInvariant();
+}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="mb-1">
+            <i class="fas fa-code text-primary me-2"></i>@Model.DisplayText
+        </h2>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="badge bg-secondary">@(lang.ToUpperInvariant())</span>
+            @if (!string.IsNullOrEmpty(snippet?.Category))
+            {
+                <span class="badge bg-light text-dark border"><i class="fas fa-folder me-1"></i>@snippet.Category</span>
+            }
+            @if (!string.IsNullOrEmpty(snippet?.ProjectName))
+            {
+                <span class="text-muted small"><i class="fas fa-project-diagram me-1"></i>@snippet.ProjectName</span>
+            }
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary" id="copy-btn" title="Copy code">
+            <i class="fas fa-copy me-1"></i> Copy
+        </button>
+        <a asp-action="Edit" asp-route-id="@Model.ContentItemId" class="btn btn-primary">
+            <i class="fas fa-edit me-1"></i> Edit
+        </a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to list</a>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(snippet?.Documentation))
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="text-muted text-uppercase small mb-2">Description</h6>
+            <p class="mb-0">@snippet.Documentation</p>
+        </div>
+    </div>
+}
+
+@if (snippet?.Tags != null && snippet.Tags.Any())
+{
+    <div class="mb-3">
+        @foreach (var tag in snippet.Tags)
+        {
+            <span class="badge bg-light text-dark border me-1">@tag</span>
+        }
+    </div>
+}
+
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+        <span class="small"><i class="fas fa-code me-1"></i>@(lang.ToUpperInvariant())</span>
+        <button type="button" class="btn btn-sm btn-outline-light" id="copy-btn-header" title="Copy code">
+            <i class="fas fa-copy"></i>
+        </button>
+    </div>
+    <div class="card-body p-0 bg-dark">
+        <pre class="mb-0 p-4" style="background: #1e1e1e; max-height: 70vh; overflow: auto;"><code id="snippet-code" class="language-@langLower">@Html.Raw(WebUtility.HtmlEncode(snippet?.Code ?? "").Replace("\r\n", "\n"))</code></pre>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(snippet?.RelatedPatternId))
+{
+    <div class="mt-4">
+        <a asp-area="Compost.Patterns" asp-controller="Patterns" asp-action="Detail" asp-route-id="@snippet.RelatedPatternId" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-project-diagram me-1"></i> Related pattern
+        </a>
+    </div>
+}
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-csharp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-markup.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Change background to white in light mode
+        const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        if (!isDarkMode) {
+            const codeContainer = document.querySelector('.snippet-code-container .card-body');
+            const preElement = document.querySelector('.snippet-code-container pre');
+            if (codeContainer) {
+                codeContainer.style.background = 'white';
+            }
+            if (preElement) {
+                preElement.style.background = 'white';
+            }
+        }
+        
+        if (typeof Prism !== 'undefined') Prism.highlightAll();
+
+        const codeEl = document.getElementById('snippet-code');
+        const code = codeEl ? codeEl.textContent : ''; // decoded text for copy
+
+        function copyCode() {
+            navigator.clipboard.writeText(code).then(function() {
+                const btn = document.getElementById('copy-btn');
+                const btnH = document.getElementById('copy-btn-header');
+                if (btn) { btn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!'; btn.classList.remove('btn-outline-primary'); btn.classList.add('btn-success'); setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy me-1"></i> Copy'; btn.classList.add('btn-outline-primary'); btn.classList.remove('btn-success'); }, 2000); }
+                if (btnH) { btnH.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(function() { btnH.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000); }
+            });
+        }
+
+        document.getElementById('copy-btn')?.addEventListener('click', copyCode);
+        document.getElementById('copy-btn-header')?.addEventListener('click', copyCode);
+    });
+</script>

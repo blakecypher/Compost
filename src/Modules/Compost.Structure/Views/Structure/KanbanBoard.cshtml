@@ -1,0 +1,435 @@
+@model Compost.Core.Models.KanbanBoard
+@{
+    ViewData["Title"] = $"{Model.Title} - Kanban Board";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index")">Structures</a></li>
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Detail", new { id = Model.StructureNodeId })">Structure</a>
+                    </li>
+                    <li class="breadcrumb-item active">@Model.Title</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>@Model.Title</h2>
+                    <p class="text-muted">@Model.Description</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="showAddCardModal()">
+                        <i class="fas fa-plus"></i> Add Card
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="showBoardSettings()">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="kanban-board">
+                <div class="d-flex overflow-auto pb-3" style="min-height: 600px;">
+                    @foreach (var column in Model.Columns.OrderBy(c => c.Order))
+                    {
+                        <div class="kanban-column me-3" style="min-width: 300px; flex: 0 0 auto;">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">@column.Name</h6>
+                                    <div>
+                                        <span class="badge bg-secondary me-1" id="card-count-@column.Id">0</span>
+                                        @if (column.WipLimit.HasValue)
+                                        {
+                                            <span class="badge bg-warning">WIP: @column.WipLimit</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="card-body p-2" 
+                                     id="column-@column.Id" 
+                                     data-column-id="@column.Id"
+                                     data-status="@column.Status"
+                                     ondrop="handleDrop(event)" 
+                                     ondragover="handleDragOver(event)"
+                                     ondragleave="handleDragLeave(event)">
+                                    <!-- Cards will be dynamically added here -->
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Card Modal -->
+<div class="modal fade" id="addCardModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Kanban Card</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCardForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="cardTitle" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="cardTitle" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="cardDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="cardDescription" rows="4"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="cardStatus" class="form-label">Status</label>
+                                <select class="form-select" id="cardStatus">
+                                    @foreach (var column in Model.Columns.OrderBy(c => c.Order))
+                                    {
+                                        <option value="@column.Status">@column.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="cardStoryPoints" class="form-label">Story Points</label>
+                                <select class="form-select" id="cardStoryPoints">
+                                    <option value="">None</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="5">5</option>
+                                    <option value="8">8</option>
+                                    <option value="13">13</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="cardPriority" class="form-label">Priority</label>
+                                <select class="form-select" id="cardPriority">
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addCard()">Add Card</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Board Settings Modal -->
+<div class="modal fade" id="boardSettingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Board Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enableWipLimits" 
+                               @(Model.Config.EnableWipLimits ? "checked" : "")>
+                        <label class="form-check-label" for="enableWipLimits">
+                            Enable WIP Limits
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enableTimeTracking" 
+                               @(Model.Config.EnableTimeTracking ? "checked" : "")>
+                        <label class="form-check-label" for="enableTimeTracking">
+                            Enable Time Tracking
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enableStoryPoints" 
+                               @(Model.Config.EnableStoryPoints ? "checked" : "")>
+                        <label class="form-check-label" for="enableStoryPoints">
+                            Enable Story Points
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveBoardSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var cards = ViewBag.Cards as List<Compost.Core.Models.KanbanCard> ?? new List<Compost.Core.Models.KanbanCard>();
+}
+
+@section Scripts {
+    <script>
+        // Initialize board with existing cards
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCards();
+        });
+
+        function loadCards() {
+            const cards = @Html.Raw(Json.Serialize(cards));
+            const columns = document.querySelectorAll('.kanban-column .card-body');
+            
+            // Clear existing cards
+            columns.forEach(column => {
+                column.innerHTML = '';
+            });
+            
+            // Group cards by status
+            cards.forEach(card => {
+                const column = document.querySelector(`[data-status="${card.status}"]`);
+                if (column) {
+                    const cardElement = createCardElement(card);
+                    column.appendChild(cardElement);
+                }
+            });
+            
+            // Update card counts
+            updateCardCounts();
+        }
+
+        function createCardElement(card) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'kanban-card card mb-2';
+            cardDiv.draggable = true;
+            cardDiv.dataset.cardId = card.id;
+            cardDiv.ondragstart = handleDragStart;
+            cardDiv.ondragend = handleDragEnd;
+            
+            const priorityColor = getPriorityColor(card.priority);
+            const storyPoints = card.storyPoints ? `<span class="badge bg-info">${card.storyPoints}</span>` : '';
+            
+            cardDiv.innerHTML = `
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">${card.title}</h6>
+                        <span class="badge bg-${priorityColor}">${card.priority}</span>
+                    </div>
+                    <p class="card-text small text-muted">${card.description || ''}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        ${storyPoints}
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="editCard('${card.id}')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteCard('${card.id}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return cardDiv;
+        }
+
+        function getPriorityColor(priority) {
+            switch(priority) {
+                case 'Critical': return 'danger';
+                case 'High': return 'warning';
+                case 'Medium': return 'info';
+                case 'Low': return 'secondary';
+                default: return 'secondary';
+            }
+        }
+
+        function updateCardCounts() {
+            const columns = document.querySelectorAll('.kanban-column .card-body');
+            columns.forEach(column => {
+                const count = column.querySelectorAll('.kanban-card').length;
+                const columnId = column.dataset.columnId;
+                const countElement = document.getElementById(`card-count-${columnId}`);
+                if (countElement) {
+                    countElement.textContent = count;
+                }
+            });
+        }
+
+        // Drag and Drop handlers
+        let draggedElement = null;
+
+        function handleDragStart(e) {
+            draggedElement = e.target;
+            e.target.style.opacity = '0.5';
+        }
+
+        function handleDragEnd(e) {
+            e.target.style.opacity = '';
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.currentTarget.classList.add('drag-over');
+            return false;
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            e.preventDefault();
+            
+            const column = e.currentTarget;
+            column.classList.remove('drag-over');
+            
+            if (draggedElement && draggedElement !== e.target) {
+                column.appendChild(draggedElement);
+                
+                // Update card status
+                const cardId = draggedElement.dataset.cardId;
+                const newStatus = column.dataset.status;
+                updateCardStatus(cardId, newStatus);
+                
+                updateCardCounts();
+            }
+            
+            return false;
+        }
+
+        function updateCardStatus(cardId, newStatus) {
+            // In a real implementation, this would call the API
+            console.log(`Updating card ${cardId} to status ${newStatus}`);
+        }
+
+        // Modal functions
+        function showAddCardModal() {
+            $('#addCardModal').modal('show');
+        }
+
+        function addCard() {
+            const form = document.getElementById('addCardForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const cardData = {
+                title: document.getElementById('cardTitle').value,
+                description: document.getElementById('cardDescription').value,
+                status: document.getElementById('cardStatus').value,
+                storyPoints: document.getElementById('cardStoryPoints').value,
+                priority: document.getElementById('cardPriority').value
+            };
+
+            // In a real implementation, this would call the API
+            console.log('Adding card:', cardData);
+            
+            // Add card to board
+            const column = document.querySelector(`[data-status="${cardData.status}"]`);
+            if (column) {
+                const newCard = {
+                    id: Date.now().toString(),
+                    ...cardData
+                };
+                const cardElement = createCardElement(newCard);
+                column.appendChild(cardElement);
+                updateCardCounts();
+            }
+            
+            $('#addCardModal').modal('hide');
+            form.reset();
+        }
+
+        function showBoardSettings() {
+            $('#boardSettingsModal').modal('show');
+        }
+
+        function saveBoardSettings() {
+            const settings = {
+                enableWipLimits: document.getElementById('enableWipLimits').checked,
+                enableTimeTracking: document.getElementById('enableTimeTracking').checked,
+                enableStoryPoints: document.getElementById('enableStoryPoints').checked
+            };
+
+            // In a real implementation, this would call the API
+            console.log('Saving board settings:', settings);
+            
+            $('#boardSettingsModal').modal('hide');
+        }
+
+        function editCard(cardId) {
+            console.log('Editing card:', cardId);
+            // Implementation for editing card
+        }
+
+        function deleteCard(cardId) {
+            if (confirm('Are you sure you want to delete this card?')) {
+                const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
+                if (cardElement) {
+                    cardElement.remove();
+                    updateCardCounts();
+                }
+                console.log('Deleting card:', cardId);
+            }
+        }
+    </script>
+
+    <style>
+        .kanban-board {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .kanban-column .card-body {
+            min-height: 400px;
+            background: #ffffff;
+            border: 2px dashed #dee2e6;
+            border-radius: 4px;
+        }
+
+        .kanban-column .card-body.drag-over {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .kanban-card {
+            cursor: move;
+            transition: transform 0.2s;
+        }
+
+        .kanban-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+}

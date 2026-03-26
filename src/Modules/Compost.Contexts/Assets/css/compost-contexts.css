@@ -1,0 +1,345 @@
+/* Compost Contexts Module Styles */
+
+/* ========== CSS Variables ========== */
+:root {
+    --compost-primary: #2c5f2d;
+    --compost-primary-light: #4a7c4b;
+    --compost-secondary: #97bc62;
+    --compost-accent: #e8f5e9;
+    --compost-dark: #1b3a1c;
+    --compost-text: #333;
+    --compost-text-light: #666;
+    --compost-border: #ddd;
+    --compost-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --compost-radius: 8px;
+}
+
+/* ========== Layout Zones ========== */
+.compost-layout {
+    display: grid;
+    grid-template-areas:
+        "header header"
+        "sidebar main"
+        "footer footer";
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+    gap: 0;
+}
+
+.compost-header {
+    grid-area: header;
+    background: linear-gradient(135deg, var(--compost-primary) 0%, var(--compost-primary-light) 100%);
+    color: white;
+    padding: 1rem 2rem;
+    box-shadow: var(--compost-shadow);
+}
+
+.compost-sidebar {
+    grid-area: sidebar;
+    background: #f8f9fa;
+    border-right: 1px solid var(--compost-border);
+    padding: 1.5rem;
+}
+
+.compost-main {
+    grid-area: main;
+    padding: 2rem;
+    background: #fff;
+}
+
+.compost-footer {
+    grid-area: footer;
+    background: var(--compost-dark);
+    color: white;
+    padding: 1rem 2rem;
+    text-align: center;
+}
+
+/* ========== Header Components ========== */
+.compost-header h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+.compost-header .lead {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+/* ========== Sidebar Navigation ========== */
+.compost-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.compost-nav-item {
+    margin-bottom: 0.5rem;
+}
+
+.compost-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    color: var(--compost-text);
+    text-decoration: none;
+    border-radius: var(--compost-radius);
+    transition: all 0.2s ease;
+}
+
+.compost-nav-link:hover {
+    background: var(--compost-accent);
+    color: var(--compost-primary);
+}
+
+.compost-nav-link.active {
+    background: var(--compost-primary);
+    color: white;
+}
+
+.compost-nav-link i {
+    width: 20px;
+    text-align: center;
+}
+
+/* ========== Cards ========== */
+.compost-card {
+    background: white;
+    border-radius: var(--compost-radius);
+    box-shadow: var(--compost-shadow);
+    border: 1px solid var(--compost-border);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.compost-card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--compost-border);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.compost-card-header-success {
+    background: linear-gradient(135deg, var(--compost-primary) 0%, var(--compost-primary-light) 100%);
+    color: white;
+}
+
+.compost-card-body {
+    padding: 1.25rem;
+}
+
+/* ========== Active Project Card ========== */
+.compost-active-context {
+    border-left: 4px solid var(--compost-secondary);
+}
+
+.compost-active-context .compost-card-header {
+    background: linear-gradient(135deg, var(--compost-primary) 0%, var(--compost-primary-light) 100%);
+    color: white;
+}
+
+/* ========== Stats Grid ========== */
+.compost-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.compost-stat-item {
+    background: white;
+    padding: 1.25rem;
+    border-radius: var(--compost-radius);
+    box-shadow: var(--compost-shadow);
+    text-align: center;
+}
+
+.compost-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--compost-primary);
+    margin-bottom: 0.25rem;
+}
+
+.compost-stat-label {
+    color: var(--compost-text-light);
+    font-size: 0.875rem;
+}
+
+/* ========== Tables ========== */
+.compost-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.compost-table th {
+    background: #f8f9fa;
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--compost-text);
+    border-bottom: 2px solid var(--compost-border);
+}
+
+.compost-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--compost-border);
+    vertical-align: middle;
+}
+
+.compost-table tr:hover {
+    background: var(--compost-accent);
+}
+
+.compost-table tr.active-row {
+    background: rgba(151, 188, 98, 0.1);
+    border-left: 3px solid var(--compost-secondary);
+}
+
+/* ========== Forms ========== */
+.compost-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.compost-form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--compost-text);
+}
+
+.compost-form-control {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--compost-border);
+    border-radius: var(--compost-radius);
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.compost-form-control:focus {
+    outline: none;
+    border-color: var(--compost-primary);
+    box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.1);
+}
+
+/* ========== Buttons ========== */
+.compost-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--compost-radius);
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.compost-btn-primary {
+    background: var(--compost-primary);
+    color: white;
+}
+
+.compost-btn-primary:hover {
+    background: var(--compost-primary-light);
+}
+
+.compost-btn-success {
+    background: var(--compost-secondary);
+    color: var(--compost-dark);
+}
+
+.compost-btn-success:hover {
+    background: #86ab55;
+}
+
+.compost-btn-outline {
+    background: transparent;
+    border: 1px solid var(--compost-primary);
+    color: var(--compost-primary);
+}
+
+.compost-btn-outline:hover {
+    background: var(--compost-primary);
+    color: white;
+}
+
+.compost-btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* ========== Badges ========== */
+.compost-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.compost-badge-success {
+    background: rgba(151, 188, 98, 0.2);
+    color: var(--compost-dark);
+}
+
+.compost-badge-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #856404;
+}
+
+.compost-badge-info {
+    background: rgba(44, 95, 45, 0.1);
+    color: var(--compost-primary);
+}
+
+/* ========== Time Display ========== */
+.compost-time-display {
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--compost-primary);
+}
+
+/* ========== Empty State ========== */
+.compost-empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--compost-accent);
+    border-radius: var(--compost-radius);
+    border: 2px dashed var(--compost-secondary);
+}
+
+.compost-empty-state h3 {
+    color: var(--compost-primary);
+    margin-bottom: 1rem;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+    .compost-layout {
+        grid-template-areas:
+            "header"
+            "main"
+            "footer";
+        grid-template-columns: 1fr;
+    }
+    
+    .compost-sidebar {
+        display: none;
+    }
+    
+    .compost-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

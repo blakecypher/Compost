@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline - Compost</title>
+    <link rel="stylesheet" href="/Compost.Theme/css/compost.css" />
+    <style>
+        .offline-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .offline-icon {
+            font-size: 4rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        
+        .offline-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .offline-message {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            max-width: 500px;
+        }
+        
+        .retry-btn {
+            background: var(--primary-color);
+            color: var(--text-inverse);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .retry-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        
+        .status-indicator {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div>
+            <div class="offline-icon">
+                <i class="fas fa-wifi-slash"></i>
+            </div>
+            
+            <h1 class="offline-title">You're Offline</h1>
+            
+            <p class="offline-message">
+                It looks like you've lost your internet connection. Some features may not be available until you're back online.
+            </p>
+            
+            <button class="retry-btn" onclick="retryConnection()">
+                <i class="fas fa-sync-alt me-2"></i>
+                Retry Connection
+            </button>
+            
+            <div class="status-indicator" id="status">
+                <i class="fas fa-circle pulse"></i>
+                <span id="status-text">Checking connection...</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let retryCount = 0;
+        const maxRetries = 5;
+        
+        function updateStatus(text, isOnline = false) {
+            const statusElement = document.getElementById('status');
+            const statusText = document.getElementById('status-text');
+            
+            statusText.textContent = text;
+            
+            if (isOnline) {
+                statusElement.innerHTML = '<i class="fas fa-circle text-success"></i><span>' + text + '</span>';
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-circle pulse text-warning"></i><span>' + text + '</span>';
+            }
+        }
+        
+        async function checkConnection() {
+            try {
+                const response = await fetch('/', { 
+                    method: 'HEAD',
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    updateStatus('Connection restored!', true);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                    return true;
+                }
+            } catch (error) {
+                return false;
+            }
+            
+            return false;
+        }
+        
+        async function retryConnection() {
+            retryCount++;
+            const retryBtn = document.querySelector('.retry-btn');
+            const icon = retryBtn.querySelector('i');
+            
+            // Disable button and show loading state
+            retryBtn.disabled = true;
+            icon.className = 'fas fa-spinner fa-spin me-2';
+            updateStatus('Checking connection...');
+            
+            const isOnline = await checkConnection();
+            
+            if (!isOnline) {
+                // Re-enable button
+                retryBtn.disabled = false;
+                icon.className = 'fas fa-sync-alt me-2';
+                
+                if (retryCount >= maxRetries) {
+                    updateStatus('Max retries reached. Please check your connection.');
+                    retryBtn.textContent = 'Retry Again';
+                    retryCount = 0;
+                } else {
+                    updateStatus(`Still offline... (${retryCount}/${maxRetries})`);
+                }
+            }
+        }
+        
+        // Auto-check connection every 30 seconds
+        setInterval(async () => {
+            const isOnline = await checkConnection();
+            if (isOnline) {
+                updateStatus('Connection restored!', true);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        }, 30000);
+        
+        // Listen for online/offline events
+        window.addEventListener('online', () => {
+            updateStatus('Connection restored!', true);
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+        
+        window.addEventListener('offline', () => {
+            updateStatus('Connection lost');
+        });
+        
+        // Initial connection check
+        checkConnection();
+    </script>
+</body>
+</html>

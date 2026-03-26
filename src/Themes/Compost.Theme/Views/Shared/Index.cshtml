@@ -1,0 +1,341 @@
+@{
+    ViewData["Title"] = "Welcome to Compost";
+}
+
+<!-- Hero Section -->
+<section class="hero-section py-5 text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-4 animate-slide-up">
+                    <i class="fas fa-seedling text-primary me-3"></i>
+                    Welcome to Compost
+                </h1>
+                <p class="lead text-secondary mb-4 animate-slide-up" style="animation-delay: 0.1s;">
+                    Modern development workflow management system built with Orchard Core
+                </p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap animate-slide-up" style="animation-delay: 0.2s;">
+                    <a href="/MindMap" class="btn btn-primary btn-lg">
+                        <i class="fas fa-project-diagram me-2"></i>
+                        Explore Mind Maps
+                    </a>
+                    <a href="/Kanban" class="btn btn-outline btn-lg">
+                        <i class="fas fa-columns me-2"></i>
+                        View Kanban Board
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Grid -->
+<section class="features-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">Powerful Features</h2>
+            <p class="text-secondary">Everything you need for modern development workflows</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 glass-card">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-project-diagram text-primary" style="font-size: 3rem;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Mind Maps</h4>
+                        <p class="text-secondary">Create interactive mind maps with real-time collaboration, multiple layouts, and AI-powered suggestions.</p>
+                        <a href="/MindMap" class="btn btn-outline mt-3">
+                            <i class="fas fa-arrow-right me-2"></i>
+                            Get Started
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 glass-card">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-columns text-success" style="font-size: 3rem;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Kanban Boards</h4>
+                        <p class="text-secondary">Manage your workflow with drag-and-drop kanban boards, story point estimation, and AI-powered insights.</p>
+                        <a href="/Kanban" class="btn btn-outline mt-3">
+                            <i class="fas fa-arrow-right me-2"></i>
+                            View Board
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 glass-card">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-code text-info" style="font-size: 3rem;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Code Snippets</h4>
+                        <p class="text-secondary">Organize and share code snippets with syntax highlighting, pattern recognition, and AI-powered suggestions.</p>
+                        <a href="/Snippets" class="btn btn-outline mt-3">
+                            <i class="fas fa-arrow-right me-2"></i>
+                            Browse Snippets
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 glass-card">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-shapes text-warning" style="font-size: 3rem;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Architectural Patterns</h4>
+                        <p class="text-secondary">Explore and implement design patterns with detailed documentation and code examples.</p>
+                        <a href="/Patterns" class="btn btn-outline mt-3">
+                            <i class="fas fa-arrow-right me-2"></i>
+                            View Patterns
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 glass-card">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-microphone text-danger" style="font-size: 3rem;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Transcription</h4>
+                        <p class="text-secondary">Record meetings with real-time transcription, AI-powered action item extraction, and SignalR updates.</p>
+                        <a href="/Transcription" class="btn btn-outline mt-3">
+                            <i class="fas fa-arrow-right me-2"></i>
+                            Start Recording
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 glass-card">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-brain text-secondary" style="font-size: 3rem;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">AI Integration</h4>
+                        <p class="text-secondary">Leverage AI for story point estimation, pattern recognition, code suggestions, and action item extraction.</p>
+                        <button class="btn btn-outline mt-3" disabled>
+                            <i class="fas fa-sparkles me-2"></i>
+                            Coming Soon
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section py-5 bg-secondary">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stat-item">
+                    <h3 class="fw-bold text-primary mb-2">5+</h3>
+                    <p class="text-secondary mb-0">Integrated Modules</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stat-item">
+                    <h3 class="fw-bold text-success mb-2">100%</h3>
+                    <p class="text-secondary mb-0">Responsive Design</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stat-item">
+                    <h3 class="fw-bold text-info mb-2">AI</h3>
+                    <p class="text-secondary mb-0">Powered Features</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stat-item">
+                    <h3 class="fw-bold text-warning mb-2">PWA</h3>
+                    <p class="text-secondary mb-0">Ready</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Actions -->
+<section class="quick-actions-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">Quick Actions</h2>
+            <p class="text-secondary">Get started with these common tasks</p>
+        </div>
+        
+        <div class="row g-3 justify-content-center">
+            <div class="col-auto">
+                <a href="/MindMap/Create" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    New Mind Map
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="/Kanban" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>
+                    Add Card
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="/Snippets/Create" class="btn btn-info">
+                    <i class="fas fa-plus me-2"></i>
+                    New Snippet
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="/Transcription/Record" class="btn btn-danger">
+                    <i class="fas fa-microphone me-2"></i>
+                    Start Recording
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Activity -->
+<section class="recent-activity-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <h3 class="fw-bold mb-4">Recent Activity</h3>
+                <div class="activity-feed">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <div class="activity-icon me-3">
+                                    <i class="fas fa-project-diagram text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-1">New Mind Map Created</h6>
+                                    <p class="text-secondary mb-1">System Architecture Overview</p>
+                                    <small class="text-muted">2 hours ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <div class="activity-icon me-3">
+                                    <i class="fas fa-columns text-success"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-1">Kanban Card Updated</h6>
+                                    <p class="text-secondary mb-1">User Authentication - Moved to In Progress</p>
+                                    <small class="text-muted">4 hours ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <div class="activity-icon me-3">
+                                    <i class="fas fa-code text-info"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-1">Code Snippet Added</h6>
+                                    <p class="text-secondary mb-1">Repository Pattern Implementation</p>
+                                    <small class="text-muted">Yesterday</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <h3 class="fw-bold mb-4">Quick Stats</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span>Mind Maps</span>
+                            <span class="badge bg-primary">12</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span>Kanban Cards</span>
+                            <span class="badge bg-success">48</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span>Code Snippets</span>
+                            <span class="badge bg-info">156</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Patterns</span>
+                            <span class="badge bg-warning">23</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    padding: 5rem 0;
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+}
+
+.stat-item h3 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 3rem 0;
+    }
+    
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .stat-item h3 {
+        font-size: 2rem;
+    }
+}
+</style>

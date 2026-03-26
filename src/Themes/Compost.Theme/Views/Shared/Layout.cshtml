@@ -1,0 +1,207 @@
+@using OrchardCore.Mvc
+@{
+    string siteName = OrchardCore.Notifications.Value["SiteName"]?.ToString() ?? "Compost";
+    bool isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Compost - Modern development workflow management system" />
+    <meta name="keywords" content="development, workflow, kanban, mindmaps, patterns" />
+    <meta name="author" content="Compost Team" />
+    <meta name="theme-color" content="#2563eb" />
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="@siteName" />
+    <meta property="og:description" content="Modern development workflow management system" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="@Url.Content("~/Compost.Theme/images/og-image.png")" />
+    
+    <!-- PWA -->
+    <link rel="manifest" href="@Url.Content("~/Compost.Theme/manifest.json")" />
+    <link rel="apple-touch-icon" sizes="180x180" href="@Url.Content("~/Compost.Theme/images/apple-touch-icon.png")" />
+    <link rel="icon" type="image/png" sizes="32x32" href="@Url.Content("~/Compost.Theme/images/favicon-32x32.png")" />
+    <link rel="icon" type="image/png" sizes="16x16" href="@Url.Content("~/Compost.Theme/images/favicon-16x16.png")" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="@Url.Content("~/Compost.Theme/css/compost.css")" />
+    
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body data-bs-theme="auto">
+    <!-- Accessibility Skip Links -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white p-2 rounded">Skip to main content</a>
+    
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Brand -->
+                <a class="navbar-brand" href="@Url.Content("~/")">
+                    <i class="fas fa-seedling"></i>
+                    <span>@siteName</span>
+                </a>
+                
+                <!-- Desktop Navigation -->
+                <div class="navbar-nav d-none d-md-flex">
+                    <a class="nav-link" href="@Url.Content("~/")">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/MindMap")">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>Mind Maps</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/Kanban")">
+                        <i class="fas fa-columns"></i>
+                        <span>Kanban</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/Snippets")">
+                        <i class="fas fa-code"></i>
+                        <span>Snippets</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/Patterns")">
+                        <i class="fas fa-shapes"></i>
+                        <span>Patterns</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/Transcription")">
+                        <i class="fas fa-microphone"></i>
+                        <span>Transcription</span>
+                    </a>
+                </div>
+                
+                <!-- Actions -->
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="btn btn-outline" aria-label="Toggle theme">
+                        <i class="fas fa-moon" id="theme-icon"></i>
+                    </button>
+                    
+                    <!-- User Menu -->
+                    @if (isAuthenticated)
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="user-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user"></i>
+                                <span class="d-none d-sm-inline">@User.Identity.Name</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-dropdown">
+                                <li><a class="dropdown-item" href="@Url.Content("~/Admin")"><i class="fas fa-cog"></i> Admin</a></li>
+                                <li><a class="dropdown-item" href="@Url.Content("~/Admin/Users/Logout")"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <a href="@Url.Content("~/Login")" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Login</span>
+                        </a>
+                    }
+                    
+                    <!-- Mobile Menu Toggle -->
+                    <button class="btn btn-outline d-md-none" type="button" id="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile Navigation -->
+            <div class="mobile-nav d-md-none" id="mobile-nav">
+                <div class="d-flex flex-column gap-2 mt-3">
+                    <a class="nav-link" href="@Url.Content("~/")">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/MindMap")">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>Mind Maps</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/Kanban")">
+                        <i class="fas fa-columns"></i>
+                        <span>Kanban</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/Snippets")">
+                        <i class="fas fa-code"></i>
+                        <span>Snippets</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/Patterns")">
+                        <i class="fas fa-shapes"></i>
+                        <span>Patterns</span>
+                    </a>
+                    <a class="nav-link" href="@Url.Content("~/Transcription")">
+                        <i class="fas fa-microphone"></i>
+                        <span>Transcription</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main id="main-content" role="main" class="flex-grow-1">
+        @await RenderBodyAsync()
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-secondary border-top" role="contentinfo">
+        <div class="container py-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="fas fa-seedling text-primary"></i>
+                        <span class="fw-bold">@siteName</span>
+                    </div>
+                    <p class="text-muted mb-0">
+                        Modern development workflow management system built with Orchard Core.
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-6">
+                            <h6 class="fw-bold mb-2">Features</h6>
+                            <ul class="list-unstyled">
+                                <li><a href="@Url.Content("~/MindMap")" class="text-muted text-decoration-none">Mind Maps</a></li>
+                                <li><a href="@Url.Content("~/Kanban")" class="text-muted text-decoration-none">Kanban Boards</a></li>
+                                <li><a href="@Url.Content("~/Snippets")" class="text-muted text-decoration-none">Code Snippets</a></li>
+                                <li><a href="@Url.Content("~/Patterns")" class="text-muted text-decoration-none">Patterns</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="fw-bold mb-2">Resources</h6>
+                            <ul class="list-unstyled">
+                                <li><a href="https://github.com/compost" class="text-muted text-decoration-none">GitHub</a></li>
+                                <li><a href="https://docs.compost.dev" class="text-muted text-decoration-none">Documentation</a></li>
+                                <li><a href="https://community.compost.dev" class="text-muted text-decoration-none">Community</a></li>
+                                <li><a href="mailto:support@compost.dev" class="text-muted text-decoration-none">Support</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="border-top mt-4 pt-3 text-center">
+                <p class="text-muted mb-0">
+                    &copy; @DateTime.Now.Year Compost Team. Built with <i class="fas fa-heart text-danger"></i> using Orchard Core.
+                </p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="@Url.Content("~/Compost.Theme/js/compost.js")"></script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

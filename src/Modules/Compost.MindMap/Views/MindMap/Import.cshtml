@@ -1,0 +1,87 @@
+@{
+    ViewBag.Title = "Import Mind Map";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-primary">
+                        <i class="fas fa-file-import me-2"></i>Import Mind Map
+                    </h2>
+                    <p class="text-muted">Import a mind map from a JSON file</p>
+                </div>
+                <a href="/MindMap" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Mind Maps
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-upload me-2"></i>Select File
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Import" method="post" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="file" class="form-label">JSON File</label>
+                            <input type="file" class="form-control" id="file" name="file" 
+                                   accept=".json" required />
+                            <div class="form-text">
+                                Select a JSON file containing a mind map structure.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-import me-1"></i>Import Mind Map
+                            </button>
+                            <a href="/MindMap" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Import Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Supported Format</h6>
+                    <p class="small text-muted">JSON files exported from this application</p>
+                    
+                    <h6>What gets imported</h6>
+                    <ul class="small text-muted">
+                        <li>Mind map name and description</li>
+                        <li>All nodes and their relationships</li>
+                        <li>Node types and properties</li>
+                        <li>Tags and metadata</li>
+                    </ul>
+                    
+                    <h6>What happens during import</h6>
+                    <ul class="small text-muted">
+                        <li>New unique IDs are generated</li>
+                        <li>Existing mind maps are not affected</li>
+                        <li>Imported map is saved immediately</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

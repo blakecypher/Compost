@@ -1,0 +1,40 @@
+@using Compost.Core.Models
+@model Compost.Kanban.ViewModels.KanbanCardPartViewModel
+
+<div class="mb-3">
+    <label asp-for="Status" class="form-label">Status</label>
+    <select asp-for="Status" class="form-select">
+        @foreach (KanbanStatus status in Enum.GetValues(typeof(KanbanStatus)))
+        {
+            <option value="@status">@status.ToString()</option>
+        }
+    </select>
+</div>
+
+<div class="mb-3">
+    <label asp-for="StoryPoints" class="form-label">Story Points</label>
+    <input asp-for="StoryPoints" type="number" class="form-control" />
+    <span class="hint">Estimate the effort required for this task.</span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="WorkContextId" class="form-label">Work Project ID</label>
+    <input asp-for="WorkContextId" class="form-control" />
+    <span class="hint">The unique ID of the project context this card belongs to.</span>
+</div>
+
+<div class="mb-3 form-check">
+    <input asp-for="IsBlocked" type="checkbox" class="form-check-input" />
+    <label asp-for="IsBlocked" class="form-check-label">Is Blocked</label>
+</div>
+
+<div class="mb-3" id="blocked-reason-container" style="@(Model.IsBlocked ? "" : "display:none")">
+    <label asp-for="BlockedReason" class="form-label">Blocked Reason</label>
+    <textarea asp-for="BlockedReason" class="form-control" rows="2"></textarea>
+</div>
+
+<script>
+    document.getElementById('KanbanCardPart_IsBlocked').addEventListener('change', function() {
+        document.getElementById('blocked-reason-container').style.display = this.checked ? 'block' : 'none';
+    });
+</script>
