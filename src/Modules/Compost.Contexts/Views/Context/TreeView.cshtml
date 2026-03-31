@@ -4,48 +4,283 @@
     ViewBag.Title = "Projects";
     
     var rootProjects = Model.Where(p => string.IsNullOrEmpty(p.ParentProjectId)).OrderBy(p => p.DisplayOrder).ToList();
+    var allProjects = Model.OrderBy(p => p.DisplayOrder).ToList();
     
     Func<string, List<Compost.Core.Models.Project>> getChildren = parentId =>
         Model.Where(p => p.ParentProjectId == parentId).OrderBy(p => p.DisplayOrder).ToList();
 }
 
-    <div class="header-section mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
         <h1 class="text-theme-contexts">
             <i class="fas fa-sitemap me-2"></i>Projects
         </h1>
-        <p class="lead text-secondary">Organize your projects hierarchically. Drag and drop to structure your work.</p>
+        <p class="text-muted">Organize your projects hierarchically. Drag and drop to structure your work.</p>
+        <small class="text-info">Enhanced Card View v2.0 - @DateTime.Now.ToString("HH:mm:ss")</small>
     </div>
+    <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-theme-contexts">
+        <i class="fas fa-plus"></i> Create Project
+    </a>
+</div>
 
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        <strong>Tip:</strong> Drag a context onto another to make it a child. Drag to the root area to make it a top-level context.
-    </div>
-
-    <div class="mb-3 d-flex gap-2">
-        <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-success">
-            <i class="fas fa-plus"></i> Create Project
-        </a>
-    </div>
-
-    <div class="tree-container p-3 bg-light rounded" id="tree-root"
-         ondragover="dragOver(event)" 
-         ondrop="dragDropRoot(event)">
-        
-        @if (rootProjects.Any())
-        {
-            @foreach (var project in rootProjects)
-            {
-                @RenderTreeNode(project, 0)
-            }
-        }
-        else
-        {
-            <div class="text-center text-muted py-5">
-                <i class="fas fa-tree fa-3x mb-3"></i>
-                <p>No projects yet. <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts">Create your first project</a> to get started.</p>
+<!-- Search and Filter Bar -->
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <form asp-action="TreeView" method="get">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="query" class="form-control" placeholder="Search project names, descriptions..." value="@ViewBag.SearchQuery">
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary flex-fill" type="submit">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        @if (ViewBag.SearchQuery != null)
+                        {
+                            <a asp-action="TreeView" class="btn btn-outline-danger">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        }
+                    </div>
+                </div>
             </div>
-        }
+        </form>
     </div>
+</div>
+
+<div class="d-flex gap-2 align-items-center mb-4">
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary btn-sm active" onclick="changeView('board')" title="Board View">
+            <i class="fas fa-th"></i>
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="changeView('tree')" title="Tree View">
+            <i class="fas fa-sitemap"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Projects Board -->
+<div class="projects-board" id="projectsBoard">
+    @if (allProjects.Any())
+    {
+        <div class="row g-4">
+            @foreach (var project in allProjects)
+            {
+                var isActive = project.IsActive;
+                var hasChildren = Model.Any(p => p.ParentProjectId == project.Id);
+                var childCount = Model.Count(p => p.ParentProjectId == project.Id);
+                
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="project-card card shadow-sm h-100 project-enhanced-card" style="border-top: 4px solid #ffc107; transition: transform 0.1s, box-shadow 0.2s; background: var(--bs-body-bg) !important; border-left: 1px solid var(--bs-border-color); border-right: 1px solid var(--bs-border-color); border-bottom: 1px solid var(--bs-border-color);" 
+                         data-project-id="@project.Id" 
+                         data-parent-id="@project.ParentProjectId"
+                         data-status="@(isActive ? "Active" : "Inactive")"
+                         data-name="@project.Name.ToLower()"
+                         data-description="@project.Description?.ToLower() ?? """>
+                        
+                        <!-- Project Header -->
+                        <div class="project-header card-header d-flex justify-content-between align-items-center" style="background-color: var(--bs-body-bg); color: var(--bs-body-color); border-bottom: 1px solid var(--bs-border-color);">
+                            <div class="d-flex align-items-center">
+                                <div class="project-icon me-2" style="background-color: rgba(124, 58, 237, 0.1);">
+                                    <i class="fas fa-folder" style="color: var(--theme-contexts);"></i>
+                                </div>
+                                <div>
+                                    <span class="badge small bg-theme-contexts text-white">
+                                        @(string.IsNullOrEmpty(project.ParentProjectId) ? "Root" : "Child")
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-link text-muted" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="/Project/Edit/@project.Id">
+                                            <i class="fas fa-edit me-2"></i>Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/Project/Create?parentId=@project.Id">
+                                            <i class="fas fa-plus me-2"></i>Add Child
+                                        </a>
+                                    </li>
+                                    @if (!isActive)
+                                    {
+                                        <li>
+                                            <form action="/Project/Switch/@project.Id" method="post" style="display:inline;">
+                                                <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken()" />
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fas fa-play me-2"></i>Activate
+                                                </button>
+                                            </form>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Project Body -->
+                        <div class="project-body card-body">
+                            <h5 class="project-title fw-bold mb-2 text-theme-contexts">@project.Name</h5>
+                            
+                            <!-- Status and Branch Info -->
+                            <div class="mb-3">
+                                <div class="d-flex flex-wrap gap-1 mb-2">
+                                    @if (isActive)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-play me-1"></i>Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-pause me-1"></i>Inactive
+                                        </span>
+                                    }
+                                    
+                                    @if (hasChildren)
+                                    {
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-sitemap me-1"></i>@childCount child@(childCount != 1 ? "ren" : "")
+                                        </span>
+                                    }
+                                    
+                                    @if (!string.IsNullOrEmpty(project.CurrentBranch))
+                                    {
+                                        <span class="badge bg-dark text-white">
+                                            <i class="fas fa-code-branch me-1"></i>@project.CurrentBranch
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            @if (!string.IsNullOrEmpty(project.Description))
+                            {
+                                <div class="mb-3">
+                                    <h6 class="text-muted small text-uppercase mb-2">Description</h6>
+                                    <p class="project-description text-muted small">
+                                        @(project.Description.Length > 120 ? project.Description[..120] + "..." : project.Description)
+                                    </p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-3">
+                                    <p class="project-description text-muted small italic">No description provided</p>
+                                </div>
+                            }
+
+                            <!-- Tags -->
+                            @if (project.Tags != null && project.Tags.Any())
+                            {
+                                <div class="project-tags mb-3">
+                                    <h6 class="text-muted small text-uppercase mb-2">Tags</h6>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var tag in project.Tags.Take(4))
+                                        {
+                                            <span class="badge bg-light text-dark border small">@tag</span>
+                                        }
+                                        @if (project.Tags.Count > 4)
+                                        {
+                                            <span class="badge bg-light text-dark border small">+@(project.Tags.Count - 4)</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Project Metadata -->
+                            <div class="project-metadata mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-folder-tree me-1"></i>
+                                        @if (string.IsNullOrEmpty(project.ParentProjectId))
+                                        {
+                                            <span>Root Project</span>
+                                        }
+                                        else
+                                        {
+                                            var parent = Model.FirstOrDefault(p => p.Id == project.ParentProjectId);
+                                            <span>Child of @(parent?.Name ?? "Unknown")</span>
+                                        }
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-sort me-1"></i>Order: @project.DisplayOrder
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Quick Actions -->
+                            <div class="project-quick-actions d-flex gap-2 mt-auto">
+                                <button class="btn btn-sm flex-fill btn-outline-theme-contexts" onclick="viewProjectDetails('@project.Id')">
+                                    <i class="fas fa-eye me-1"></i>View
+                                </button>
+                                @if (hasChildren)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleChildren('@project.Id')">
+                                        <i class="fas fa-sitemap me-1"></i>Children
+                                    </button>
+                                }
+                                <button class="btn btn-sm btn-outline-secondary" onclick="copyProjectLink('@project.Id')">
+                                    <i class="fas fa-share"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="alert alert-secondary text-center py-5">
+                <i class="fas fa-folder-open fa-3x mb-3"></i>
+                <h4>No Projects Yet</h4>
+                <p class="mb-3">Create your first project to start organizing your work.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-theme-contexts">
+                        <i class="fas fa-plus me-1"></i> Create Project
+                    </a>
+                    <button class="btn btn-outline-secondary" onclick="importSampleProjects()">
+                        <i class="fas fa-download me-1"></i> Import Sample Projects
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Tree View (Hidden by default) -->
+<div class="tree-container p-3 bg-light rounded" id="treeView" style="display: none;"
+     ondragover="dragOver(event)" 
+     ondrop="dragDropRoot(event)">
+    
+    @if (rootProjects.Any())
+    {
+        @foreach (var project in rootProjects)
+        {
+            @RenderTreeNode(project, 0)
+        }
+    }
+    else
+    {
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-tree fa-3x mb-3"></i>
+            <p>No projects yet. <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts">Create your first project</a> to get started.</p>
+        </div>
+    }
+</div>
 
 @functions {
 
@@ -309,4 +544,156 @@
     .tree-node-content strong {
         color: var(--text-primary);
     }
+    
+    /* Enhanced Project Card Styles */
+    .project-enhanced-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        background: var(--bs-body-bg) !important;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .project-enhanced-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    [data-bs-theme="light"] .project-enhanced-card:hover {
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    [data-bs-theme="dark"] .project-enhanced-card:hover {
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .project-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(124, 58, 237, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .project-metadata {
+        border-top: 1px solid var(--bs-border-color);
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Button hover effects */
+    .project-quick-actions button:hover {
+        background: var(--theme-contexts) !important;
+        color: #ffffff !important;
+        border-color: var(--theme-contexts) !important;
+    }
+    
+    .btn-theme-contexts {
+        background-color: var(--theme-contexts);
+        border-color: var(--theme-contexts);
+        color: #fff;
+    }
+    
+    .btn-theme-contexts:hover {
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .btn-outline-theme-contexts {
+        color: var(--theme-contexts);
+        border-color: var(--theme-contexts);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-contexts:hover {
+        background-color: var(--theme-contexts);
+        color: #fff;
+    }
+    
+    .text-theme-contexts {
+        color: var(--theme-contexts) !important;
+    }
+    
+    .bg-theme-contexts {
+        background-color: var(--theme-contexts) !important;
+    }
+    
+    /* Enhanced Tree Node Drop Shadow */
+    .tree-node-content {
+        cursor: grab;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: var(--bg-secondary) !important;
+        border: 2px solid var(--border-medium) !important;
+        border-top: 4px solid var(--theme-contexts) !important;
+        color: var(--text-primary);
+        border-radius: 16px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .tree-node-content:hover {
+        box-shadow: 0 12px 30px rgba(155, 126, 222, 0.25), 0 8px 16px rgba(0, 0, 0, 0.2);
+        transform: translateY(-4px) scale(1.02);
+        border-color: var(--theme-contexts) !important;
+        background: var(--bg-tertiary) !important;
+    }
+
+    [data-bs-theme="dark"] .tree-node-content:hover {
+        box-shadow: 0 12px 35px rgba(155, 126, 222, 0.35), 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
 </style>
+
+<script>
+    function copyProjectLink(projectId) {
+        const url = window.location.origin + '/Contexts/TreeView#' + projectId;
+        navigator.clipboard.writeText(url).then(() => {
+            // Show success feedback
+            const button = event.target.closest('button');
+            const originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-outline-secondary');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHtml;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
+    }
+    
+    function importSampleProjects() {
+        // This could be expanded to actually import sample projects
+        alert('Sample project import would be implemented here. For now, click "Create Project" to get started.');
+    }
+    
+    function changeView(viewType) {
+        const boardView = document.getElementById('projectsBoard');
+        const treeView = document.getElementById('treeView');
+        const boardBtn = document.querySelector('[onclick="changeView(\'board\')"]');
+        const treeBtn = document.querySelector('[onclick="changeView(\'tree\')"]');
+        
+        if (viewType === 'board') {
+            boardView.style.display = 'block';
+            treeView.style.display = 'none';
+            boardBtn.classList.add('active');
+            treeBtn.classList.remove('active');
+        } else {
+            boardView.style.display = 'none';
+            treeView.style.display = 'block';
+            boardBtn.classList.remove('active');
+            treeBtn.classList.add('active');
+        }
+    }
+    
+    function viewProjectDetails(projectId) {
+        // Navigate to project details or edit page
+        window.location.href = '/Project/Edit/' + projectId;
+    }
+    
+    function toggleChildren(projectId) {
+        // This would toggle visibility of child projects in tree view
+        console.log('Toggle children for project:', projectId);
+    }
+</script>

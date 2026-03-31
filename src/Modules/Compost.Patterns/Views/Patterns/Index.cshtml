@@ -12,6 +12,7 @@
             <i class="fas fa-project-diagram"></i> Architectural Patterns
         </h2>
         <p class="text-muted">Document and reuse architectural decisions and design patterns.</p>
+        <small class="text-info">Enhanced Card View v2.0 - @DateTime.Now.ToString("HH:mm:ss")</small>
     </div>
     <a asp-action="Create" class="btn btn-theme-patterns">
         <i class="fas fa-plus"></i> Add Pattern
@@ -21,17 +22,23 @@
 <div class="card bg-light mb-4">
     <div class="card-body">
         <form asp-action="Index" method="get">
-            <div class="input-group">
-                <input type="text" name="query" class="form-control" placeholder="Search patterns by name, usage, description, or keywords..." value="@ViewBag.SearchQuery">
-                <button class="btn btn-outline-secondary" type="submit">
-                    <i class="fas fa-search"></i> Search
-                </button>
-                @if (ViewBag.SearchQuery != null)
-                {
-                    <a asp-action="Index" class="btn btn-outline-danger">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
-                }
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" name="query" class="form-control" placeholder="Search patterns by name, usage, description, or keywords..." value="@ViewBag.SearchQuery">
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary flex-fill" type="submit">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        @if (ViewBag.SearchQuery != null)
+                        {
+                            <a asp-action="Index" class="btn btn-outline-danger">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        }
+                    </div>
+                </div>
             </div>
         </form>
     </div>
@@ -45,35 +52,113 @@
             var pattern = item.As<ArchitecturalPatternPart>();
             if (pattern == null) continue;
             
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 border-theme-patterns shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">@item.DisplayText</h5>
-                        <p class="card-text small text-muted">
-                            @(pattern.WhenToUse?.Length > 150 ? pattern.WhenToUse[..150] + "..." : pattern.WhenToUse)
-                        </p>
-                        <div class="mt-3">
-                            @if(pattern.Keywords != null)
-                            {
-                                @foreach(var tag in pattern.Keywords.Take(3))
-                                {
-                                    <span class="badge bg-theme-patterns text-on-theme-patterns me-1">@tag</span>
-                                }
-                            }
+            var category = pattern.Keywords?.FirstOrDefault() ?? "General";
+            var tagCount = pattern.Keywords?.Count ?? 0;
+            var hasCodeExample = !string.IsNullOrEmpty(pattern.Gotchas) && pattern.Gotchas.Contains("Code Example:");
+            var successScore = pattern.SuccessScore;
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 pattern-card" style="border-top: 4px solid #ffc107; transition: transform 0.1s, box-shadow 0.2s; background: var(--bs-body-bg) !important; border-left: 1px solid var(--bs-border-color); border-right: 1px solid var(--bs-border-color); border-bottom: 1px solid var(--bs-border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--bs-body-bg); color: var(--bs-body-color); border-bottom: 1px solid var(--bs-border-color);">
+                        <div class="d-flex align-items-center">
+                            <div class="pattern-icon me-2" style="background-color: rgba(124, 58, 237, 0.1);">
+                                <i class="fas fa-project-diagram" style="color: var(--theme-patterns);"></i>
+                            </div>
+                            <div>
+                                <span class="badge small bg-theme-patterns text-white">@category</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-footer bg-transparent border-0 d-flex justify-content-between">
-                         <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="btn btn-sm btn-outline-theme-patterns">
-                            <i class="fas fa-book-open"></i> View Details
-                        </a>
                         <div class="dropdown">
-                            <button class="btn btn-sm btn-link text-theme-patterns" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-ellipsis-h"></i>
+                            <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a asp-action="Edit" asp-route-id="@item.ContentItemId" class="dropdown-item">Edit</a></li>
-                                <li><a asp-action="Delete" asp-route-id="@item.ContentItemId" class="dropdown-item text-danger" onclick="return confirm('Are you sure?');">Delete</a></li>
+                                <li><a asp-action="Edit" asp-route-id="@item.ContentItemId" class="dropdown-item"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                <li><a asp-action="Detail" asp-route-id="@item.ContentItemId" class="dropdown-item"><i class="fas fa-book-open me-2"></i>View Details</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a asp-action="Delete" asp-route-id="@item.ContentItemId" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this pattern?');"><i class="fas fa-trash me-2"></i>Delete</a></li>
                             </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h5 class="card-title mb-2 text-theme-patterns">@item.DisplayText</h5>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <small class="text-muted me-2">Success Score:</small>
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: @(successScore * 100)%"></div>
+                                </div>
+                                <small class="text-muted ms-2">@(Math.Round(successScore * 100))%</small>
+                            </div>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(pattern.WhenToUse))
+                        {
+                            <div class="mb-3">
+                                <h6 class="text-muted small text-uppercase mb-2">When to Use</h6>
+                                <p class="card-text small text-muted">
+                                    @(pattern.WhenToUse.Length > 120 ? pattern.WhenToUse[..120] + "..." : pattern.WhenToUse)
+                                </p>
+                            </div>
+                        }
+                        
+                        @if (!string.IsNullOrEmpty(pattern.HowItWorks))
+                        {
+                            <div class="mb-3">
+                                <h6 class="text-muted small text-uppercase mb-2">How It Works</h6>
+                                <p class="card-text small text-muted">
+                                    @(pattern.HowItWorks.Length > 100 ? pattern.HowItWorks[..100] + "..." : pattern.HowItWorks)
+                                </p>
+                            </div>
+                        }
+                        
+                        <div class="mb-3">
+                            <div class="d-flex flex-wrap gap-1">
+                                @if(pattern.Keywords != null && pattern.Keywords.Count > 1)
+                                {
+                                    @foreach(var tag in pattern.Keywords.Skip(1).Take(4))
+                                    {
+                                        <span class="badge bg-light text-dark border small">@tag</span>
+                                    }
+                                    @if (pattern.Keywords.Count > 5)
+                                    {
+                                        <span class="badge bg-light text-dark border small">+@(pattern.Keywords.Count - 5)</span>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-2">
+                                @if (hasCodeExample)
+                                {
+                                    <span class="badge bg-info small">
+                                        <i class="fas fa-code me-1"></i>Code Example
+                                    </span>
+                                }
+                                @if (pattern.ResourceUrls?.Any() == true)
+                                {
+                                    <span class="badge bg-secondary small">
+                                        <i class="fas fa-link me-1"></i>@pattern.ResourceUrls.Count Resources
+                                    </span>
+                                }
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-tag me-1"></i>@tagCount tags
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent border-0">
+                        <div class="d-flex gap-2">
+                            <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="btn btn-sm flex-fill btn-outline-theme-patterns">
+                                <i class="fas fa-book-open me-1"></i> View Details
+                            </a>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyPatternLink('@item.ContentItemId')">
+                                <i class="fas fa-share"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -86,9 +171,115 @@
             <div class="alert alert-secondary text-center py-5">
                 <i class="fas fa-layer-group fa-3x mb-3"></i>
                 <h4>No Patterns Defined</h4>
-                <p>Start documenting your architectural patterns to standardize your development.</p>
-                <a asp-action="Create" class="btn btn-theme-patterns mt-2">Create Pattern</a>
+                <p class="mb-3">Start documenting your architectural patterns to standardize your development.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a asp-action="Create" class="btn btn-theme-patterns">
+                        <i class="fas fa-plus me-1"></i> Create Pattern
+                    </a>
+                    <button class="btn btn-outline-secondary" onclick="importSamplePatterns()">
+                        <i class="fas fa-download me-1"></i> Import Sample Patterns
+                    </button>
+                </div>
             </div>
         </div>
     }
 </div>
+
+<style>
+    .pattern-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        background: var(--bs-body-bg) !important;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .pattern-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    [data-bs-theme="light"] .pattern-card:hover {
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    [data-bs-theme="dark"] .pattern-card:hover {
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .pattern-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(124, 58, 237, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .progress {
+        background-color: var(--bs-gray-200);
+    }
+    
+    /* Button hover effects */
+    .pattern-card .btn:hover {
+        background: var(--theme-patterns) !important;
+        color: #ffffff !important;
+        border-color: var(--theme-patterns) !important;
+    }
+    
+    .btn-theme-patterns {
+        background-color: var(--theme-patterns);
+        border-color: var(--theme-patterns);
+        color: #fff;
+    }
+    
+    .btn-theme-patterns:hover {
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .btn-outline-theme-patterns {
+        color: var(--theme-patterns);
+        border-color: var(--theme-patterns);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-patterns:hover {
+        background-color: var(--theme-patterns);
+        color: #fff;
+    }
+    
+    .text-theme-patterns {
+        color: var(--theme-patterns) !important;
+    }
+    
+    .bg-theme-patterns {
+        background-color: var(--theme-patterns) !important;
+    }
+</style>
+
+<script>
+    function copyPatternLink(patternId) {
+        const url = window.location.origin + '/Patterns/Detail/' + patternId;
+        navigator.clipboard.writeText(url).then(() => {
+            // Show success feedback
+            const button = event.target.closest('button');
+            const originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-outline-secondary');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHtml;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
+    }
+    
+    function importSamplePatterns() {
+        // This could be expanded to actually import sample patterns
+        alert('Sample pattern import would be implemented here. For now, click "Create Pattern" to get started.');
+    }
+</script>

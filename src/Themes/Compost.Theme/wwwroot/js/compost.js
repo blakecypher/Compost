@@ -16,6 +16,7 @@ class CompostTheme {
         this.initAnimations();
         this.initNotifications();
         this.initAccessibility();
+        this.initActiveNavigation();
     }
 
     /**
@@ -396,6 +397,52 @@ class CompostTheme {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    /**
+     * Active Navigation State
+     */
+    initActiveNavigation() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+        
+        navLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && this.isPathMatch(currentPath, href)) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+        
+        // Also handle mobile navigation
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav .nav-link');
+        mobileNavLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && this.isPathMatch(currentPath, href)) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    }
+    
+    isPathMatch(currentPath, href) {
+        // Exact match for root
+        if (href === '/' && currentPath === '/') {
+            return true;
+        }
+        
+        // Handle special cases
+        if (href.includes('/Contexts/TreeView') && currentPath.includes('/Contexts/')) {
+            return true;
+        }
+        
+        // General path matching
+        const hrefPath = href.replace('/', '');
+        const currentPathClean = currentPath.replace('/', '');
+        
+        return hrefPath && currentPathClean.includes(hrefPath);
     }
 
     throttle(func, limit) {

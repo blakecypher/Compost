@@ -194,7 +194,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="text-primary">
+        <h2 class="text-theme-kanban">
             <i class="fas fa-columns"></i> Kanban Board
         </h2>
         <p class="text-muted">Manage your tasks and track progress for <strong>@contextName</strong> (@totalCards cards)
@@ -272,6 +272,16 @@
                     <option value="21">21 Points</option>
                 </select>
             </div>
+            <div class="col-md-3">
+                <label class="form-label">Priority Filter</label>
+                <select id="priorityFilter" class="form-select" onchange="filterCards()">
+                    <option value="">All Priorities</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                </select>
+            </div>
         </div>
     </div>
 </div>
@@ -322,8 +332,8 @@
                                 <h6 class="card-title fw-bold mb-0 editable-title" data-id="@card.ContentItemId"
                                     onclick="editCardTitle(this)">@card.DisplayText</h6>
                                 <div class="d-flex gap-1">
-                                    <span class="badge rounded-pill small" style="background: @priorityColor;"
-                                          title="Priority: @priority">@priority.ToString().First()</span>
+                                    <span class="badge rounded-pill small editable-priority" style="background: @priorityColor;"
+                                          title="Priority: @priority" data-id="@card.ContentItemId" onclick="editCardPriority(this)">@priority.ToString().First()</span>
                                     @if (part?.IsBlocked == true)
                                     {
                                         <span class="badge rounded-circle p-1" title="Blocked: @part.BlockedReason"><i
@@ -701,6 +711,83 @@
         input.select();
     }
 
+    function editCardPriority(element) {
+        // Check if already editing
+        if (element.style.display === 'none') return;
+
+        const cardId = element.dataset.id;
+        const currentPriority = element.textContent.trim();
+
+        const select = document.createElement('select');
+        select.className = 'form-select form-select-sm';
+        select.style.width = '80px';
+        select.innerHTML = `
+            <option value="Low" ${currentPriority === 'L' ? 'selected' : ''}>Low</option>
+            <option value="Medium" ${currentPriority === 'M' ? 'selected' : ''}>Medium</option>
+            <option value="High" ${currentPriority === 'H' ? 'selected' : ''}>High</option>
+            <option value="Critical" ${currentPriority === 'C' ? 'selected' : ''}>Critical</option>
+        `;
+        select.style.background = '#2a2a2a';
+        select.style.border = '1px solid #444444';
+        select.style.color = '#d4d4d8';
+
+        select.onblur = function () {
+            saveInlinePriorityEdit(cardId, this.value, element);
+        };
+        select.onchange = function () {
+            this.blur();
+        };
+
+        element.style.display = 'none';
+        element.parentNode.insertBefore(select, element);
+        select.focus();
+    }
+
+    async function saveInlinePriorityEdit(cardId, value, element) {
+        try {
+            const response = await fetch('/Kanban/UpdateCardField', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'contentItemId': cardId,
+                    'field': 'priority',
+                    'value': value
+                })
+            });
+
+            if (response.ok) {
+                // Update UI
+                const priorityColor = value === 'Low' ? '#28a745' :
+                                   value === 'Medium' ? '#ffc107' :
+                                   value === 'High' ? '#fd7e14' :
+                                   value === 'Critical' ? '#dc3545' : '#6c757d';
+                
+                element.textContent = value.charAt(0);
+                element.style.background = priorityColor;
+                element.title = `Priority: ${value}`;
+                element.style.display = '';
+                
+                // Also update the priority indicator
+                const card = element.closest('.kanban-card');
+                const priorityIndicator = card.querySelector('.priority-indicator');
+                if (priorityIndicator) {
+                    priorityIndicator.style.background = priorityColor;
+                }
+                
+                // Update data attribute
+                card.dataset.priority = value;
+            } else {
+                // Revert on error
+                element.style.display = '';
+            }
+        } catch (err) {
+            console.error('Error saving priority edit:', err);
+            element.style.display = '';
+        }
+    }
+
     async function saveInlineEdit(cardId, field, value, element) {
         try {
             const response = await fetch('/Kanban/UpdateCardField', {
@@ -866,6 +953,7 @@
         const searchTerm = document.getElementById('cardSearch').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
         const pointsFilter = document.getElementById('pointsFilter').value;
+        const priorityFilter = document.getElementById('priorityFilter').value;
 
         const cards = document.querySelectorAll('.kanban-card');
 
@@ -873,6 +961,7 @@
             const title = card.querySelector('.card-title')?.textContent.toLowerCase() || '';
             const description = card.querySelector('.card-text')?.textContent.toLowerCase() || '';
             const status = card.dataset.status || '';
+            const priority = card.dataset.priority || '';
             const pointsElement = card.querySelector('.editable-points');
             const points = pointsElement ? pointsElement.textContent.replace(' pts', '').replace('+ ', '').trim() : '';
 
@@ -880,9 +969,10 @@
             const matchesSearch = title.includes(searchTerm) || description.includes(searchTerm);
             const matchesStatus = !statusFilter || status === statusFilter;
             const matchesPoints = !pointsFilter || points === pointsFilter;
+            const matchesPriority = !priorityFilter || priority === priorityFilter;
 
             // Show or hide card
-            if (matchesSearch && matchesStatus && matchesPoints) {
+            if (matchesSearch && matchesStatus && matchesPoints && matchesPriority) {
                 card.style.display = 'block';
             } else {
                 card.style.display = 'none';

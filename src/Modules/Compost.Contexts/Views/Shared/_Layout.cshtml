@@ -47,8 +47,9 @@
             --border-color: #d5c4a1;
 
             /* Module Theme Colors */
-            --theme-contexts: #9b7ede;
-            --theme-patterns: #9b7ede;
+            --theme-contexts: #7c3aed;    /* Electric Violet */
+            --theme-patterns: #7c3aed;   /* Electric Violet */
+            --theme-snippets: #ab3e53;   /* Slate Grey */
         }
 
         [data-bs-theme="dark"] {
@@ -83,8 +84,9 @@
             --border-color: #504945;
 
             /* Module Theme Colors - Dark */
-            --theme-contexts: #b19cd9;
-            --theme-patterns: #b19cd9;
+            --theme-contexts: #8b5cf6;   /* Vibrant Purple */
+            --theme-patterns: #8b5cf6;  /* Vibrant Purple */
+            --theme-snippets: #9ca3af;  /* Light Slate */
         }
 
         /* Global Styles */
@@ -97,8 +99,49 @@
 
         .sidebar { background-color: var(--sidebar-bg) !important; border-right: 1px solid var(--border-color) !important; }
         .sidebar .nav-link { color: var(--bs-body-color); font-weight: 500; }
-        .sidebar .nav-link:hover { background-color: rgba(0,0,0,0.05); color: var(--gruv-orange); }
-        .sidebar .nav-link.active { background-color: var(--theme-contexts) !important; color: #fff !important; }
+        
+        /* Contexts/Projects - Purple */
+        .sidebar .nav-link[href*="Projects"]:hover,
+        .sidebar .nav-link[href*="Contexts"]:hover,
+        .sidebar .nav-link[href*="TreeView"]:hover { 
+            background-color: rgba(124, 58, 237, 0.2) !important; 
+            color: var(--theme-contexts) !important;
+            font-weight: 600 !important;
+        }
+        .sidebar .nav-link[href*="Projects"].active,
+        .sidebar .nav-link[href*="Contexts"].active,
+        .sidebar .nav-link[href*="TreeView"].active { 
+            background-color: var(--theme-contexts) !important; 
+            color: #fff !important;
+            font-weight: 600 !important;
+            box-shadow: 0 0 12px rgba(124, 58, 237, 0.5), inset 0 0 0 1px rgba(124, 58, 237, 0.4) !important;
+        }
+        
+        /* Patterns - Purple */
+        .sidebar .nav-link[href*="Patterns"]:hover { 
+            background-color: rgba(124, 58, 237, 0.2) !important; 
+            color: var(--theme-patterns) !important;
+            font-weight: 600 !important;
+        }
+        .sidebar .nav-link[href*="Patterns"].active { 
+            background-color: var(--theme-patterns) !important; 
+            color: #fff !important;
+            font-weight: 600 !important;
+            box-shadow: 0 0 12px rgba(124, 58, 237, 0.5), inset 0 0 0 1px rgba(124, 58, 237, 0.4) !important;
+        }
+        
+        /* Snippets - Slate with blue tint */
+        .sidebar .nav-link[href*="Snippets"]:hover { 
+            background-color: rgba(108, 117, 125, 0.25) !important; 
+            color: var(--theme-snippets) !important;
+            font-weight: 600 !important;
+        }
+        .sidebar .nav-link[href*="Snippets"].active { 
+            background-color: var(--theme-snippets) !important; 
+            color: #fff !important;
+            font-weight: 600 !important;
+            box-shadow: 0 0 12px rgba(108, 117, 125, 0.4), inset 0 0 0 1px rgba(108, 117, 125, 0.3) !important;
+        }
         .sidebar .menu-section { font-size: 0.7rem; letter-spacing: 0.05em; color: var(--gruv-gray); padding: 0.5rem 0.75rem 0.25rem; }
 
         .card { background-color: var(--card-bg); border: 1px solid var(--border-color); }
@@ -154,17 +197,23 @@
         /* Module Theme Utilities */
         .bg-theme-contexts  { background-color: var(--theme-contexts) !important; }
         .bg-theme-patterns  { background-color: var(--theme-patterns) !important; }
+        .bg-theme-snippets  { background-color: var(--theme-snippets) !important; }
         .text-theme-contexts  { color: var(--theme-contexts) !important; }
         .text-theme-patterns  { color: var(--theme-patterns) !important; }
-        .text-on-theme-contexts, .text-on-theme-patterns { color: #fff !important; }
+        .text-theme-snippets  { color: var(--theme-snippets) !important; }
+        .text-on-theme-contexts, .text-on-theme-patterns, .text-on-theme-snippets { color: #fff !important; }
         .btn-theme-contexts { background-color: var(--theme-contexts); border-color: var(--theme-contexts); color: #fff; }
         .btn-theme-contexts:hover { filter: brightness(1.12); color: #fff; }
+        .btn-theme-snippets { background-color: var(--theme-snippets); border-color: var(--theme-snippets); color: #fff; }
+        .btn-theme-snippets:hover { filter: brightness(1.12); color: #fff; }
         .btn-outline-theme-patterns { background-color: transparent; border-color: var(--theme-patterns); color: var(--theme-patterns); }
         .btn-outline-theme-patterns:hover { background-color: var(--theme-patterns); color: #fff; }
         .btn-theme-patterns { background-color: var(--theme-patterns); border-color: var(--theme-patterns); color: #fff; }
         .btn-theme-patterns:hover { filter: brightness(1.12); color: #fff; }
         .border-theme-patterns { border-color: var(--theme-patterns) !important; }
+        .border-theme-snippets { border-color: var(--theme-snippets) !important; }
         .badge.bg-theme-patterns { background-color: var(--theme-patterns) !important; }
+        .badge.bg-theme-snippets { background-color: var(--theme-snippets) !important; }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>

@@ -7,27 +7,12 @@
     var lang = snippet?.Language ?? "text";
     var langLower = lang.ToLowerInvariant();
 }
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        <h2 class="mb-1">
-            <i class="fas fa-code text-primary me-2"></i>@Model.DisplayText
-        </h2>
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-            <span class="badge bg-secondary">@(lang.ToUpperInvariant())</span>
-            @if (!string.IsNullOrEmpty(snippet?.Category))
-            {
-                <span class="badge bg-light text-dark border"><i class="fas fa-folder me-1"></i>@snippet.Category</span>
-            }
-            @if (!string.IsNullOrEmpty(snippet?.ProjectName))
-            {
-                <span class="text-muted small"><i class="fas fa-project-diagram me-1"></i>@snippet.ProjectName</span>
-            }
-        </div>
-    </div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-code text-primary me-2"></i>@Model.DisplayText
+    </h2>
     <div class="d-flex gap-2">
-        <button type="button" class="btn btn-outline-primary" id="copy-btn" title="Copy code">
-            <i class="fas fa-copy me-1"></i> Copy
-        </button>
         <a asp-action="Edit" asp-route-id="@Model.ContentItemId" class="btn btn-primary">
             <i class="fas fa-edit me-1"></i> Edit
         </a>
@@ -35,48 +20,224 @@
     </div>
 </div>
 
-@if (!string.IsNullOrEmpty(snippet?.Documentation))
-{
-    <div class="card mb-4">
-        <div class="card-body">
-            <h6 class="text-muted text-uppercase small mb-2">Description</h6>
-            <p class="mb-0">@snippet.Documentation</p>
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm overflow-hidden mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+                <div class="d-flex align-items-center">
+                    <span class="small"><i class="fas fa-code me-1"></i>@(lang.ToUpperInvariant())</span>
+                    @if (!string.IsNullOrEmpty(snippet?.Category))
+                    {
+                        <span class="badge bg-light text-dark border ms-2"><i class="fas fa-folder me-1"></i>@snippet.Category</span>
+                    }
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-light" id="copy-btn-header" title="Copy code">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+            <div class="card-body p-0 bg-dark">
+                <pre class="mb-0 p-4" style="background: #1e1e1e; max-height: 70vh; overflow: auto;"><code id="snippet-code" class="language-@langLower">@Html.Raw(WebUtility.HtmlEncode(snippet?.Code ?? "").Replace("\r\n", "\n"))</code></pre>
+            </div>
         </div>
     </div>
-}
 
-@if (snippet?.Tags != null && snippet.Tags.Any())
-{
-    <div class="mb-3">
-        @foreach (var tag in snippet.Tags)
-        {
-            <span class="badge bg-light text-dark border me-1">@tag</span>
-        }
-    </div>
-}
+    <!-- Right Sidebar -->
+    <div class="col-md-4">
+        <!-- AI Pattern Recognition Section -->
+        <div class="card border-primary mb-3">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-robot me-2"></i>AI Pattern Recognition</span>
+                <button type="button" class="btn btn-light btn-sm" id="recognize-btn" onclick="recognizePatterns()">
+                    <i class="fas fa-magic me-1"></i> Analyze Code
+                </button>
+            </div>
+            <div class="card-body" id="pattern-results" style="display: none;">
+                <div id="pattern-loading" class="text-center py-3" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Analyzing...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Analyzing code for architectural patterns...</p>
+                </div>
+                <div id="pattern-content">
+                    <p class="text-muted">Click "Analyze Code" to detect architectural patterns in this snippet.</p>
+                </div>
+            </div>
+        </div>
 
-<div class="card border-0 shadow-sm overflow-hidden">
-    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
-        <span class="small"><i class="fas fa-code me-1"></i>@(lang.ToUpperInvariant())</span>
-        <button type="button" class="btn btn-sm btn-outline-light" id="copy-btn-header" title="Copy code">
-            <i class="fas fa-copy"></i>
-        </button>
-    </div>
-    <div class="card-body p-0 bg-dark">
-        <pre class="mb-0 p-4" style="background: #1e1e1e; max-height: 70vh; overflow: auto;"><code id="snippet-code" class="language-@langLower">@Html.Raw(WebUtility.HtmlEncode(snippet?.Code ?? "").Replace("\r\n", "\n"))</code></pre>
+        <!-- Code Details Container -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Code Details
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(snippet?.Documentation))
+                {
+                    <div class="mb-3">
+                        <h6 class="text-muted text-uppercase small mb-2">Description</h6>
+                        <p class="mb-0 small">@snippet.Documentation</p>
+                    </div>
+                }
+
+                @if (snippet?.Tags != null && snippet.Tags.Any())
+                {
+                    <div class="mb-3">
+                        <h6 class="text-muted text-uppercase small mb-2">Tags</h6>
+                        <div>
+                            @foreach (var tag in snippet.Tags.Take(5))
+                            {
+                                <span class="badge bg-light text-dark border me-1 small">@tag</span>
+                            }
+                            @if (snippet.Tags.Count > 5)
+                            {
+                                <span class="badge bg-light text-dark border small">+@(snippet.Tags.Count - 5)</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <h6 class="text-muted text-uppercase small mb-2">Related Pattern</h6>
+                        @if (!string.IsNullOrEmpty(snippet?.RelatedPatternId))
+                        {
+                            <a asp-area="Compost.Patterns" asp-controller="Patterns" asp-action="Detail" asp-route-id="@snippet.RelatedPatternId" class="btn btn-outline-secondary btn-sm w-100">
+                                <i class="fas fa-project-diagram me-1"></i> View
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">None</span>
+                        }
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted text-uppercase small mb-2">Actions</h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100" id="copy-btn" title="Copy code">
+                            <i class="fas fa-copy me-1"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(snippet?.ProjectName))
+                {
+                    <div class="mb-2">
+                        <h6 class="text-muted text-uppercase small mb-2">Project</h6>
+                        <div class="text-muted small">
+                            <i class="fas fa-project-diagram me-1"></i>@snippet.ProjectName
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Code Statistics -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-bar me-2"></i>Code Statistics
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small mb-1">Language</label>
+                            <div>
+                                <span class="badge bg-secondary small">@(lang.ToUpperInvariant())</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        @if (!string.IsNullOrEmpty(snippet?.Category))
+                        {
+                            <div class="mb-2">
+                                <label class="form-label text-muted small mb-1">Category</label>
+                                <div>
+                                    <span class="badge bg-light text-dark border small">@snippet.Category</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small mb-1">Characters</label>
+                            <div class="text-muted small">@(snippet?.Code?.Length ?? 0)</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-2">
+                            <label class="form-label text-muted small mb-1">Lines</label>
+                            <div class="text-muted small">@(snippet?.Code?.Split('\n').Length ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-@if (!string.IsNullOrEmpty(snippet?.RelatedPatternId))
-{
-    <div class="mt-4">
-        <a asp-area="Compost.Patterns" asp-controller="Patterns" asp-action="Detail" asp-route-id="@snippet.RelatedPatternId" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-project-diagram me-1"></i> Related pattern
-        </a>
-    </div>
-}
-
 <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<style>
+    /* Pattern Modal Styles - Theme Aware */
+    .modal-content {
+        background-color: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        color: var(--bs-body-color);
+    }
+    
+    .modal-header {
+        background-color: var(--bs-tertiary-bg);
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    
+    .modal-footer {
+        background-color: var(--bs-tertiary-bg);
+        border-top: 1px solid var(--bs-border-color);
+    }
+    
+    .modal-body {
+        background-color: var(--bs-body-bg);
+    }
+    
+    .form-control, .form-select {
+        background-color: var(--bs-body-bg);
+        border-color: var(--bs-border-color);
+        color: var(--bs-body-color);
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background-color: var(--bs-body-bg);
+        border-color: var(--bs-primary);
+        color: var(--bs-body-color);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+    }
+    
+    .form-label {
+        color: var(--bs-body-color);
+    }
+    
+    .font-monospace {
+        font-family: var(--bs-font-monospace);
+    }
+    
+    /* Alert notification styles */
+    .alert-dismissible {
+        margin-bottom: 1rem;
+        animation: slideInRight 0.3s ease-out;
+    }
+    
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-csharp.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-javascript.min.js"></script>
@@ -116,4 +277,313 @@
         document.getElementById('copy-btn')?.addEventListener('click', copyCode);
         document.getElementById('copy-btn-header')?.addEventListener('click', copyCode);
     });
+
+    // AI Pattern Recognition
+    function recognizePatterns() {
+        const resultsDiv = document.getElementById('pattern-results');
+        const loadingDiv = document.getElementById('pattern-loading');
+        const contentDiv = document.getElementById('pattern-content');
+        const snippetId = '@Model.ContentItemId';
+        
+        resultsDiv.style.display = 'block';
+        loadingDiv.style.display = 'block';
+        contentDiv.innerHTML = '';
+        
+        // Create form data for POST request
+        const formData = new FormData();
+        formData.append('id', snippetId);
+        
+        fetch('/Snippets/RecognizePatterns', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.text(); // Get as text first to debug
+        })
+        .then(text => {
+            console.log('Raw response:', text); // Debug log
+            try {
+                const data = JSON.parse(text);
+                handlePatternResponse(data, loadingDiv, contentDiv);
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                loadingDiv.style.display = 'none';
+                contentDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Invalid response format. Please try again.</div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            loadingDiv.style.display = 'none';
+            contentDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}</div>`;
+        });
+    }
+    
+    function handlePatternResponse(data, loadingDiv, contentDiv) {
+        loadingDiv.style.display = 'none';
+        
+        if (data.success && data.patterns && data.patterns.length > 0) {
+            let html = '<div class="list-group">';
+            data.patterns.forEach((pattern, index) => {
+                const confidenceClass = pattern.confidence > 0.8 ? 'success' : (pattern.confidence > 0.5 ? 'warning' : 'secondary');
+                html += `
+                    <div class="list-group-item list-group-item-action flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1"><i class="fas fa-project-diagram me-2 text-primary"></i>${pattern.name}</h6>
+                                <p class="mb-2 text-muted small">${pattern.description}</p>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <span class="badge bg-${confidenceClass}">${(pattern.confidence * 100).toFixed(0)}% match</span>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="associatePattern('${pattern.name}', '${pattern.description}', ${(pattern.confidence * 100).toFixed(0)})">
+                                        <i class="fas fa-link me-1"></i>Associate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            html += '<div class="mt-3 text-muted small"><i class="fas fa-info-circle me-1"></i>These patterns were detected by AI analysis of the code structure.</div>';
+            contentDiv.innerHTML = html;
+        } else if (data.success) {
+            contentDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No specific architectural patterns detected in this code snippet.</div>';
+        } else {
+            contentDiv.innerHTML = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>${data.error || 'Unable to analyze patterns at this time.'}</div>`;
+        }
+    }
+    
+    // Pattern Association Functions
+    function associatePattern(patternName, patternDescription, confidence) {
+        const snippetId = '@Model.ContentItemId';
+        const snippetCode = document.getElementById('snippet-code').textContent;
+        
+        // Check if pattern already exists
+        fetch(`/Patterns/CheckPatternExists?name=${encodeURIComponent(patternName)}`, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                // Pattern exists, associate it
+                associateExistingPattern(data.patternId, snippetId);
+            } else {
+                // Pattern doesn't exist, show create modal
+                showCreatePatternModal(patternName, patternDescription, confidence, snippetCode, snippetId);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking pattern:', error);
+            showError('Failed to check pattern existence');
+        });
+    }
+    
+    function associateExistingPattern(patternId, snippetId) {
+        fetch(`/Patterns/AssociatePattern`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                patternId: patternId,
+                snippetId: snippetId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Pattern associated successfully!');
+                // Refresh the page to show the updated association
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'Failed to associate pattern');
+            }
+        })
+        .catch(error => {
+            console.error('Error associating pattern:', error);
+            showError('Failed to associate pattern');
+        });
+    }
+    
+    function showCreatePatternModal(patternName, patternDescription, confidence, snippetCode, snippetId) {
+        // Create modal HTML
+        const modalHtml = `
+            <div class="modal fade" id="createPatternModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-plus-circle me-2"></i>Create New Pattern
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="createPatternForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Pattern Name</label>
+                                            <input type="text" class="form-control" id="patternName" value="${patternName}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Category</label>
+                                            <select class="form-select" id="patternCategory">
+                                                <option value="Creational">Creational</option>
+                                                <option value="Structural">Structural</option>
+                                                <option value="Behavioral">Behavioral</option>
+                                                <option value="Architectural">Architectural</option>
+                                                <option value="Design">Design</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" id="patternDescription" rows="3" required>${patternDescription}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">When to Use</label>
+                                    <textarea class="form-control" id="patternWhenToUse" rows="2" placeholder="When should this pattern be used?">${patternDescription}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Code Example</label>
+                                    <textarea class="form-control font-monospace" id="patternCodeExample" rows="8" placeholder="Example implementation">${snippetCode}</textarea>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Confidence Score</label>
+                                            <div class="form-control-plaintext">
+                                                <span class="badge bg-info">${confidence}% match</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Tags</label>
+                                            <input type="text" class="form-control" id="patternTags" placeholder="comma separated tags">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <input type="hidden" id="snippetId" value="${snippetId}">
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="createPattern()">
+                                <i class="fas fa-save me-1"></i>Create & Associate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('createPatternModal'));
+        modal.show();
+        
+        // Clean up modal when hidden
+        document.getElementById('createPatternModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }
+    
+    function createPattern() {
+        const form = document.getElementById('createPatternForm');
+        const formData = {
+            name: document.getElementById('patternName').value,
+            category: document.getElementById('patternCategory').value,
+            description: document.getElementById('patternDescription').value,
+            whenToUse: document.getElementById('patternWhenToUse').value,
+            codeExample: document.getElementById('patternCodeExample').value,
+            tags: document.getElementById('patternTags').value,
+            snippetId: document.getElementById('snippetId').value
+        };
+        
+        fetch(`/Patterns/CreateFromSnippet`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createPatternModal'));
+                modal.hide();
+                
+                // Show success message
+                showSuccess('Pattern created and associated successfully!');
+                
+                // Navigate to pattern page or refresh current page
+                if (data.navigateToPattern) {
+                    setTimeout(() => {
+                        window.location.href = `/Patterns/Detail/${data.patternId}`;
+                    }, 1500);
+                } else {
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } else {
+                showError(data.error || 'Failed to create pattern');
+            }
+        })
+        .catch(error => {
+            console.error('Error creating pattern:', error);
+            showError('Failed to create pattern');
+        });
+    }
+    
+    function showSuccess(message) {
+        const alertHtml = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        showNotification(alertHtml);
+    }
+    
+    function showError(message) {
+        const alertHtml = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        showNotification(alertHtml);
+    }
+    
+    function showNotification(html) {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.alert-dismissible');
+        existingNotifications.forEach(alert => alert.remove());
+        
+        // Add notification at the top of the right sidebar
+        const sidebar = document.querySelector('.col-md-4');
+        sidebar.insertAdjacentHTML('afterbegin', html);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            const alert = sidebar.querySelector('.alert-dismissible');
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
 </script>

@@ -8,12 +8,13 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="text-secondary">
+        <h2 class="text-theme-snippets">
             <i class="fas fa-code"></i> Code Snippets
         </h2>
         <p class="text-muted">Repository for your reusable code components.</p>
+        <small class="text-info">Enhanced Card View v2.0 - @DateTime.Now.ToString("HH:mm:ss")</small>
     </div>
-    <a asp-action="Create" class="btn btn-secondary">
+    <a asp-action="Create" class="btn btn-theme-snippets">
         <i class="fas fa-plus"></i> Add Snippet
     </a>
 </div>
@@ -40,79 +41,125 @@
 @if (Model != null && Model.Any())
 {
     <div class="row">
-        @foreach (var item in Model)
-        {
-            var snippet = item.As<CodeSnippetPart>();
-            if (snippet == null) continue;
+        <!-- Main Content - Snippet Cards -->
+        <div class="col-lg-9">
+            <div class="row">
+                @foreach (var item in Model)
+                {
+                    var snippet = item.As<CodeSnippetPart>();
+                    if (snippet == null) continue;
 
-            string GetBaseColor(string lang) => lang?.ToLower() switch
-            {
-                "csharp" => "primary",
-                "javascript" => "warning",
-                "typescript" => "info",
-                "python" => "success",
-                "sql" => "secondary",
-                "json" => "dark",
-                "xml" => "danger",
-                "html" => "danger",
-                "css" => "info",
-                _ => "secondary"
-            };
+                    string GetBaseColor(string lang) => lang?.ToLower() switch
+                    {
+                        "csharp" => "primary",
+                        "javascript" => "warning",
+                        "typescript" => "info",
+                        "python" => "success",
+                        "sql" => "secondary",
+                        "json" => "dark",
+                        "xml" => "danger",
+                        "html" => "danger",
+                        "css" => "info",
+                        _ => "secondary"
+                    };
 
-            var baseColor = GetBaseColor(snippet.Language);
-            var headerClass = $"bg-{baseColor} {(baseColor is "warning" or "info" ? "text-dark" : "text-white")}";
-            var buttonClass = $"btn-outline-{baseColor}";
-            var textColorClass = baseColor is "warning" or "info" ? "text-dark" : "text-white";
+                    var baseColor = GetBaseColor(snippet.Language);
+                    var headerClass = $"bg-{baseColor} {(baseColor is "warning" or "info" ? "text-dark" : "text-white")}";
+                    var buttonClass = $"btn-outline-{baseColor}";
+                    var textColorClass = baseColor is "warning" or "info" ? "text-dark" : "text-white";
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 snippet-card border-0" style="border-top: 4px solid #ffc107; transition: transform 0.1s, box-shadow 0.2s; background: var(--bs-body-bg) !important; border-left: 1px solid var(--bs-border-color); border-right: 1px solid var(--bs-border-color); border-bottom: 1px solid var(--bs-border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="card-header @headerClass d-flex justify-content-between align-items-center">
+                                <span class="fw-bold"><i class="fas fa-code me-1"></i> @(snippet.Language?.ToUpper() ?? "TEXT")</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-link @textColorClass p-0" type="button" data-bs-toggle="dropdown" style="text-decoration: none;">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a asp-action="Detail" asp-route-id="@item.ContentItemId" class="dropdown-item"><i class="fas fa-eye me-2"></i>View</a></li>
+                                        <li><a asp-action="Edit" asp-route-id="@item.ContentItemId" class="dropdown-item"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                        <li><a asp-action="Delete" asp-route-id="@item.ContentItemId" class="dropdown-item text-danger" onclick="return confirm('Are you sure?');"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="text-decoration-none text-theme-snippets">@item.DisplayText</a>
+                                </h5>
+                                <p class="card-text text-muted small">
+                                    @(snippet.Documentation?.Length > 100 ? snippet.Documentation[..100] + "..." : snippet.Documentation)
+                                </p>
+                                <div class="mt-2 mb-3">
+                                   @if(snippet.Tags != null)
+                                   {
+                                       @foreach(var tag in snippet.Tags.Take(3))
+                                       {
+                                           <span class="badge bg-light text-dark border me-1">@tag</span>
+                                       }
+                                   }
+                                </div>
+                                 <!-- Code preview with theme support -->
+                                <div class="p-3 rounded snippet-code-preview" style="max-height: 200px; overflow: hidden; position: relative; border-left: 4px solid @(baseColor == "dark" ? "#6c757d" : $"var(--bs-{baseColor})"); background: var(--bs-body-bg);">
+                                    <pre class="m-0" style="background: transparent; padding: 0;"><code class="language-@snippet.Language" style="font-family: 'Fira Code', Consolas, monospace; font-size: 0.85rem; color: var(--bs-body-color);">@snippet.Code</code></pre>
+                                    <div class="position-absolute bottom-0 start-0 w-100 h-25 snippet-preview-gradient" style="background: linear-gradient(to bottom, transparent, var(--bs-body-bg));"></div>
+                                </div>
+                            </div>
+                             <div class="card-footer border-0 d-flex justify-content-between align-items-center pt-0 pb-3" style="background: var(--bs-card-bg);">
+                                <small class="text-muted">
+                                    <i class="fas fa-folder me-1"></i> @(snippet.Category ?? "Uncategorized")
+                                </small>
+                                <div class="d-flex gap-1">
+                                    <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="btn btn-sm btn-outline-secondary">View</a>
+                                    <a asp-action="Edit" asp-route-id="@item.ContentItemId" class="btn btn-sm btn-outline-theme-snippets">Edit</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Right Sidebar - Info Boxes -->
+        <div class="col-lg-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb"></i> Snippet Tips
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-check text-success me-2"></i> Use descriptive names for easy searching.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check text-success me-2"></i> Add tags to categorize snippets by purpose.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check text-success me-2"></i> Include documentation for complex logic.
+                        </li>
+                    </ul>
+                </div>
+            </div>
             
-            <div class="col-md-6 mb-4">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-header @headerClass d-flex justify-content-between align-items-center">
-                        <span class="fw-bold"><i class="fas fa-code me-1"></i> @(snippet.Language?.ToUpper() ?? "TEXT")</span>
-                        <div class="dropdown">
-                            <button class="btn btn-link @textColorClass p-0" type="button" data-bs-toggle="dropdown" style="text-decoration: none;">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a asp-action="Detail" asp-route-id="@item.ContentItemId" class="dropdown-item"><i class="fas fa-eye me-2"></i>View</a></li>
-                                <li><a asp-action="Edit" asp-route-id="@item.ContentItemId" class="dropdown-item"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                <li><a asp-action="Delete" asp-route-id="@item.ContentItemId" class="dropdown-item text-danger" onclick="return confirm('Are you sure?');"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="text-decoration-none text-dark">@item.DisplayText</a>
-                        </h5>
-                        <p class="card-text text-muted small">
-                            @(snippet.Documentation?.Length > 100 ? snippet.Documentation[..100] + "..." : snippet.Documentation)
-                        </p>
-                        <div class="mt-2 mb-3">
-                           @if(snippet.Tags != null)
-                           {
-                               @foreach(var tag in snippet.Tags.Take(3))
-                               {
-                                   <span class="badge bg-light text-dark border me-1">@tag</span>
-                               }
-                           }
-                        </div>
-                         <!-- Code preview with theme support -->
-                        <div class="p-3 rounded snippet-code-preview" style="max-height: 200px; overflow: hidden; position: relative; border-left: 4px solid @(baseColor == "dark" ? "#6c757d" : $"var(--bs-{baseColor})"); background: var(--bs-body-bg);">
-                            <pre class="m-0" style="background: transparent; padding: 0;"><code class="language-@snippet.Language" style="font-family: 'Fira Code', Consolas, monospace; font-size: 0.85rem; color: var(--bs-body-color);">@snippet.Code</code></pre>
-                            <div class="position-absolute bottom-0 start-0 w-100 h-25 snippet-preview-gradient" style="background: linear-gradient(to bottom, transparent, var(--bs-body-bg));"></div>
-                        </div>
-                    </div>
-                     <div class="card-footer border-0 d-flex justify-content-between align-items-center pt-0 pb-3" style="background: var(--bs-card-bg);">
-                        <small class="text-muted">
-                            <i class="fas fa-folder me-1"></i> @(snippet.Category ?? "Uncategorized")
-                        </small>
-                        <div class="d-flex gap-1">
-                            <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="btn btn-sm btn-outline-secondary">View</a>
-                            <a asp-action="Edit" asp-route-id="@item.ContentItemId" class="btn btn-sm @buttonClass">Edit</a>
-                        </div>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-cog"></i> Supported Languages
+                </div>
+                <div class="card-body">
+                    <p class="small">Syntax highlighting supported for:</p>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge bg-primary">C#</span>
+                        <span class="badge bg-warning text-dark">JavaScript</span>
+                        <span class="badge bg-info text-dark">TypeScript</span>
+                        <span class="badge bg-success">Python</span>
+                        <span class="badge bg-secondary">SQL</span>
+                        <span class="badge bg-dark">JSON</span>
+                        <span class="badge bg-danger">HTML/XML</span>
+                        <span class="badge bg-info text-dark">CSS</span>
                     </div>
                 </div>
             </div>
-        }
+        </div>
     </div>
 }
 else
@@ -120,8 +167,8 @@ else
     <div class="alert alert-secondary text-center py-5">
         <i class="fas fa-code fa-3x mb-3"></i>
         <h4>No Snippets Yet</h4>
-        <p>Start building your library by adding your first code snippet.</p>
-        <a asp-action="Create" class="btn btn-primary mt-2">Create Snippet</a>
+        <p class="mb-3">Start building your library by adding your first code snippet.</p>
+        <a asp-action="Create" class="btn btn-theme-snippets">Create Snippet</a>
     </div>
 }
 
@@ -146,3 +193,59 @@ else
         if (typeof Prism !== 'undefined') Prism.highlightAll();
     });
 </script>
+
+<style>
+    .snippet-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        background: var(--bs-body-bg) !important;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .snippet-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    [data-bs-theme="light"] .snippet-card:hover {
+        box-shadow: 0 10px 20px rgba(183, 76, 76, 0.2), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    [data-bs-theme="dark"] .snippet-card:hover {
+        box-shadow: 0 10px 20px rgba(183, 76, 76, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Button hover effects */
+    .snippet-card .btn:hover {
+        background: var(--theme-snippets) !important;
+        color: #ffffff !important;
+        border-color: var(--theme-snippets) !important;
+    }
+    
+    .btn-outline-theme-snippets {
+        color: var(--theme-snippets);
+        border-color: var(--theme-snippets);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-snippets:hover {
+        background-color: var(--theme-snippets);
+        color: #fff;
+    }
+    
+    .btn-theme-snippets {
+        background-color: var(--theme-snippets);
+        border-color: var(--theme-snippets);
+        color: #fff;
+    }
+    
+    .btn-theme-snippets:hover {
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .text-theme-snippets {
+        color: var(--theme-snippets) !important;
+    }
+</style>

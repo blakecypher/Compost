@@ -189,6 +189,7 @@ public class SnippetsController(IContentManager contentManager, ISession session
 
     /// <summary>POST /Snippets/RecognizePatterns - AI pattern recognition for code</summary>
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> RecognizePatterns(string id)
     {
         var contentItem = await contentManager.GetAsync(id);
@@ -243,9 +244,43 @@ public class SnippetsController(IContentManager contentManager, ISession session
         }
     }
 
+    /// <summary>POST /Snippets/AnalyzeCode - Analyze code for patterns without saving</summary>
+    [HttpPost]
+    public async Task<IActionResult> AnalyzeCode([FromBody] AnalyzeCodeRequest request)
+    {
+        if (string.IsNullOrEmpty(request?.Code))
+        {
+            return Json(new { success = false, error = "Code is required" });
+        }
+
+        try
+        {
+            var patterns = await aiService.RecognizePatternsAsync(request.Code, request.Language ?? "csharp");
+            
+            return Json(new { 
+                success = true, 
+                patterns = patterns.Select(p => new {
+                    name = p.Name,
+                    description = p.WhenToUse,
+                    confidence = p.SuccessScore
+                })
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
+
     private async Task PopulatePatternsAsync(SnippetViewModel model)
     {
         var patterns = await session.Query<ContentItem, ContentItemIndex>(x => x.ContentType == "ArchitecturalPattern" && x.Published).ListAsync();
         model.AvailablePatterns = patterns.ToDictionary(p => p.ContentItemId, p => p.DisplayText ?? "Untitled Pattern");
     }
+}
+
+public class AnalyzeCodeRequest
+{
+    public string Code { get; set; }
+    public string Language { get; set; }
 }

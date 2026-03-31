@@ -556,13 +556,203 @@ class CompostMindMap {
 
     // Placeholder methods for node actions
     editNode(nodeId) {
-        console.log('Edit node:', nodeId);
-        // TODO: Implement edit functionality
+        const node = this.cy.getElementById(nodeId);
+        if (node.length === 0) {
+            console.error('Node not found:', nodeId);
+            return;
+        }
+
+        const nodeData = node.data();
+        
+        // Create modal dialog for node editing
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content card border-theme-mindmaps">
+                    <div class="modal-header bg-theme-mindmaps text-on-theme-mindmaps border-0">
+                        <h5 class="modal-title">Edit Node: ${nodeData.label}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">NODE TEXT</label>
+                            <input type="text" id="node-text-input" class="form-control border-theme-mindmaps" value="${nodeData.label || ''}" placeholder="Enter node text">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">NODE TYPE</label>
+                            <select id="node-type-select" class="form-select border-theme-mindmaps">
+                                <option value="Root" ${nodeData.type === 'Root' ? 'selected' : ''}>Root</option>
+                                <option value="Idea" ${nodeData.type === 'Idea' ? 'selected' : ''}>Idea</option>
+                                <option value="Requirement" ${nodeData.type === 'Requirement' ? 'selected' : ''}>Requirement</option>
+                                <option value="Question" ${nodeData.type === 'Question' ? 'selected' : ''}>Question</option>
+                                <option value="Action" ${nodeData.type === 'Action' ? 'selected' : ''}>Action</option>
+                                <option value="Decision" ${nodeData.type === 'Decision' ? 'selected' : ''}>Decision</option>
+                                <option value="Risk" ${nodeData.type === 'Risk' ? 'selected' : ''}>Risk</option>
+                                <option value="Note" ${nodeData.type === 'Note' ? 'selected' : ''}>Note</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">COLOR</label>
+                            <input type="color" id="node-color-input" class="form-control form-control-color border-theme-mindmaps" value="${nodeData.color || '#4CAF50'}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">NOTES</label>
+                            <textarea id="node-notes-input" class="form-control border-theme-mindmaps" rows="3" placeholder="Add notes...">${nodeData.notes || ''}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">SOURCE TEXT</label>
+                            <textarea id="node-source-text-input" class="form-control border-theme-mindmaps" rows="4" placeholder="Source text...">${nodeData.sourceText || ''}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-theme-mindmaps" id="save-node-edit">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        
+        // Initialize Bootstrap modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+
+        // Handle save
+        modal.querySelector('#save-node-edit').addEventListener('click', async () => {
+            const updatedData = {
+                title: modal.querySelector('#node-text-input').value,
+                nodeType: modal.querySelector('#node-type-select').value,
+                color: modal.querySelector('#node-color-input').value,
+                content: modal.querySelector('#node-notes-input').value,
+                sourceText: modal.querySelector('#node-source-text-input').value
+            };
+
+            if (!updatedData.title.trim()) {
+                this.showNotification('Node text is required', 'error');
+                return;
+            }
+
+            try {
+                // Update node via API
+                const response = await fetch(`${this.options.apiBase}/ApiUpdateNode?mapId=${encodeURIComponent(this.options.mapId)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: nodeId,
+                        ...updatedData
+                    })
+                });
+
+                if (response.ok) {
+                    const updatedNode = await response.json();
+                    
+                    // Update node in Cytoscape
+                    node.data('label', updatedData.title);
+                    node.data('type', updatedData.nodeType);
+                    node.data('color', updatedData.color);
+                    node.data('notes', updatedData.content);
+                    node.data('sourceText', updatedData.sourceText);
+                    node.data('icon', this.getNodeTypeIcon(updatedData.nodeType));
+                    
+                    // Update node style
+                    node.style('background-color', updatedData.color);
+                    
+                    // Refresh node details panel if this node is selected
+                    if (node.selected()) {
+                        this.showNodeDetails(node);
+                    }
+                    
+                    this.showNotification('Node updated successfully', 'success');
+                    bsModal.hide();
+                } else {
+                    throw new Error('Failed to update node');
+                }
+            } catch (error) {
+                console.error('Error updating node:', error);
+                this.showNotification('Failed to update node', 'error');
+            }
+        });
+
+        // Cleanup on hide
+        modal.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modal);
+        });
     }
 
     deleteNode(nodeId) {
-        console.log('Delete node:', nodeId);
-        // TODO: Implement delete functionality
+        const node = this.cy.getElementById(nodeId);
+        if (node.length === 0) {
+            console.error('Node not found:', nodeId);
+            return;
+        }
+
+        const nodeData = node.data();
+        
+        // Confirm deletion
+        if (!confirm(`Are you sure you want to delete "${nodeData.label}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        // Don't allow deletion of root nodes
+        if (nodeData.type === 'Root') {
+            this.showNotification('Root nodes cannot be deleted', 'error');
+            return;
+        }
+
+        this.deleteNodeAsync(nodeId);
+    }
+
+    async deleteNodeAsync(nodeId) {
+        try {
+            // Delete node via API
+            const response = await fetch(`${this.options.apiBase}/ApiDeleteNode?mapId=${encodeURIComponent(this.options.mapId)}&nodeId=${encodeURIComponent(nodeId)}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                // Remove node from Cytoscape
+                const node = this.cy.getElementById(nodeId);
+                node.remove();
+                
+                // Hide node details panel
+                this.hideNodeDetails();
+                
+                this.showNotification('Node deleted successfully', 'success');
+            } else {
+                throw new Error('Failed to delete node');
+            }
+        } catch (error) {
+            console.error('Error deleting node:', error);
+            this.showNotification('Failed to delete node', 'error');
+        }
+    }
+
+    deleteEdge(edgeId) {
+        const edge = this.cy.getElementById(edgeId);
+        if (edge.length === 0) {
+            console.error('Edge not found:', edgeId);
+            return;
+        }
+
+        const sourceNode = edge.source();
+        const targetNode = edge.target();
+        
+        // Confirm deletion
+        if (!confirm(`Are you sure you want to remove the connection from "${sourceNode.data('label')}" to "${targetNode.data('label')}"?`)) {
+            return;
+        }
+
+        // Remove edge from Cytoscape
+        edge.remove();
+        
+        // Hide node details panel
+        this.hideNodeDetails();
+        
+        this.showNotification('Connection removed successfully', 'success');
     }
 
     async promoteNode(nodeId) {

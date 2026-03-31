@@ -3,75 +3,188 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="text-success">
+        <h2 class="text-theme-transcription">
             <i class="fas fa-microphone"></i> Transcription
         </h2>
         <p class="text-muted">Record meetings and manage your transcripts.</p>
     </div>
-    <a asp-action="Record" class="btn btn-primary">
+    <a asp-action="Record" class="btn btn-theme-transcription">
         <i class="fas fa-plus-circle"></i> New Recording
     </a>
 </div>
 
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <i class="fas fa-history"></i> Meeting History
-    </div>
-    <div class="card-body p-0">
-        @if (Model != null && Model.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Title</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Duration</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var meeting in Model)
-                        {
-                            <tr>
-                                <td>
-                                    <strong>@meeting.Title</strong>
-                                </td>
-                                <td>
-                                    <span class="badge bg-@(meeting.Status == MeetingStatus.Completed ? "success" : "info")">
+@if (Model != null && Model.Any())
+{
+    <div class="row">
+        <!-- Main Content - Meeting Cards -->
+        <div class="col-lg-9">
+            <div class="row">
+                @foreach (var meeting in Model)
+                {
+                    var isCompleted = meeting.Status == MeetingStatus.Completed;
+                    var duration = TimeSpan.FromSeconds(meeting.DurationSeconds);
+                    var durationFormatted = duration.TotalHours >= 1 
+                        ? duration.ToString(@"hh\:mm\:ss") 
+                        : duration.ToString(@"mm\:ss");
+                    
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 meeting-card" style="border-top: 4px solid var(--theme-transcription); transition: transform 0.1s, box-shadow 0.2s; background: var(--bs-body-bg) !important; border-left: 1px solid var(--bs-border-color); border-right: 1px solid var(--bs-border-color); border-bottom: 1px solid var(--bs-border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--bs-body-bg); color: var(--bs-body-color); border-bottom: 1px solid var(--bs-border-color);">
+                                <div class="d-flex align-items-center">
+                                    <div class="meeting-icon me-2" style="background-color: rgba(183, 76, 76, 0.1);">
+                                        <i class="fas fa-microphone" style="color: var(--theme-transcription);"></i>
+                                    </div>
+                                    <span class="badge @(isCompleted ? "bg-success" : "bg-info")">
                                         @meeting.Status
                                     </span>
-                                </td>
-                                <td>@meeting.StartedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
-                                <td>@TimeSpan.FromSeconds(meeting.DurationSeconds).ToString(@"hh\:mm\:ss")</td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a asp-action="Detail" asp-route-id="@meeting.Id" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
-                                        <form asp-action="Delete" asp-route-id="@meeting.Id" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this meeting?');">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1">
-                                                <i class="fas fa-trash"></i> Delete
-                                            </button>
-                                        </form>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a asp-action="Detail" asp-route-id="@meeting.Id" class="dropdown-item"><i class="fas fa-eye me-2"></i>View Details</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form asp-action="Delete" asp-route-id="@meeting.Id" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this meeting?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fas fa-trash me-2"></i> Delete
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                <h5 class="card-title mb-2 text-theme-transcription">@meeting.Title</h5>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center text-muted small mb-2">
+                                        <i class="fas fa-calendar-alt me-2"></i>
+                                        @meeting.StartedAt.ToLocalTime().ToString("MMM dd, yyyy")
                                     </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                    <div class="d-flex align-items-center text-muted small mb-2">
+                                        <i class="fas fa-clock me-2"></i>
+                                        @meeting.StartedAt.ToLocalTime().ToString("HH:mm")
+                                    </div>
+                                    <div class="d-flex align-items-center text-muted small">
+                                        <i class="fas fa-hourglass-half me-2"></i>
+                                        @durationFormatted duration
+                                    </div>
+                                </div>
+                                
+                                @if (!string.IsNullOrEmpty(meeting.WorkContextId))
+                                {
+                                    <div class="mb-3">
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="fas fa-folder me-1"></i>@meeting.WorkContextId
+                                        </span>
+                                    </div>
+                                }
+                                
+                                @if (meeting.Speakers?.Any() == true)
+                                {
+                                    <div class="mb-3">
+                                        <small class="text-muted text-uppercase" style="font-size: 0.7rem;">Speakers</small>
+                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                            @foreach (var speaker in meeting.Speakers.Take(3))
+                                            {
+                                                <span class="badge bg-light text-dark border small">@speaker.Name</span>
+                                            }
+                                            @if (meeting.Speakers.Count > 3)
+                                            {
+                                                <span class="badge bg-light text-dark border small">+@(meeting.Speakers.Count - 3)</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                
+                                @if (!string.IsNullOrEmpty(meeting.Description))
+                                {
+                                    <div class="mb-3">
+                                        <small class="text-muted text-uppercase" style="font-size: 0.7rem;">Description</small>
+                                        <p class="card-text small text-muted mt-1">
+                                            @(meeting.Description.Length > 120 ? meeting.Description[..120] + "..." : meeting.Description)
+                                        </p>
+                                    </div>
+                                }
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    @if (meeting.Speakers.Count > 0)
+                                    {
+                                        <span class="badge bg-secondary small">
+                                            <i class="fas fa-users me-1"></i>@meeting.Speakers.Count speakers
+                                        </span>
+                                    }
+                                    @if (meeting.Transcript?.Any() == true)
+                                    {
+                                        <small class="text-muted">
+                                            <i class="fas fa-align-left me-1"></i>@meeting.Transcript.Count segments
+                                        </small>
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div class="card-footer bg-transparent border-0">
+                                <div class="d-flex gap-2">
+                                    <a asp-action="Detail" asp-route-id="@meeting.Id" class="btn btn-sm flex-fill btn-outline-theme-transcription">
+                                        <i class="fas fa-eye me-1"></i> View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
-        }
-        else
-        {
-            <div class="text-center py-5">
-                <i class="fas fa-microphone-slash fa-4x text-muted mb-3"></i>
+        </div>
+        
+        <!-- Right Sidebar - Info Boxes -->
+        <div class="col-lg-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb"></i> Transcription Tips
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-check text-success me-2"></i> Use a high-quality microphone for better accuracy.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check text-success me-2"></i> Speak clearly and avoid talking over each other.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check text-success me-2"></i> Use the "Project" setting to help the AI identify relevant keywords.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-cog"></i> Speech Recognition Support
+                </div>
+                <div class="card-body">
+                    <p class="small">The system currently uses browser-based speech recognition for stubs, with full <strong>Azure Speech Services</strong> integration planned for production.</p>
+                    <div class="alert alert-info py-2 small">
+                        <i class="fas fa-info-circle me-2"></i> Supports 80+ languages and custom acoustic models.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-secondary text-center py-5">
+                <i class="fas fa-microphone-slash fa-3x mb-3"></i>
                 
                 @if (ViewBag.ShowMigrationNote == true)
                 {
-                    <h5>Active Transcriptions</h5>
+                    <h4>Active Transcriptions</h4>
                     <div class="alert alert-info d-inline-block">
                         <i class="fas fa-info-circle me-2"></i>
                         @ViewBag.Message
@@ -84,47 +197,72 @@
                 }
                 else
                 {
-                    <h5>No recordings yet</h5>
-                    <p class="text-muted">Start a new recording to capture your first meeting transcript.</p>
-                    <a asp-action="Record" class="btn btn-outline-success">Start Recording</a>
+                    <h4>No recordings yet</h4>
+                    <p class="mb-3">Start a new recording to capture your first meeting transcript.</p>
+                    <a asp-action="Record" class="btn btn-theme-transcription">
+                        <i class="fas fa-plus-circle me-1"></i> Start Recording
+                    </a>
                 }
             </div>
-        }
+        </div>
     </div>
-</div>
+}
 
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <i class="fas fa-lightbulb"></i> Transcription Tips
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        <i class="fas fa-check text-success me-2"></i> Use a high-quality microphone for better accuracy.
-                    </li>
-                    <li class="list-group-item">
-                        <i class="fas fa-check text-success me-2"></i> Speak clearly and avoid talking over each other.
-                    </li>
-                    <li class="list-group-item">
-                        <i class="fas fa-check text-success me-2"></i> Use the "Project" setting to help the AI identify relevant keywords.
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 mb-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <i class="fas fa-cog"></i> Speech Recognition Support
-            </div>
-            <div class="card-body">
-                <p>The system currently uses browser-based speech recognition for stubs, with full <strong>Azure Speech Services</strong> integration planned for production.</p>
-                <div class="alert alert-info py-2">
-                    <i class="fas fa-info-circle me-2"></i> Supports 80+ languages and custom acoustic models.
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<style>
+    .meeting-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        background: var(--bs-body-bg) !important;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .meeting-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    [data-bs-theme="light"] .meeting-card:hover {
+        box-shadow: 0 10px 20px rgba(183, 76, 76, 0.2), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    [data-bs-theme="dark"] .meeting-card:hover {
+        box-shadow: 0 10px 20px rgba(183, 76, 76, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .meeting-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(183, 76, 76, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-theme-transcription {
+        background-color: var(--theme-transcription);
+        border-color: var(--theme-transcription);
+        color: #fff;
+    }
+    
+    .btn-theme-transcription:hover {
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .btn-outline-theme-transcription {
+        color: var(--theme-transcription);
+        border-color: var(--theme-transcription);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-transcription:hover {
+        background-color: var(--theme-transcription);
+        color: #fff;
+    }
+    
+    .text-theme-transcription {
+        color: var(--theme-transcription) !important;
+    }
+</style>

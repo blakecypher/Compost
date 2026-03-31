@@ -77,6 +77,17 @@
                                     <span asp-validation-for="RelatedPatternId" class="text-danger"></span>
                                 </div>
                                 
+                                <!-- AI Pattern Detection -->
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-outline-info w-100" id="detect-patterns-btn" onclick="detectPatterns()">
+                                        <i class="fas fa-robot me-2"></i>Auto-Detect Patterns
+                                    </button>
+                                    <div id="detected-patterns" class="mt-2 small" style="display: none;">
+                                        <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+                                        <span class="text-muted">Analyzing code...</span>
+                                    </div>
+                                </div>
+                                
                                 <div class="mb-3">
                                     <label asp-for="Description" class="form-label">Description / Usage Notes</label>
                                     <textarea asp-for="Description" class="form-control" rows="5"></textarea>
@@ -162,5 +173,58 @@
                 // Set default value to input if empty
                  codeInput.value = editor.getValue();
             }
+            
+            // Make editor globally accessible for pattern detection
+            window.monacoEditor = editor;
         });
+        
+        // AI Pattern Detection function
+        function detectPatterns() {
+            const code = window.monacoEditor ? window.monacoEditor.getValue() : document.getElementById('code-hidden-input').value;
+            const language = document.getElementById('language-select').value;
+            const resultDiv = document.getElementById('detected-patterns');
+            
+            if (!code || code.trim().length < 10) {
+                resultDiv.innerHTML = '<div class="alert alert-warning py-1">Please enter some code first (at least 10 characters).</div>';
+                resultDiv.style.display = 'block';
+                return;
+            }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-info" role="status"></div><span class="text-muted ms-2">Analyzing code...</span>';
+            
+            // Use AI service to detect patterns from code directly
+            fetch('/Snippets/AnalyzeCode', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: JSON.stringify({ code: code, language: language })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.patterns && data.patterns.length > 0) {
+                    let html = '<div class="alert alert-success py-2"><strong><i class="fas fa-check-circle me-1"></i>Detected Patterns:</strong><ul class="mb-0 mt-1">';
+                    data.patterns.slice(0, 3).forEach(p => {
+                        html += `<li>${p.name} (${(p.confidence * 100).toFixed(0)}% match)</li>`;
+                    });
+                    html += '</ul></div>';
+                    
+                    // Auto-fill category if empty
+                    if (!document.getElementById('Category').value && data.patterns[0]) {
+                        document.getElementById('Category').value = data.patterns[0].name;
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                } else if (data.success) {
+                    resultDiv.innerHTML = '<div class="alert alert-info py-1"><i class="fas fa-info-circle me-1"></i>No specific patterns detected.</div>';
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-warning py-1"><i class="fas fa-exclamation-triangle me-1"></i>${data.error || 'Analysis failed'}</div>`;
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `<div class="alert alert-danger py-1"><i class="fas fa-exclamation-circle me-1"></i>${error.message}</div>`;
+            });
+        }
     </script>

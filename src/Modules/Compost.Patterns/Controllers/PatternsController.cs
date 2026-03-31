@@ -42,7 +42,7 @@ public class PatternsController(IContentManager contentManager, ISession session
         return View(patterns);
     }
 
-    public async Task<IActionResult> Create()
+    public IActionResult Create()
     {
         return View(new PatternViewModel());
     }
@@ -198,6 +198,137 @@ public class PatternsController(IContentManager contentManager, ISession session
         }
         return RedirectToAction(nameof(Index));
     }
+    
+    /// <summary>GET /Patterns/CheckPatternExists - Check if pattern exists by name</summary>
+    [HttpGet]
+    public async Task<IActionResult> CheckPatternExists(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return Json(new { exists = false });
+        }
+        
+        var patterns = await session.Query<ContentItem, ContentItemIndex>(x => x.ContentType == "ArchitecturalPattern" && x.Published).ListAsync();
+        var existingPattern = patterns.FirstOrDefault(p => p.DisplayText?.Equals(name, StringComparison.OrdinalIgnoreCase) == true);
+        
+        return Json(new { 
+            exists = existingPattern != null,
+            patternId = existingPattern?.ContentItemId
+        });
+    }
+    
+    /// <summary>POST /Patterns/AssociatePattern - Associate pattern with snippet</summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> AssociatePattern([FromBody] AssociatePatternRequest request)
+    {
+        if (string.IsNullOrEmpty(request?.PatternId) || string.IsNullOrEmpty(request?.SnippetId))
+        {
+            return Json(new { success = false, error = "Pattern ID and Snippet ID are required" });
+        }
+        
+        try
+        {
+            var snippet = await contentManager.GetAsync(request.SnippetId, VersionOptions.DraftRequired);
+            if (snippet == null)
+            {
+                return Json(new { success = false, error = "Snippet not found" });
+            }
+            
+            snippet.Alter<CodeSnippetPart>(part => {
+                part.RelatedPatternId = request.PatternId;
+            });
+            
+            await contentManager.UpdateAsync(snippet);
+            await contentManager.PublishAsync(snippet);
+            
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
+    
+    /// <summary>POST /Patterns/CreateFromSnippet - Create pattern from snippet analysis</summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> CreateFromSnippet([FromBody] CreatePatternFromSnippetRequest request)
+    {
+        if (string.IsNullOrEmpty(request?.Name) || string.IsNullOrEmpty(request?.SnippetId))
+        {
+            return Json(new { success = false, error = "Pattern name and snippet ID are required" });
+        }
+        
+        try
+        {
+            // Create new pattern
+            var contentItem = await contentManager.NewAsync("ArchitecturalPattern");
+            
+            contentItem.Alter<TitlePart>(part => {
+                part.Title = request.Name;
+            });
+            contentItem.DisplayText = request.Name;
+            
+            contentItem.Alter<ArchitecturalPatternPart>(part => {
+                part.WhenToUse = request.WhenToUse ?? request.Description;
+                part.HowItWorks = request.Description;
+                
+                // Store code example in Gotchas field temporarily (or we could add it to HowItWorks)
+                if (!string.IsNullOrEmpty(request.CodeExample))
+                {
+                    part.Gotchas = $"Code Example:\n{request.CodeExample}";
+                }
+                
+                // Store category in Keywords as first item
+                if (!string.IsNullOrEmpty(request.Category))
+                {
+                    part.Keywords = new List<string> { request.Category };
+                }
+                
+                if (!string.IsNullOrWhiteSpace(request.Tags))
+                {
+                    var tagList = request.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                            .Select(t => t.Trim())
+                                            .ToList();
+                    
+                    // Add category to keywords if not already there
+                    if (!string.IsNullOrEmpty(request.Category) && !tagList.Contains(request.Category))
+                    {
+                        tagList.Insert(0, request.Category);
+                    }
+                    
+                    // Add tags to keywords
+                    part.Keywords.AddRange(tagList.Where(tag => !part.Keywords.Contains(tag)));
+                }
+            });
+            
+            await contentManager.CreateAsync(contentItem, VersionOptions.Draft);
+            await contentManager.PublishAsync(contentItem);
+            
+            // Associate with snippet
+            var snippet = await contentManager.GetAsync(request.SnippetId, VersionOptions.DraftRequired);
+            if (snippet != null)
+            {
+                snippet.Alter<CodeSnippetPart>(part => {
+                    part.RelatedPatternId = contentItem.ContentItemId;
+                });
+                
+                await contentManager.UpdateAsync(snippet);
+                await contentManager.PublishAsync(snippet);
+            }
+            
+            return Json(new { 
+                success = true, 
+                patternId = contentItem.ContentItemId,
+                navigateToPattern = true
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
 
     private static List<string> ParseResourceUrls(string text)
     {
@@ -207,4 +338,21 @@ public class PatternsController(IContentManager contentManager, ISession session
             .Where(u => u.Length > 0)
             .ToList();
     }
+}
+
+public class AssociatePatternRequest
+{
+    public string PatternId { get; set; }
+    public string SnippetId { get; set; }
+}
+
+public class CreatePatternFromSnippetRequest
+{
+    public string Name { get; set; }
+    public string Category { get; set; }
+    public string Description { get; set; }
+    public string WhenToUse { get; set; }
+    public string CodeExample { get; set; }
+    public string Tags { get; set; }
+    public string SnippetId { get; set; }
 }

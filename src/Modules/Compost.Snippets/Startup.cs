@@ -26,6 +26,28 @@ public class Startup : StartupBase
 
     public override void Configure(IApplicationBuilder builder, IEndpointRouteBuilder routes, IServiceProvider serviceProvider)
     {
+        // Add specific routes for API endpoints first (more specific routes should come first)
+        routes.MapAreaControllerRoute(
+            name: "SnippetsRecognizePatterns",
+            areaName: "Compost.Snippets",
+            pattern: "Snippets/RecognizePatterns",
+            defaults: new { controller = nameof(Snippets), action = "RecognizePatterns" }
+        );
+
+        routes.MapAreaControllerRoute(
+            name: "SnippetsAnalyzeCode",
+            areaName: "Compost.Snippets",
+            pattern: "Snippets/AnalyzeCode",
+            defaults: new { controller = nameof(Snippets), action = "AnalyzeCode" }
+        );
+
+        routes.MapAreaControllerRoute(
+            name: "SnippetsGenerateSuggestion",
+            areaName: "Compost.Snippets",
+            pattern: "Snippets/GenerateSuggestion",
+            defaults: new { controller = nameof(Snippets), action = "GenerateSuggestion" }
+        );
+
         routes.MapAreaControllerRoute(
             name: nameof(Snippets),
             areaName: "Compost.Snippets",

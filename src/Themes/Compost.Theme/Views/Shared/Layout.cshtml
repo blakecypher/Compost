@@ -35,7 +35,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
     <!-- Theme CSS -->
-    <link rel="stylesheet" href="@Url.Content("~/Compost.Theme/css/compost.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/Compost.Theme/css/compost.css?v=4.0")" />
     
     @await RenderSectionAsync("Head", required: false)
 </head>
@@ -59,23 +59,27 @@
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/MindMap")">
+                    <a class="nav-link nav-link-mindmaps" href="@Url.Content("~/MindMap")">
                         <i class="fas fa-project-diagram"></i>
                         <span>Mind Maps</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/Kanban")">
+                    <a class="nav-link nav-link-kanban" href="@Url.Content("~/Kanban")">
                         <i class="fas fa-columns"></i>
                         <span>Kanban</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/Snippets")">
+                    <a class="nav-link nav-link-contexts" href="@Url.Content("~/Contexts/TreeView")">
+                        <i class="fas fa-sitemap"></i>
+                        <span>Projects</span>
+                    </a>
+                    <a class="nav-link nav-link-snippets" href="@Url.Content("~/Snippets")">
                         <i class="fas fa-code"></i>
                         <span>Snippets</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/Patterns")">
+                    <a class="nav-link nav-link-patterns" href="@Url.Content("~/Patterns")">
                         <i class="fas fa-shapes"></i>
                         <span>Patterns</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/Transcription")">
+                    <a class="nav-link nav-link-transcription" href="@Url.Content("~/Transcription")">
                         <i class="fas fa-microphone"></i>
                         <span>Transcription</span>
                     </a>
@@ -124,23 +128,27 @@
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/MindMap")">
+                    <a class="nav-link nav-link-mindmaps" href="@Url.Content("~/MindMap")">
                         <i class="fas fa-project-diagram"></i>
                         <span>Mind Maps</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/Kanban")">
+                    <a class="nav-link nav-link-kanban" href="@Url.Content("~/Kanban")">
                         <i class="fas fa-columns"></i>
                         <span>Kanban</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/Snippets")">
+                    <a class="nav-link nav-link-contexts" href="@Url.Content("~/Contexts/TreeView")">
+                        <i class="fas fa-sitemap"></i>
+                        <span>Projects</span>
+                    </a>
+                    <a class="nav-link nav-link-snippets" href="@Url.Content("~/Snippets")">
                         <i class="fas fa-code"></i>
                         <span>Snippets</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/Patterns")">
+                    <a class="nav-link nav-link-patterns" href="@Url.Content("~/Patterns")">
                         <i class="fas fa-shapes"></i>
                         <span>Patterns</span>
                     </a>
-                    <a class="nav-link" href="@Url.Content("~/Transcription")">
+                    <a class="nav-link nav-link-transcription" href="@Url.Content("~/Transcription")">
                         <i class="fas fa-microphone"></i>
                         <span>Transcription</span>
                     </a>

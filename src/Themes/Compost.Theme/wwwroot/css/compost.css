@@ -26,12 +26,12 @@
     
     /* Module Theme Colors - Light Mode */
     --theme-dashboard: #198754;       /* Success Green */
-    --theme-contexts: #9b7ede;        /* Pastel Purple */
+    --theme-contexts: #7c3aed;        /* Electric Violet - Highly Vibrant */
     --theme-mindmaps: #ff6b35;        /* Orange */
     --theme-kanban: #ffc107;          /* Warning Yellow */
-    --theme-transcription: #0d6efd;   /* Primary Blue */
+    --theme-transcription: #6366f1;    /* Pastel Indigo Blue */
     --theme-snippets: #6c757d;        /* Secondary Grey */
-    --theme-patterns: #9b7ede;        /* Pastel Purple */
+    --theme-patterns: #7c3aed;        /* Electric Violet - Highly Vibrant */
     
     /* Border Colors */
     --border-light: #e2e8f0;
@@ -98,12 +98,12 @@
         
         /* Module Theme Colors - Dark Mode */
         --theme-dashboard: #198754;       /* Success Green (Matches bootstrap) */
-        --theme-contexts: #b19cd9;        /* Pastel Purple - Lighter for Dark Mode */
+        --theme-contexts: #8b5cf6;        /* Primary Purple - Vibrant for Dark Mode */
         --theme-mindmaps: #ff6b35;        /* Orange */
         --theme-kanban: #ffc107;          /* Warning Yellow */
-        --theme-transcription: #0d6efd;   /* Primary Blue */
-        --theme-snippets: #6c757d;        /* Secondary Grey */
-        --theme-patterns: #b19cd9;        /* Pastel Purple - Lighter for Dark Mode */
+        --theme-transcription: #818cf8;    /* Pastel Indigo Blue - Lighter for Dark Mode */
+        --theme-snippets: #9ca3af;        /* Light Slate */
+        --theme-patterns: #8b5cf6;        /* Primary Purple - Vibrant for Dark Mode */
         
         --border-light: #334155;
         --border-medium: #475569;
@@ -143,12 +143,12 @@
     
     /* Module Theme Colors - Dark Mode */
     --theme-dashboard: #198754;       /* Success Green */
-    --theme-contexts: #b19cd9;        /* Pastel Purple */
+    --theme-contexts: #8b5cf6;        /* Primary Purple - Vibrant for Dark Mode */
     --theme-mindmaps: #ff6b35;        /* Orange */
     --theme-kanban: #ffc107;          /* Warning Yellow */
-    --theme-transcription: #0d6efd;   /* Primary Blue */
-    --theme-snippets: #6c757d;        /* Secondary Grey */
-    --theme-patterns: #b19cd9;        /* Pastel Purple */
+    --theme-transcription: #818cf8;    /* Pastel Indigo Blue */
+    --theme-snippets: #9ca3af;        /* Light Slate */
+    --theme-patterns: #8b5cf6;        /* Primary Purple - Vibrant for Dark Mode */
     
     --border-light: #334155;
     --border-medium: #475569;
@@ -268,10 +268,160 @@ a:hover {
     transition: all var(--transition-fast);
 }
 
+/* Module-specific navigation colors - HIGHER SPECIFICITY */
+.nav-link.nav-link-mindmaps:hover,
+.nav-link.nav-link-mindmaps.active {
+    color: var(--theme-mindmaps) !important;
+    background: rgba(255, 107, 53, 0.1) !important;
+}
+
+.nav-link.nav-link-kanban:hover,
+.nav-link.nav-link-kanban.active {
+    color: var(--theme-kanban) !important;
+    background: rgba(255, 193, 7, 0.1) !important;
+}
+
+.nav-link.nav-link-snippets:hover,
+.nav-link.nav-link-snippets.active {
+    color: var(--theme-snippets) !important;
+    background: rgba(108, 117, 125, 0.1) !important;
+}
+
+.nav-link.nav-link-patterns:hover,
+.nav-link.nav-link-patterns.active {
+    color: var(--theme-patterns) !important;
+    background: rgba(124, 58, 237, 0.25) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.3), inset 0 0 0 1px rgba(124, 58, 237, 0.2) !important;
+}
+
+.nav-link.nav-link-contexts:hover,
+.nav-link.nav-link-contexts.active {
+    color: var(--theme-contexts) !important;
+    background: rgba(124, 58, 237, 0.25) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.3), inset 0 0 0 1px rgba(124, 58, 237, 0.2) !important;
+}
+
+.nav-link.nav-link-transcription:hover,
+.nav-link.nav-link-transcription.active {
+    color: var(--theme-transcription) !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+}
+
+.nav-link.nav-link-dashboard:hover,
+.nav-link.nav-link-dashboard.active {
+    color: var(--theme-dashboard) !important;
+    background: rgba(25, 135, 84, 0.1) !important;
+}
+
+/* Default navigation styles - LOWER PRIORITY */
 .nav-link:hover,
 .nav-link.active {
     color: var(--primary-color);
     background: var(--bg-tertiary);
+}
+
+/* ORCHARD CORE ADMIN NAVIGATION STYLES */
+/* Admin left sidebar navigation */
+.admin-menu .nav-link,
+.admin-menu .nav-item .nav-link {
+    color: var(--text-secondary) !important;
+    transition: all var(--transition-fast);
+}
+
+.admin-menu .nav-link:hover,
+.admin-menu .nav-item .nav-link:hover {
+    color: var(--primary-color) !important;
+    background: rgba(37, 99, 235, 0.1) !important;
+}
+
+/* Module-specific admin navigation colors */
+.admin-menu .nav-link[href*="MindMap"]:hover,
+.admin-menu .nav-item .nav-link[href*="MindMap"]:hover {
+    color: var(--theme-mindmaps) !important;
+    background: rgba(255, 107, 53, 0.1) !important;
+}
+
+.admin-menu .nav-link[href*="Kanban"]:hover,
+.admin-menu .nav-item .nav-link[href*="Kanban"]:hover {
+    color: var(--theme-kanban) !important;
+    background: rgba(255, 193, 7, 0.1) !important;
+}
+
+.admin-menu .nav-link[href*="Snippets"]:hover,
+.admin-menu .nav-item .nav-link[href*="Snippets"]:hover {
+    color: var(--theme-snippets) !important;
+    background: rgba(108, 117, 125, 0.1) !important;
+}
+
+.admin-menu .nav-link[href*="Patterns"]:hover,
+.admin-menu .nav-item .nav-link[href*="Patterns"]:hover {
+    color: var(--theme-patterns) !important;
+    background: rgba(124, 58, 237, 0.25) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.3), inset 0 0 0 1px rgba(124, 58, 237, 0.2) !important;
+}
+
+.admin-menu .nav-link[href*="Contexts"]:hover,
+.admin-menu .nav-item .nav-link[href*="Contexts"]:hover {
+    color: var(--theme-contexts) !important;
+    background: rgba(124, 58, 237, 0.25) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.3), inset 0 0 0 1px rgba(124, 58, 237, 0.2) !important;
+}
+
+.admin-menu .nav-link[href*="Transcription"]:hover,
+.admin-menu .nav-item .nav-link[href*="Transcription"]:hover {
+    color: var(--theme-transcription) !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* Active states for admin navigation */
+.admin-menu .nav-link.active,
+.admin-menu .nav-item.active .nav-link {
+    color: var(--primary-color) !important;
+    background: rgba(37, 99, 235, 0.1) !important;
+}
+
+.admin-menu .nav-link[href*="MindMap"].active,
+.admin-menu .nav-item.active .nav-link[href*="MindMap"] {
+    color: var(--theme-mindmaps) !important;
+    background: rgba(255, 107, 53, 0.1) !important;
+}
+
+.admin-menu .nav-link[href*="Kanban"].active,
+.admin-menu .nav-item.active .nav-link[href*="Kanban"] {
+    color: var(--theme-kanban) !important;
+    background: rgba(255, 193, 7, 0.1) !important;
+}
+
+.admin-menu .nav-link[href*="Snippets"].active,
+.admin-menu .nav-item.active .nav-link[href*="Snippets"] {
+    color: var(--theme-snippets) !important;
+    background: rgba(108, 117, 125, 0.1) !important;
+}
+
+.admin-menu .nav-link[href*="Patterns"].active,
+.admin-menu .nav-item.active .nav-link[href*="Patterns"] {
+    color: var(--theme-patterns) !important;
+    background: rgba(124, 58, 237, 0.35) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 15px rgba(124, 58, 237, 0.4), inset 0 0 0 1px rgba(124, 58, 237, 0.3) !important;
+}
+
+.admin-menu .nav-link[href*="Contexts"].active,
+.admin-menu .nav-item.active .nav-link[href*="Contexts"] {
+    color: var(--theme-contexts) !important;
+    background: rgba(124, 58, 237, 0.35) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 15px rgba(124, 58, 237, 0.4), inset 0 0 0 1px rgba(124, 58, 237, 0.3) !important;
+}
+
+.admin-menu .nav-link[href*="Transcription"].active,
+.admin-menu .nav-item.active .nav-link[href*="Transcription"] {
+    color: var(--theme-transcription) !important;
+    background: rgba(99, 102, 241, 0.1) !important;
 }
 
 /* Cards */
@@ -582,6 +732,24 @@ a:hover {
 .bg-secondary { background-color: var(--bg-secondary); }
 .bg-tertiary { background-color: var(--bg-tertiary); }
 .bg-card { background-color: var(--bg-card); }
+
+/* Theme-specific background utility classes */
+.bg-theme-dashboard { background-color: var(--theme-dashboard) !important; }
+.bg-theme-contexts { background-color: var(--theme-contexts) !important; }
+.bg-theme-mindmaps { background-color: var(--theme-mindmaps) !important; }
+.bg-theme-kanban { background-color: var(--theme-kanban) !important; }
+.bg-theme-transcription { background-color: var(--theme-transcription) !important; }
+.bg-theme-snippets { background-color: var(--theme-snippets) !important; }
+.bg-theme-patterns { background-color: var(--theme-patterns) !important; }
+
+/* Theme-specific text color utility classes */
+.text-theme-dashboard { color: var(--theme-dashboard) !important; }
+.text-theme-contexts { color: var(--theme-contexts) !important; }
+.text-theme-mindmaps { color: var(--theme-mindmaps) !important; }
+.text-theme-kanban { color: var(--theme-kanban) !important; }
+.text-theme-transcription { color: var(--theme-transcription) !important; }
+.text-theme-snippets { color: var(--theme-snippets) !important; }
+.text-theme-patterns { color: var(--theme-patterns) !important; }
 
 .rounded { border-radius: 8px; }
 .rounded-lg { border-radius: 12px; }
