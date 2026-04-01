@@ -1,3 +1,4 @@
+@using Microsoft.Extensions.DependencyInjection
 @model List<Compost.Core.Models.Project>
 
 @{
@@ -23,6 +24,68 @@
     </a>
 </div>
 
+<!-- Active Project Banner -->
+@{
+    var activeProject = ViewBag.ActiveProject as Compost.Core.Models.Project;
+}
+@if (activeProject != null)
+{
+    var totalSeconds = activeProject.TotalTimeSpentSeconds;
+    if (activeProject.CurrentSessionStartedAt.HasValue)
+    {
+        totalSeconds += (long)(DateTime.UtcNow - activeProject.CurrentSessionStartedAt.Value).TotalSeconds;
+    }
+    var timeSpan = TimeSpan.FromSeconds(totalSeconds);
+    <div class="alert alert-success d-flex align-items-center mb-4 active-project-banner">
+        <div class="flex-grow-1">
+            <h5 class="mb-1"><i class="fas fa-play-circle me-2"></i>Active Project: <strong>@activeProject.Name</strong></h5>
+            <p class="mb-0 small">
+                Status: <span class="badge bg-light text-dark">@activeProject.Status</span>
+                Time: <span class="badge bg-dark">@($"{timeSpan.Hours}h {timeSpan.Minutes}m")</span>
+                @if (!string.IsNullOrEmpty(activeProject.CurrentBranch))
+                {
+                    <span class="badge bg-info"><i class="fas fa-code-branch me-1"></i>@activeProject.CurrentBranch</span>
+                }
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Compost.Contexts/Project/Edit/@activeProject.Id" class="btn btn-sm btn-outline-success">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            @if (activeProject.CurrentSessionStartedAt.HasValue)
+            {
+                <form action="/Compost.Contexts/Project/EndSession/@activeProject.Id" method="post" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fas fa-stop"></i> End Session
+                    </button>
+                </form>
+            }
+            else
+            {
+                <form action="/Compost.Contexts/Project/StartSession/@activeProject.Id" method="post" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="fas fa-clock"></i> Start Session
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-secondary d-flex align-items-center mb-4">
+        <div class="flex-grow-1">
+            <h5 class="mb-1"><i class="fas fa-pause-circle me-2"></i>No Active Project</h5>
+            <p class="mb-0 small text-muted">Select a project and click "Activate" to set it as your active context.</p>
+        </div>
+        <a href="#" onclick="document.getElementById('projectsBoard').scrollIntoView({behavior: 'smooth'}); return false;" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-list"></i> View Projects
+        </a>
+    </div>
+}
+
 <!-- Search and Filter Bar -->
 <div class="card bg-light mb-4">
     <div class="card-body">
@@ -32,10 +95,12 @@
                     <input type="text" name="query" class="form-control" placeholder="Search project names, descriptions..." value="@ViewBag.SearchQuery">
                 </div>
                 <div class="col-md-3">
-                    <select name="status" class="form-select">
+                    <select name="status" class="form-select" id="statusFilter" onchange="filterByStatus()">
                         <option value="">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                        <option value="To Do">To Do</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                        <option value="Blocked">Blocked</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -82,9 +147,10 @@
                     <div class="project-card card shadow-sm h-100 project-enhanced-card" style="border-top: 4px solid #ffc107; transition: transform 0.1s, box-shadow 0.2s; background: var(--bs-body-bg) !important; border-left: 1px solid var(--bs-border-color); border-right: 1px solid var(--bs-border-color); border-bottom: 1px solid var(--bs-border-color);" 
                          data-project-id="@project.Id" 
                          data-parent-id="@project.ParentProjectId"
-                         data-status="@(isActive ? "Active" : "Inactive")"
+                         data-workflow-status="@project.Status"
+                         data-is-active="@(isActive ? "true" : "false")"
                          data-name="@project.Name.ToLower()"
-                         data-description="@project.Description?.ToLower() ?? """>
+                         data-description="@(project.Description?.ToLower() ?? "")">
                         
                         <!-- Project Header -->
                         <div class="project-header card-header d-flex justify-content-between align-items-center" style="background-color: var(--bs-body-bg); color: var(--bs-body-color); border-bottom: 1px solid var(--bs-border-color);">
@@ -104,23 +170,60 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
-                                        <a class="dropdown-item" href="/Project/Edit/@project.Id">
+                                        <a class="dropdown-item" href="/Compost.Contexts/Project/Edit/@project.Id">
                                             <i class="fas fa-edit me-2"></i>Edit
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="/Project/Create?parentId=@project.Id">
+                                        <a class="dropdown-item" href="/Compost.Contexts/Project/Create?parentId=@project.Id">
                                             <i class="fas fa-plus me-2"></i>Add Child
                                         </a>
                                     </li>
                                     @if (!isActive)
                                     {
                                         <li>
-                                            <form action="/Project/Switch/@project.Id" method="post" style="display:inline;">
-                                                <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken()" />
-                                                <button type="submit" class="dropdown-item">
-                                                    <i class="fas fa-play me-2"></i>Activate
-                                                </button>
+                                            <form action="/Compost.Contexts/Project/Switch/@project.Id" method="post" style="display:inline;">
+                                            @{
+                                                var antiforgery = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var tokens = antiforgery?.GetAndStoreTokens(ViewContext.HttpContext);
+                                                var tokenValue = tokens?.RequestToken ?? "";
+                                            }
+                                            <input type="hidden" name="__RequestVerificationToken" value="@tokenValue" />
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-play me-2"></i>Activate
+                                            </button>
+                                            </form>
+                                        </li>
+                                    }
+                                    @if (project.CurrentSessionStartedAt.HasValue)
+                                    {
+                                        <li>
+                                            <form action="/Compost.Contexts/Project/EndSession/@project.Id" method="post" style="display:inline;">
+                                            @{
+                                                var antiforgery2 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var tokens2 = antiforgery2?.GetAndStoreTokens(ViewContext.HttpContext);
+                                                var tokenValue2 = tokens2?.RequestToken ?? "";
+                                            }
+                                            <input type="hidden" name="__RequestVerificationToken" value="@tokenValue2" />
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="fas fa-stop me-2"></i>End Session
+                                            </button>
+                                            </form>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li>
+                                            <form action="/Compost.Contexts/Project/StartSession/@project.Id" method="post" style="display:inline;">
+                                            @{
+                                                var antiforgery3 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var tokens3 = antiforgery3?.GetAndStoreTokens(ViewContext.HttpContext);
+                                                var tokenValue3 = tokens3?.RequestToken ?? "";
+                                            }
+                                            <input type="hidden" name="__RequestVerificationToken" value="@tokenValue3" />
+                                            <button type="submit" class="dropdown-item text-success">
+                                                <i class="fas fa-clock me-2"></i>Start Session
+                                            </button>
                                             </form>
                                         </li>
                                     }
@@ -147,6 +250,33 @@
                                             <i class="fas fa-pause me-1"></i>Inactive
                                         </span>
                                     }
+                                    
+                                    @if (project.TotalTimeSpentSeconds > 0 || project.CurrentSessionStartedAt.HasValue)
+                                    {
+                                        var totalSeconds = project.TotalTimeSpentSeconds;
+                                        if (project.CurrentSessionStartedAt.HasValue)
+                                        {
+                                            totalSeconds += (long)(DateTime.UtcNow - project.CurrentSessionStartedAt.Value).TotalSeconds;
+                                        }
+                                        var timeSpan = TimeSpan.FromSeconds(totalSeconds);
+                                        <span class="badge bg-dark" title="Total time spent">
+                                            <i class="fas fa-clock me-1"></i>@($"{timeSpan.Hours}h {timeSpan.Minutes}m")
+                                        </span>
+                                    }
+                                    
+                                    @{
+                                        var statusClass = project.Status switch
+                                        {
+                                            "To Do" => "bg-warning text-dark",
+                                            "In Progress" => "bg-info",
+                                            "Done" => "bg-success",
+                                            "Blocked" => "bg-danger",
+                                            _ => "bg-light text-dark"
+                                        };
+                                    }
+                                    <span class="badge @statusClass">
+                                        <i class="fas fa-tasks me-1"></i>@project.Status
+                                    </span>
                                     
                                     @if (hasChildren)
                                     {
@@ -347,14 +477,16 @@
         
         // Action buttons
         content.AppendHtml("<div class=\"btn-group ms-2\">");
-        content.AppendHtml($"<a href=\"/Projects/Edit/{project.Id}\" class=\"btn btn-sm btn-outline-primary\" title=\"Edit\"><i class=\"fas fa-edit\"></i></a>");
+        content.AppendHtml($"<a href=\"/Compost.Contexts/Project/Edit/{project.Id}\" class=\"btn btn-sm btn-outline-primary\" title=\"Edit\"><i class=\"fas fa-edit\"></i></a>");
         
         if (!isActive)
         {
-            content.AppendHtml($"<form action=\"/Projects/Switch/{project.Id}\" method=\"post\" style=\"display:inline;\"><input type=\"hidden\" name=\"__RequestVerificationToken\" value=\"{Html.AntiForgeryToken()}\" /><button type=\"submit\" class=\"btn btn-sm btn-outline-success\" title=\"Activate\"><i class=\"fas fa-play\"></i></button></form>");
+            var tokens = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>()?.GetAndStoreTokens(ViewContext.HttpContext);
+            var tokenValue = tokens?.RequestToken ?? "";
+            content.AppendHtml($"<form action=\"/Compost.Contexts/Project/Switch/{project.Id}\" method=\"post\" style=\"display:inline;\"><input type=\"hidden\" name=\"__RequestVerificationToken\" value=\"{tokenValue}\" /><button type=\"submit\" class=\"btn btn-sm btn-outline-success\" title=\"Activate\"><i class=\"fas fa-play\"></i></button></form>");
         }
         
-        content.AppendHtml($"<a href=\"/Projects/Create?parentId={project.Id}\" class=\"btn btn-sm btn-outline-secondary\" title=\"Add Child\"><i class=\"fas fa-plus\"></i></a>");
+        content.AppendHtml($"<a href=\"/Compost.Contexts/Project/Create?parentId={project.Id}\" class=\"btn btn-sm btn-outline-secondary\" title=\"Add Child\"><i class=\"fas fa-plus\"></i></a>");
         content.AppendHtml("</div></div>");
         
         // Children
@@ -449,7 +581,7 @@
                     formData.append('__RequestVerificationToken', token.value);
                 }
                 
-                const response = await fetch('/Projects/UpdateParent', {
+                const response = await fetch('/Compost.Contexts/Project/UpdateParent', {
                     method: 'POST',
                     body: formData
                 });
@@ -675,25 +807,39 @@
         const treeBtn = document.querySelector('[onclick="changeView(\'tree\')"]');
         
         if (viewType === 'board') {
-            boardView.style.display = 'block';
-            treeView.style.display = 'none';
-            boardBtn.classList.add('active');
-            treeBtn.classList.remove('active');
+            if (boardView) boardView.style.display = 'block';
+            if (treeView) treeView.style.display = 'none';
+            if (boardBtn) boardBtn.classList.add('active');
+            if (treeBtn) treeBtn.classList.remove('active');
         } else {
-            boardView.style.display = 'none';
-            treeView.style.display = 'block';
-            boardBtn.classList.remove('active');
-            treeBtn.classList.add('active');
+            if (boardView) boardView.style.display = 'none';
+            if (treeView) treeView.style.display = 'block';
+            if (boardBtn) boardBtn.classList.remove('active');
+            if (treeBtn) treeBtn.classList.add('active');
         }
     }
     
     function viewProjectDetails(projectId) {
-        // Navigate to project details or edit page
-        window.location.href = '/Project/Edit/' + projectId;
+        window.location.href = '/Compost.Contexts/Project/Edit/' + projectId;
     }
     
     function toggleChildren(projectId) {
         // This would toggle visibility of child projects in tree view
         console.log('Toggle children for project:', projectId);
+    }
+    
+    function filterByStatus() {
+        const selectedStatus = document.getElementById('statusFilter').value;
+        const cards = document.querySelectorAll('.project-card');
+        
+        cards.forEach(card => {
+            const cardStatus = card.getAttribute('data-workflow-status');
+            
+            if (!selectedStatus || cardStatus === selectedStatus) {
+                card.closest('.col-lg-4').style.display = '';
+            } else {
+                card.closest('.col-lg-4').style.display = 'none';
+            }
+        });
     }
 </script>

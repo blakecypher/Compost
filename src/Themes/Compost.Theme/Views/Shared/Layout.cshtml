@@ -87,6 +87,9 @@
                 
                 <!-- Actions -->
                 <div class="d-flex align-items-center gap-3">
+                    <!-- Active Project Indicator -->
+                    @await Component.InvokeAsync("ActiveProjectIndicator")
+                    
                     <!-- Theme Toggle -->
                     <button id="theme-toggle" class="btn btn-outline" aria-label="Toggle theme">
                         <i class="fas fa-moon" id="theme-icon"></i>

@@ -88,7 +88,7 @@ public class ProjectPart : ContentPart
     public int DisplayOrder { get; set; }
 
     /// <summary>
-    /// Status for project workflow (e.g., "To Do", "In Progress", "Done", "Blocked")
+    /// Workflow status (e.g., "To Do", "In Progress", "Done", "Blocked")
     /// </summary>
     [JsonInclude]
     public string Status { get; set; } = "To Do";

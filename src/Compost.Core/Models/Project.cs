@@ -102,7 +102,7 @@ public class Project
     public int DisplayOrder { get; set; }
 
     /// <summary>
-    /// Status for project workflow
+    /// Current status of the project (e.g., "To Do", "In Progress", "Done", "Blocked")
     /// </summary>
     public string Status { get; set; } = "To Do";
 }

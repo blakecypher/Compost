@@ -31,14 +31,14 @@ public class CreateContextViewModel
     [Display(Name = "Tags (comma-separated)")]
     public string? Tags { get; set; }
 
-    [Display(Name = nameof(Status))]
-    public string Status { get; set; } = "To Do";
-
     [Display(Name = "Parent Project")]
     public string? ParentContextId { get; set; }
 
     [Display(Name = "Display Order")]
     public int DisplayOrder { get; set; } = 0;
+
+    [Display(Name = nameof(Status))]
+    public string Status { get; set; } = "To Do";
 }
 
 public class EditContextViewModel
@@ -65,14 +65,14 @@ public class EditContextViewModel
     [Display(Name = "Tags (comma-separated)")]
     public string? Tags { get; set; }
 
-    [Display(Name = nameof(Status))]
-    public string Status { get; set; } = "To Do";
-
     [Display(Name = "Parent Project")]
     public string? ParentContextId { get; set; }
 
     [Display(Name = "Display Order")]
     public int DisplayOrder { get; set; }
+
+    [Display(Name = nameof(Status))]
+    public string Status { get; set; } = "To Do";
 
     public bool IsActive { get; set; }
     public long TotalTimeSpentSeconds { get; set; }

@@ -25,9 +25,9 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
                 RepositoryUrl = p.RepositoryUrl,
                 CurrentBranch = p.CurrentBranch,
                 Tags = p.Tags,
-                Status = p.Status,
                 ParentProjectId = p.ParentProjectId,
                 DisplayOrder = p.DisplayOrder,
+                Status = p.Status,
                 IsActive = p.IsActive,
                 TotalTimeSpentSeconds = p.TotalTimeSpentSeconds,
                 TestingSteps = p.TestingSteps,
@@ -43,7 +43,7 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
         return RedirectToAction(nameof(TreeView));
     }
 
-    public async Task<IActionResult> List()
+    public IActionResult List()
     {
         // Redirect to TreeView as it's now the primary interface
         return RedirectToAction(nameof(TreeView));
@@ -104,9 +104,9 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             RepositoryUrl = project.RepositoryUrl,
             CurrentBranch = project.CurrentBranch,
             Tags = string.Join(", ", project.Tags ?? []),
-            Status = project.Status,
             ParentContextId = project.ParentProjectId,
             DisplayOrder = project.DisplayOrder,
+            Status = project.Status,
             IsActive = project.IsActive,
             TotalTimeSpentSeconds = project.TotalTimeSpentSeconds,
             TestingSteps = project.TestingSteps,
@@ -147,9 +147,10 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
         context.RepositoryUrl = string.IsNullOrWhiteSpace(model.RepositoryUrl) ? null : model.RepositoryUrl;
         context.CurrentBranch = string.IsNullOrWhiteSpace(model.CurrentBranch) ? null : model.CurrentBranch;
         context.Tags = string.IsNullOrWhiteSpace(model.Tags) ? null : model.Tags.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToList();
-        context.Status = model.Status;
         context.ParentProjectId = string.IsNullOrWhiteSpace(model.ParentContextId) ? null : model.ParentContextId;
         context.DisplayOrder = model.DisplayOrder;
+        context.Status = model.Status;
+        context.IsActive = model.IsActive;
         
         Console.WriteLine($"[DEBUG] Edit POST - Project before save: RepoName='{context.RepositoryName}', Tags='{string.Join(",", context.Tags ?? [])}'");
 
@@ -259,6 +260,7 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
     public async Task<IActionResult> TreeView()
     {
         var projects = await projectManager.GetAllProjectsAsync();
+        var activeProject = await projectManager.GetActiveProjectAsync();
         
         // Convert to ProjectContext for now to maintain compatibility with existing view
         var contexts = projects.Select(p => new Project() 
@@ -270,17 +272,18 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             RepositoryUrl = p.RepositoryUrl,
             CurrentBranch = p.CurrentBranch,
             Tags = p.Tags,
-            Status = p.Status,
             ParentProjectId = p.ParentProjectId,
             DisplayOrder = p.DisplayOrder,
+            Status = p.Status,
             IsActive = p.IsActive,
-            TotalTimeSpentSeconds = p.TotalTimeSpentSeconds,
             TestingSteps = p.TestingSteps,
             OpenQuestions = p.OpenQuestions,
             CreatedAt = p.CreatedAt,
             LastAccessedAt = p.LastAccessedAt,
             CurrentSessionStartedAt = p.CurrentSessionStartedAt
         }).ToList();
+        
+        ViewBag.ActiveProject = activeProject;
         
         return View("../Context/TreeView", contexts);
     }
@@ -298,34 +301,6 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             }
 
             context.ParentProjectId = parentId;
-            await projectManager.UpdateProjectAsync(context);
-
-            return Json(new { success = true });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, error = ex.Message });
-        }
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(string projectId, string status)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(status))
-            {
-                return Json(new { success = false, error = "Missing projectId or status" });
-            }
-
-            var context = await projectManager.GetProjectByIdAsync(projectId);
-            if (context == null)
-            {
-                return Json(new { success = false, error = "Project not found" });
-            }
-
-            context.Status = status;
             await projectManager.UpdateProjectAsync(context);
 
             return Json(new { success = true });

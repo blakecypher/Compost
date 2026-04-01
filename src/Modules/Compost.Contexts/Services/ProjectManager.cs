@@ -58,8 +58,8 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
     public async Task<Project> CreateProjectAsync(string name, string? description = null, string? repositoryName = null, string? repositoryUrl = null, string? currentBranch = null, List<string>? tags = null, string status = "To Do", string? parentProjectId = null, int displayOrder = 0)
     {
         logger.LogInformation("=== CreateProjectAsync START ===");
-        logger.LogInformation("Creating context: Name={Name}, RepoName={RepoName}, RepoUrl={RepoUrl}, Branch={Branch}, Status={Status}, ParentId={ParentId}, DisplayOrder={DisplayOrder}, Tags=[{Tags}]", 
-            name, repositoryName, repositoryUrl, currentBranch, status, parentProjectId, displayOrder, string.Join(", ", tags ??
+        logger.LogInformation("Creating context: Name={Name}, RepoName={RepoName}, RepoUrl={RepoUrl}, Branch={Branch}, ParentId={ParentId}, DisplayOrder={DisplayOrder}, Tags=[{Tags}]", 
+            name, repositoryName, repositoryUrl, currentBranch, parentProjectId, displayOrder, string.Join(", ", tags ??
                 []));
         
         var contentItem = await contentManager.NewAsync(nameof(Project));
@@ -75,15 +75,15 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
             part.CurrentBranch = currentBranch;
             part.Tags = tags ?? [];
             part.Description = description;
-            part.Status = status;
             part.ParentProjectId = parentProjectId;
             part.DisplayOrder = displayOrder;
+            part.Status = status;
             
             // CRITICAL: Apply the part to ensure it's serialized to Content
             contentItem.Apply(nameof(ProjectPart), part);
             
-            logger.LogInformation("Part values set: RepoName='{RepoName}', RepoUrl='{RepoUrl}', Branch='{Branch}', Status='{Status}', ParentId='{ParentId}', DisplayOrder={DisplayOrder}, Tags=[{Tags}]",
-                part.RepositoryName, part.RepositoryUrl, part.CurrentBranch, part.Status, part.ParentProjectId, part.DisplayOrder, string.Join(", ", part.Tags));
+            logger.LogInformation("Part values set: RepoName='{RepoName}', RepoUrl='{RepoUrl}', Branch='{Branch}', ParentId='{ParentId}', DisplayOrder={DisplayOrder}, Tags=[{Tags}]",
+                part.RepositoryName, part.RepositoryUrl, part.CurrentBranch, part.ParentProjectId, part.DisplayOrder, string.Join(", ", part.Tags));
         }
         else
         {
@@ -114,6 +114,8 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
             if (currentPart != null)
             {
                 currentPart.IsActive = false;
+                // CRITICAL: Apply the part to ensure it's serialized to Content
+                currentItem.Apply(nameof(ProjectPart), currentPart);
                 await contentManager.UpdateAsync(currentItem);
             }
         }
@@ -125,6 +127,8 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
         {
             newPart.IsActive = true;
             newPart.CurrentSessionStartedAt = DateTime.UtcNow;
+            // CRITICAL: Apply the part to ensure it's serialized to Content
+            newItem.Apply(nameof(ProjectPart), newPart);
             await contentManager.UpdateAsync(newItem);
         }
     }
@@ -180,8 +184,9 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
             part.Tags = context.Tags ?? [];
             part.ParentProjectId = context.ParentProjectId;
             part.DisplayOrder = context.DisplayOrder;
-            part.Status = context.Status;
             part.TestingSteps = context.TestingSteps;
+            part.IsActive = context.IsActive;
+            part.Status = context.Status;
             if (context.Notes != null)
                 part.Notes = context.Notes;
             
@@ -243,6 +248,8 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
         if (part != null)
         {
             part.CurrentSessionStartedAt = DateTime.UtcNow;
+            // CRITICAL: Apply the part to ensure it's serialized to Content
+            contentItem.Apply(nameof(ProjectPart), part);
             await contentManager.UpdateAsync(contentItem);
         }
     }
@@ -256,6 +263,8 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
             var duration = DateTime.UtcNow - part.CurrentSessionStartedAt.Value;
             part.TotalTimeSpentSeconds += (long)duration.TotalSeconds;
             part.CurrentSessionStartedAt = null;
+            // CRITICAL: Apply the part to ensure it's serialized to Content
+            contentItem.Apply(nameof(ProjectPart), part);
             await contentManager.UpdateAsync(contentItem);
         }
     }

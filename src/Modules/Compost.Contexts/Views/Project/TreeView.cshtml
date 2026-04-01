@@ -1,3 +1,5 @@
+@using System.IO
+@using Microsoft.Extensions.DependencyInjection
 @model List<Compost.Core.Models.Project>
 
 @{
@@ -29,10 +31,12 @@
                     <input type="text" name="query" class="form-control" placeholder="Search project names, descriptions..." value="@ViewBag.SearchQuery">
                 </div>
                 <div class="col-md-3">
-                    <select name="status" class="form-select">
+                    <select name="status" class="form-select" id="statusFilter" onchange="filterByStatus()">
                         <option value="">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                        <option value="To Do">To Do</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                        <option value="Blocked">Blocked</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -87,9 +91,10 @@
                     <div class="project-card card border-theme-contexts shadow-sm h-100 project-enhanced-card" 
                          data-project-id="@project.Id" 
                          data-parent-id="@project.ParentProjectId"
-                         data-status="@(isActive ? "Active" : "Inactive")"
+                         data-workflow-status="@project.Status"
+                         data-is-active="@(isActive ? "true" : "false")"
                          data-name="@project.Name.ToLower()"
-                         data-description="@project.Description?.ToLower() ?? """>
+                         data-description="@(project.Description?.ToLower() ?? "")">
                         
                         <!-- Project Header -->
                         <div class="project-header card-header bg-light border-theme-contexts d-flex justify-content-between align-items-center">
@@ -109,22 +114,59 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
-                                        <a class="dropdown-item" href="/Project/Edit/@project.Id">
+                                        <a class="dropdown-item" href="/Compost.Contexts/Project/Edit/@project.Id">
                                             <i class="fas fa-edit me-2"></i>Edit
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="/Project/Create?parentId=@project.Id">
+                                        <a class="dropdown-item" href="/Compost.Contexts/Project/Create?parentId=@project.Id">
                                             <i class="fas fa-plus me-2"></i>Add Child
                                         </a>
                                     </li>
                                     @if (!isActive)
                                     {
                                         <li>
-                                            <form action="/Project/Switch/@project.Id" method="post" style="display:inline;">
-                                                <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken()" />
+                                            <form action="/Compost.Contexts/Project/Switch/@project.Id" method="post" style="display:inline;">
+                                            @{
+                                                var antiforgery2 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var tokens2 = antiforgery2?.GetAndStoreTokens(ViewContext.HttpContext);
+                                                var tokenValue2 = tokens2?.RequestToken ?? "";
+                                            }
+                                            <input type="hidden" name="__RequestVerificationToken" value="@tokenValue2" />
                                                 <button type="submit" class="dropdown-item">
                                                     <i class="fas fa-play me-2"></i>Activate
+                                                </button>
+                                            </form>
+                                        </li>
+                                    }
+                                    @if (project.CurrentSessionStartedAt.HasValue)
+                                    {
+                                        <li>
+                                            <form action="/Compost.Contexts/Project/EndSession/@project.Id" method="post" style="display:inline;">
+                                            @{
+                                                var antiforgery3 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var tokens3 = antiforgery3?.GetAndStoreTokens(ViewContext.HttpContext);
+                                                var tokenValue3 = tokens3?.RequestToken ?? "";
+                                            }
+                                            <input type="hidden" name="__RequestVerificationToken" value="@tokenValue3" />
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fas fa-stop me-2"></i>End Session
+                                                </button>
+                                            </form>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li>
+                                            <form action="/Compost.Contexts/Project/StartSession/@project.Id" method="post" style="display:inline;">
+                                            @{
+                                                var antiforgery4 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var tokens4 = antiforgery4?.GetAndStoreTokens(ViewContext.HttpContext);
+                                                var tokenValue4 = tokens4?.RequestToken ?? "";
+                                            }
+                                            <input type="hidden" name="__RequestVerificationToken" value="@tokenValue4" />
+                                                <button type="submit" class="dropdown-item text-success">
+                                                    <i class="fas fa-clock me-2"></i>Start Session
                                                 </button>
                                             </form>
                                         </li>
@@ -152,6 +194,33 @@
                                             <i class="fas fa-pause me-1"></i>Inactive
                                         </span>
                                     }
+                                    
+                                    @if (project.TotalTimeSpentSeconds > 0 || project.CurrentSessionStartedAt.HasValue)
+                                    {
+                                        var totalSeconds = project.TotalTimeSpentSeconds;
+                                        if (project.CurrentSessionStartedAt.HasValue)
+                                        {
+                                            totalSeconds += (long)(DateTime.UtcNow - project.CurrentSessionStartedAt.Value).TotalSeconds;
+                                        }
+                                        var timeSpan = TimeSpan.FromSeconds(totalSeconds);
+                                        <span class="badge bg-dark" title="Total time spent">
+                                            <i class="fas fa-clock me-1"></i>@($"{timeSpan.Hours}h {timeSpan.Minutes}m")
+                                        </span>
+                                    }
+                                    
+                                    @{
+                                        var statusClass = project.Status switch
+                                        {
+                                            "To Do" => "bg-warning text-dark",
+                                            "In Progress" => "bg-info",
+                                            "Done" => "bg-success",
+                                            "Blocked" => "bg-danger",
+                                            _ => "bg-light text-dark"
+                                        };
+                                    }
+                                    <span class="badge @statusClass">
+                                        <i class="fas fa-tasks me-1"></i>@project.Status
+                                    </span>
                                     
                                     @if (hasChildren)
                                     {
@@ -352,14 +421,17 @@
         
         // Action buttons
         content.AppendHtml("<div class=\"btn-group ms-2\">");
-        content.AppendHtml($"<a href=\"/Project/Edit/{project.Id}\" class=\"btn btn-sm btn-outline-primary\" title=\"Edit\"><i class=\"fas fa-edit\"></i></a>");
+        content.AppendHtml($"<a href=\"/Compost.Contexts/Project/Edit/{project.Id}\" class=\"btn btn-sm btn-outline-primary\" title=\"Edit\"><i class=\"fas fa-edit\"></i></a>");
         
         if (!isActive)
         {
-            content.AppendHtml($"<form action=\"/Project/Switch/{project.Id}\" method=\"post\" style=\"display:inline;\"><input type=\"hidden\" name=\"__RequestVerificationToken\" value=\"{Html.AntiForgeryToken()}\" /><button type=\"submit\" class=\"btn btn-sm btn-outline-success\" title=\"Activate\"><i class=\"fas fa-play\"></i></button></form>");
+            var tokens = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>()?.GetAndStoreTokens(ViewContext.HttpContext);
+            var tokenValue = tokens?.RequestToken ?? "";
+            var formHtml = $"<form action=\"/Compost.Contexts/Project/Switch/{project.Id}\" method=\"post\" style=\"display:inline;\"><input type=\"hidden\" name=\"__RequestVerificationToken\" value=\"{tokenValue}\" /><button type=\"submit\" class=\"btn btn-sm btn-outline-success\" title=\"Activate\"><i class=\"fas fa-play\"></i></button></form>";
+            content.AppendHtml(formHtml);
         }
         
-        content.AppendHtml($"<a href=\"/Project/Create?parentId={project.Id}\" class=\"btn btn-sm btn-outline-secondary\" title=\"Add Child\"><i class=\"fas fa-plus\"></i></a>");
+        content.AppendHtml($"<a href=\"/Compost.Contexts/Project/Create?parentId={project.Id}\" class=\"btn btn-sm btn-outline-secondary\" title=\"Add Child\"><i class=\"fas fa-plus\"></i></a>");
         content.AppendHtml("</div></div>");
         
         // Children
@@ -443,7 +515,7 @@
             // Could open a modal or navigate to details page
             console.log('View project details:', projectId);
             // For now, just navigate to edit page
-            window.location.href = `/Project/Edit/${projectId}`;
+            window.location.href = `/Compost.Contexts/Project/Edit/${projectId}`;
         }
         
         function toggleChildren(projectId) {
@@ -524,7 +596,7 @@
                     formData.append('__RequestVerificationToken', token.value);
                 }
                 
-                const response = await fetch('/Project/UpdateParent', {
+                const response = await fetch('/Compost.Contexts/Project/UpdateParent', {
                     method: 'POST',
                     body: formData
                 });
@@ -558,6 +630,21 @@
                 icon.classList.remove('fa-chevron-down');
                 icon.classList.add('fa-chevron-right');
             }
+        }
+        
+        function filterByStatus() {
+            const selectedStatus = document.getElementById('statusFilter').value;
+            const cards = document.querySelectorAll('.project-card');
+            
+            cards.forEach(card => {
+                const cardStatus = card.getAttribute('data-workflow-status');
+                
+                if (!selectedStatus || cardStatus === selectedStatus) {
+                    card.closest('.col-lg-4').style.display = '';
+                } else {
+                    card.closest('.col-lg-4').style.display = 'none';
+                }
+            });
         }
     </script>
 }

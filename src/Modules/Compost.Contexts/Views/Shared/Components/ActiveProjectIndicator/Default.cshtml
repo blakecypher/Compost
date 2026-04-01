@@ -1,0 +1,31 @@
+@model Compost.Core.Models.Project
+
+@if (Model != null)
+{
+    var totalSeconds = Model.TotalTimeSpentSeconds;
+    if (Model.CurrentSessionStartedAt.HasValue)
+    {
+        totalSeconds += (long)(DateTime.UtcNow - Model.CurrentSessionStartedAt.Value).TotalSeconds;
+    }
+    var timeSpan = TimeSpan.FromSeconds(totalSeconds);
+    var timeDisplay = timeSpan.TotalHours >= 1 ? $"{timeSpan.Hours}h {timeSpan.Minutes}m" : $"{timeSpan.Minutes}m";
+    
+    <a href="@Url.Content("~/Contexts/TreeView")" class="active-project-indicator" title="Active: @Model.Name - Click to view all projects">
+        <div class="indicator-pulse"></div>
+        <span class="indicator-text">
+            <i class="fas fa-play-circle"></i>
+            <span class="d-none d-lg-inline">@Model.Name</span>
+            <span class="indicator-time">@timeDisplay</span>
+        </span>
+    </a>
+}
+else
+{
+    <a href="@Url.Content("~/Contexts/TreeView")" class="active-project-indicator inactive" title="No active project - Click to activate one">
+        <div class="indicator-dot"></div>
+        <span class="indicator-text">
+            <i class="fas fa-pause-circle"></i>
+            <span class="d-none d-lg-inline">No Active Project</span>
+        </span>
+    </a>
+}
