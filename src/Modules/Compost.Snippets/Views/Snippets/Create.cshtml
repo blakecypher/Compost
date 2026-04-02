@@ -1,29 +1,46 @@
 @model Compost.Snippets.ViewModels.SnippetViewModel
-    
-    @{
-        ViewData["Title"] = "Create Snippet";
-    }
-    
+
+@{
+    ViewBag.Title = "Create Snippet";
+}
+
+<div class="container-fluid">
+    <!-- Header matching Contexts style -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Create Snippet</h2>
-        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        <div>
+            <h1 class="text-theme-snippets" style="color: #f87171 !important;">
+                <i class="fas fa-plus-circle me-2" style="color: #f87171 !important;"></i>Create Snippet
+            </h1>
+            <p class="text-muted mb-0">Add a new code snippet to your library</p>
+        </div>
+        <a asp-action="Index" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
     </div>
-    
+
     <div class="row">
-        <div class="col-md-12">
-            <form asp-action="Create" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-8">
+            <form asp-action="Create" method="post" id="snippetForm">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                 
-                <div class="row">
-                    <div class="col-md-8">
+                <!-- Code Editor Card -->
+                <div class="card snippet-enhanced-card mb-3">
+                    <div class="card-header d-flex align-items-center snippet-header-background">
+                        <div class="snippet-icon me-2">
+                            <i class="fas fa-code text-theme-snippets"></i>
+                        </div>
+                        <span class="fw-bold">Code Editor</span>
+                    </div>
+                    <div class="card-body">
                         <div class="mb-3">
-                            <label asp-for="Title" class="form-label">Title</label>
-                            <input asp-for="Title" class="form-control" />
+                            <label asp-for="Title" class="form-label fw-bold">Title</label>
+                            <input asp-for="Title" class="form-control" placeholder="e.g., Redis Cache Helper" />
                             <span asp-validation-for="Title" class="text-danger"></span>
                         </div>
                         
                         <div class="mb-3">
-                            <label asp-for="Language" class="form-label">Language</label>
+                            <label asp-for="Language" class="form-label fw-bold">Language</label>
                             <select asp-for="Language" class="form-select" id="language-select">
                                 <option value="csharp">C#</option>
                                 <option value="javascript">JavaScript (React)</option>
@@ -40,70 +57,93 @@
                         </div>
     
                         <div class="mb-3">
-                            <label asp-for="Code" class="form-label">Code</label>
+                            <label asp-for="Code" class="form-label fw-bold">Code</label>
                             <div id="monaco-editor-container" style="height: 500px; border: 1px solid #ccc;"></div>
                             <input type="hidden" asp-for="Code" id="code-hidden-input" />
                             <span asp-validation-for="Code" class="text-danger"></span>
                         </div>
                     </div>
-                    
-                    <div class="col-md-4">
-                        <div class="card mb-3">
-                            <div class="card-header">Metadata</div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label asp-for="Category" class="form-label">Category</label>
-                                    <input asp-for="Category" class="form-control" placeholder="e.g. Utility, Component, Query" />
-                                    <span asp-validation-for="Category" class="text-danger"></span>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="Tags" class="form-label">Tags (comma separated)</label>
-                                    <input asp-for="Tags" class="form-control" placeholder="caching, redis, async" />
-                                    <span asp-validation-for="Tags" class="text-danger"></span>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="ProjectName" class="form-label">Project</label>
-                                    <input asp-for="ProjectName" class="form-control" />
-                                    <span asp-validation-for="ProjectName" class="text-danger"></span>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="RelatedPatternId" class="form-label">Related Architectural Pattern</label>
-                                    <select asp-for="RelatedPatternId" class="form-select" asp-items="@(new SelectList(Model.AvailablePatterns, "Key", "Value"))">
-                                        <option value="">-- None --</option>
-                                    </select>
-                                    <span asp-validation-for="RelatedPatternId" class="text-danger"></span>
-                                </div>
-                                
-                                <!-- AI Pattern Detection -->
-                                <div class="mb-3">
-                                    <button type="button" class="btn btn-outline-info w-100" id="detect-patterns-btn" onclick="detectPatterns()">
-                                        <i class="fas fa-robot me-2"></i>Auto-Detect Patterns
-                                    </button>
-                                    <div id="detected-patterns" class="mt-2 small" style="display: none;">
-                                        <div class="spinner-border spinner-border-sm text-info" role="status"></div>
-                                        <span class="text-muted">Analyzing code...</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label asp-for="Description" class="form-label">Description / Usage Notes</label>
-                                    <textarea asp-for="Description" class="form-control" rows="5"></textarea>
-                                    <span asp-validation-for="Description" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">Create Snippet</button>
-                        </div>
-                    </div>
                 </div>
             </form>
         </div>
+        
+        <div class="col-md-4">
+            <!-- Actions Card -->
+            <div class="card snippet-enhanced-card mb-3">
+                <div class="card-header d-flex align-items-center snippet-header-background">
+                    <div class="snippet-icon me-2">
+                        <i class="fas fa-cog text-theme-snippets"></i>
+                    </div>
+                    <span class="fw-bold">Actions</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" onclick="document.getElementById('snippetForm').submit();" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i> Create Snippet
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata Card -->
+            <div class="card snippet-enhanced-card mb-3">
+                <div class="card-header d-flex align-items-center snippet-header-background">
+                    <div class="snippet-icon me-2">
+                        <i class="fas fa-tags text-theme-snippets"></i>
+                    </div>
+                    <span class="fw-bold">Metadata</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Category" class="form-label fw-bold">Category</label>
+                        <input asp-for="Category" class="form-control" placeholder="e.g. Utility, Component, Query" />
+                        <span asp-validation-for="Category" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Tags" class="form-label fw-bold">Tags (comma separated)</label>
+                        <input asp-for="Tags" class="form-control" placeholder="caching, redis, async" />
+                        <span asp-validation-for="Tags" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="ProjectName" class="form-label fw-bold">Project</label>
+                        <input asp-for="ProjectName" class="form-control" />
+                        <span asp-validation-for="ProjectName" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="RelatedPatternId" class="form-label fw-bold">Related Pattern</label>
+                        <select asp-for="RelatedPatternId" class="form-select" asp-items="@(new SelectList(Model.AvailablePatterns, "Key", "Value"))">
+                            <option value="">-- None --</option>
+                        </select>
+                        <span asp-validation-for="RelatedPatternId" class="text-danger"></span>
+                    </div>
+                    
+                    <!-- AI Pattern Detection -->
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-info w-100" id="detect-patterns-btn" onclick="detectPatterns()">
+                            <i class="fas fa-robot me-2"></i>Auto-Detect Patterns
+                        </button>
+                        <div id="detected-patterns" class="mt-2 small" style="display: none;">
+                            <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+                            <span class="text-muted">Analyzing code...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-bold">Description / Usage Notes</label>
+                        <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
     <script>

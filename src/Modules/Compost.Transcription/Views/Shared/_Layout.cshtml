@@ -265,13 +265,7 @@
                     </ul>
 
                     <!-- Quick Stats Widget -->
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h6 class="text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Quick Stats</h6>
-                        <div class="text-center mt-2">
-                            <div class="display-6 text-success">@(ViewBag.TotalContexts ?? 0)</div>
-                            <small class="text-muted">Total Contexts</small>
-                        </div>
-                    </div>
+                    @await Component.InvokeAsync("ContextStats")
                 </div>
             </nav>
 

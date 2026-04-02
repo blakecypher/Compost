@@ -76,6 +76,7 @@ public class EditContextViewModel
 
     public bool IsActive { get; set; }
     public long TotalTimeSpentSeconds { get; set; }
+    public DateTime? CurrentSessionStartedAt { get; set; }
     public List<string> TestingSteps { get; set; } = [];
     public List<OpenQuestion> OpenQuestions { get; set; } = [];
 }

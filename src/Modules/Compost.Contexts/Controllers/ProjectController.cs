@@ -109,6 +109,7 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             Status = project.Status,
             IsActive = project.IsActive,
             TotalTimeSpentSeconds = project.TotalTimeSpentSeconds,
+            CurrentSessionStartedAt = project.CurrentSessionStartedAt,
             TestingSteps = project.TestingSteps,
             OpenQuestions = project.OpenQuestions
         };

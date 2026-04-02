@@ -1,64 +1,99 @@
 @model Compost.Patterns.ViewModels.PatternViewModel
-    
-    @{
-        ViewData["Title"] = "Create Pattern";
-    }
-    
+
+@{
+    ViewBag.Title = "Create Pattern";
+}
+
+<div class="container-fluid">
+    <!-- Header matching Contexts style -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Create Architectural Pattern</h2>
-        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        <div>
+            <h1 class="text-theme-patterns" style="color: #a855f7 !important;">
+                <i class="fas fa-project-diagram me-2" style="color: #a855f7 !important;"></i>Create Pattern
+            </h1>
+            <p class="text-muted mb-0">Define a new architectural pattern</p>
+        </div>
+        <a asp-action="Index" class="btn btn-theme-patterns" style="background-color: #a855f7 !important; border-color: #a855f7 !important; color: #fff !important;">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
     </div>
-    
+
     <div class="row">
-        <div class="col-md-10 offset-md-1">
-            <form asp-action="Create" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-8">
+            <form asp-action="Create" method="post" id="patternForm">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                 
-                <div class="card mb-4">
-                    <div class="card-header bg-dark text-white">Pattern Definition</div>
+                <!-- Pattern Definition Card -->
+                <div class="card pattern-enhanced-card mb-3">
+                    <div class="card-header d-flex align-items-center pattern-header-background">
+                        <div class="pattern-icon me-2">
+                            <i class="fas fa-project-diagram text-theme-patterns"></i>
+                        </div>
+                        <span class="fw-bold">Pattern Definition</span>
+                    </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label asp-for="Title" class="form-label">Pattern Name</label>
+                            <label asp-for="Title" class="form-label fw-bold">Pattern Name</label>
                             <input asp-for="Title" class="form-control" placeholder="e.g. CQRS, Repository Pattern" />
                             <span asp-validation-for="Title" class="text-danger"></span>
                         </div>
                         
                         <div class="mb-3">
-                            <label asp-for="Keywords" class="form-label">Keywords (comma separated)</label>
+                            <label asp-for="Keywords" class="form-label fw-bold">Keywords (comma separated)</label>
                             <input asp-for="Keywords" class="form-control" placeholder="scalability, data-access, messaging" />
                             <span asp-validation-for="Keywords" class="text-danger"></span>
                         </div>
                         
                         <div class="mb-3">
-                            <label asp-for="WhenToUse" class="form-label">When to Use (Problem Statement)</label>
+                            <label asp-for="WhenToUse" class="form-label fw-bold">When to Use (Problem Statement)</label>
                             <textarea asp-for="WhenToUse" class="form-control" rows="3" placeholder="Describe the context and problem this pattern solves..."></textarea>
                             <span asp-validation-for="WhenToUse" class="text-danger"></span>
                         </div>
                         
                         <div class="mb-3">
-                            <label asp-for="HowItWorks" class="form-label">How it Works (Solution)</label>
+                            <label asp-for="HowItWorks" class="form-label fw-bold">How it Works (Solution)</label>
                             <textarea asp-for="HowItWorks" class="form-control" rows="5" placeholder="Explain the implementation details..."></textarea>
-                             <small class="text-muted">Markdown supported</small>
+                            <small class="text-muted">Markdown supported</small>
                             <span asp-validation-for="HowItWorks" class="text-danger"></span>
                         </div>
                         
                         <div class="mb-3">
-                            <label asp-for="Gotchas" class="form-label">Gotchas & Pitfalls</label>
+                            <label asp-for="Gotchas" class="form-label fw-bold">Gotchas & Pitfalls</label>
                             <textarea asp-for="Gotchas" class="form-control" rows="3" placeholder="What should developers be wary of when using this pattern?"></textarea>
                             <span asp-validation-for="Gotchas" class="text-danger"></span>
                         </div>
                         
                         <div class="mb-3">
-                            <label asp-for="ResourceUrlsText" class="form-label">Resource URLs (one per line)</label>
+                            <label asp-for="ResourceUrlsText" class="form-label fw-bold">Resource URLs (one per line)</label>
                             <textarea asp-for="ResourceUrlsText" class="form-control" rows="2" placeholder="https://docs.example.com/pattern&#10;https://wiki.example.com/..."></textarea>
                             <small class="text-muted">Links to external documentation or wiki pages.</small>
                         </div>
                     </div>
                 </div>
-                
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-dark btn-lg">Create Pattern</button>
-                </div>
             </form>
         </div>
+        
+        <div class="col-md-4">
+            <!-- Actions Card -->
+            <div class="card pattern-enhanced-card mb-3">
+                <div class="card-header d-flex align-items-center pattern-header-background">
+                    <div class="pattern-icon me-2">
+                        <i class="fas fa-cog text-theme-patterns"></i>
+                    </div>
+                    <span class="fw-bold">Actions</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" onclick="document.getElementById('patternForm').submit();" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i> Create Pattern
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>

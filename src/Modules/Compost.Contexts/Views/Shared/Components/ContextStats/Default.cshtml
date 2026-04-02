@@ -1,0 +1,55 @@
+@model Compost.Contexts.ViewComponents.ContextStatsViewModel
+
+<div class="mt-4 p-3 bg-light rounded">
+    <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Quick Stats</h6>
+    
+    <!-- Total Contexts -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted">Total Projects</small>
+        <span class="badge bg-primary">@Model.TotalContexts</span>
+    </div>
+    
+    <!-- Active Contexts -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted"><i class="fas fa-circle text-success me-1" style="font-size: 0.5rem;"></i>Active</small>
+        <span class="badge bg-success">@Model.ActiveContexts</span>
+    </div>
+    
+    <!-- Tracking -->
+    @if (Model.TrackingContexts > 0)
+    {
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted"><i class="fas fa-clock text-warning me-1"></i>Tracking</small>
+            <span class="badge bg-warning text-dark">@Model.TrackingContexts</span>
+        </div>
+    }
+    
+    <!-- Status Breakdown -->
+    @if (Model.StatusCounts.Any())
+    {
+        <hr class="my-2" />
+        <small class="text-muted d-block mb-2">By Status</small>
+        @foreach (var status in Model.StatusCounts.OrderByDescending(s => s.Value))
+        {
+            var badgeClass = status.Key switch
+            {
+                "Done" => "bg-success",
+                "In Progress" => "bg-info",
+                "Blocked" => "bg-danger",
+                "To Do" => "bg-secondary",
+                _ => "bg-light text-dark border"
+            };
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted" style="font-size: 0.7rem;">@status.Key</small>
+                <span class="badge @badgeClass" style="font-size: 0.65rem;">@status.Value</span>
+            </div>
+        }
+    }
+    
+    <!-- Total Time -->
+    <hr class="my-2" />
+    <div class="text-center">
+        <small class="text-muted d-block">Total Time</small>
+        <span class="fw-bold text-theme-contexts">@($"{Model.TotalTimeSpent.TotalHours:F1}h")</span>
+    </div>
+</div>
