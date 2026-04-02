@@ -973,16 +973,22 @@ public class TranscriptionService(
         
         if (_activeMeetingsMemory.TryGetValue(meetingId, out var meeting))
         {
-            // Clear to avoid duplication if called multiple times or if real-time had started
-            meeting.Transcript.Clear();
-            meeting.Transcript.AddRange(mockSegments);
-            logger.LogInformation("Mock processing (fallback) completed for meeting {MeetingId}. Added {Count} mock segments.", meetingId, mockSegments.Count);
-            
-            // Send updates via SignalR
-            foreach (var segment in mockSegments)
+            // Only add mock data if there's no real transcript - never overwrite real data
+            if (meeting.Transcript.Count == 0)
             {
-                await hubContext.Clients.Group($"meeting_{meetingId}").SendAsync("ReceiveTranscriptSegment", segment);
-                await Task.Delay(200); // Small delay to simulate real-time feel
+                meeting.Transcript.AddRange(mockSegments);
+                logger.LogInformation("Mock processing (fallback) completed for meeting {MeetingId}. Added {Count} mock segments (no real transcript existed).", meetingId, mockSegments.Count);
+                
+                // Send updates via SignalR
+                foreach (var segment in mockSegments)
+                {
+                    await hubContext.Clients.Group($"meeting_{meetingId}").SendAsync("ReceiveTranscriptSegment", segment);
+                    await Task.Delay(200);
+                }
+            }
+            else
+            {
+                logger.LogInformation("Skipping mock data for meeting {MeetingId} - {Count} real transcript segments already exist.", meetingId, meeting.Transcript.Count);
             }
         }
     }

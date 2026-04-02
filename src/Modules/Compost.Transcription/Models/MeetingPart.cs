@@ -29,8 +29,26 @@ public class MeetingPart : ContentPart
     [JsonProperty("transcriptText")]
     public string? TranscriptText { get; set; }
     
-    [JsonProperty("transcript")]
-    public List<TranscriptSegment> Transcript { get; set; } = [];
+    [JsonProperty("transcriptJson")]
+    public string? TranscriptJson { get; set; }
+    
+    [JsonIgnore]
+    public List<TranscriptSegment> Transcript
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(TranscriptJson)) return [];
+            try
+            {
+                return JsonConvert.DeserializeObject<List<TranscriptSegment>>(TranscriptJson) ?? [];
+            }
+            catch
+            {
+                return [];
+            }
+        }
+        set => TranscriptJson = value?.Count > 0 ? JsonConvert.SerializeObject(value) : null;
+    }
     
     [JsonProperty("actionItems")]
     public List<ActionItem> ActionItems { get; set; } = [];
