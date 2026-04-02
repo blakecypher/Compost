@@ -1,0 +1,572 @@
+using Compost.Core.Models;
+
+namespace Compost.Core.Services;
+
+/// <summary>
+/// Context corpus dictionary for domain-specific term classification
+/// Provides language dictionary lookups for semantic context extraction
+/// </summary>
+public class ContextCorpusDictionary
+{
+    // Domain-specific keyword mappings to semantic types
+    private readonly Dictionary<string, Dictionary<string, double>> _domainKeywords;
+    private readonly HashSet<string> _stopWords;
+
+    public ContextCorpusDictionary()
+    {
+        _domainKeywords = InitializeDomainKeywords();
+        _stopWords = InitializeStopWords();
+    }
+
+    /// <summary>
+    /// Classify text based on domain keyword corpus
+    /// </summary>
+    public Dictionary<SegmentSemanticType, double> ClassifyText(string text)
+    {
+        var scores = new Dictionary<SegmentSemanticType, double>();
+        var lowerText = text.ToLowerInvariant();
+
+        foreach (var (domain, keywords) in _domainKeywords)
+        {
+            if (!Enum.TryParse<SegmentSemanticType>(domain, out var type))
+                continue;
+
+            var score = 0.0;
+            var matchedKeywords = new List<string>();
+
+            foreach (var (keyword, weight) in keywords)
+            {
+                if (lowerText.Contains(keyword))
+                {
+                    score += weight;
+                    matchedKeywords.Add(keyword);
+                }
+            }
+
+            // Boost score for multiple keyword matches
+            if (matchedKeywords.Count > 1)
+            {
+                score *= (1 + (matchedKeywords.Count * 0.1));
+            }
+
+            scores[type] = Math.Min(score, 1.0);
+        }
+
+        return scores;
+    }
+
+    /// <summary>
+    /// Check if a word is a stop word
+    /// </summary>
+    public bool IsStopWord(string word)
+    {
+        return _stopWords.Contains(word.ToLowerInvariant());
+    }
+
+    /// <summary>
+    /// Get keywords for a specific semantic type
+    /// </summary>
+    public Dictionary<string, double> GetKeywordsForType(SegmentSemanticType type)
+    {
+        return _domainKeywords.GetValueOrDefault(type.ToString(), new Dictionary<string, double>());
+    }
+
+    /// <summary>
+    /// Add custom domain keywords
+    /// </summary>
+    public void AddDomainKeywords(string domain, Dictionary<string, double> keywords)
+    {
+        if (_domainKeywords.ContainsKey(domain))
+        {
+            foreach (var (keyword, weight) in keywords)
+            {
+                _domainKeywords[domain][keyword] = weight;
+            }
+        }
+        else
+        {
+            _domainKeywords[domain] = keywords;
+        }
+    }
+
+    private Dictionary<string, Dictionary<string, double>> InitializeDomainKeywords()
+    {
+        var corpus = new Dictionary<string, Dictionary<string, double>>
+        {
+            ["Decision"] = new Dictionary<string, double>
+            {
+                // Agreement markers
+                ["decided"] = 0.9,
+                ["decision"] = 0.9,
+                ["agreed"] = 0.9,
+                ["agreement"] = 0.85,
+                ["consensus"] = 0.85,
+                ["finalized"] = 0.85,
+                ["concluded"] = 0.8,
+                ["settled on"] = 0.85,
+                ["approved"] = 0.85,
+                ["confirmed"] = 0.8,
+                ["voted"] = 0.8,
+                ["unanimous"] = 0.8,
+                ["signed off"] = 0.85,
+                ["green light"] = 0.75,
+                ["go ahead"] = 0.75,
+                ["moving forward with"] = 0.75,
+                ["proceed with"] = 0.7,
+                ["we'll go with"] = 0.8,
+                ["let's go with"] = 0.8,
+                ["chosen"] = 0.75,
+                ["selected"] = 0.75,
+                ["picked"] = 0.7,
+                ["determined"] = 0.7,
+                ["resolution"] = 0.7,
+                ["resolve"] = 0.65,
+                ["commit to"] = 0.65,
+                ["dedicated to"] = 0.6,
+                ["direction"] = 0.6,
+                ["strategy"] = 0.55,
+                ["strategic"] = 0.55
+            },
+
+            ["Action"] = new Dictionary<string, double>
+            {
+                // Action verbs
+                ["will"] = 0.8,
+                ["shall"] = 0.8,
+                ["need to"] = 0.85,
+                ["needs to"] = 0.85,
+                ["must"] = 0.9,
+                ["should"] = 0.75,
+                ["going to"] = 0.7,
+                ["plan to"] = 0.75,
+                [" tasked "] = 0.85,
+                ["assigned to"] = 0.9,
+                ["responsible for"] = 0.85,
+                ["take care of"] = 0.8,
+                ["follow up"] = 0.8,
+                ["follow-up"] = 0.8,
+                ["get back to"] = 0.7,
+                ["look into"] = 0.75,
+                ["investigate"] = 0.75,
+                ["prepare"] = 0.7,
+                ["draft"] = 0.7,
+                ["create"] = 0.7,
+                ["develop"] = 0.7,
+                ["implement"] = 0.75,
+                ["deploy"] = 0.7,
+                ["schedule"] = 0.75,
+                ["arrange"] = 0.7,
+                ["organize"] = 0.65,
+                ["coordinate"] = 0.7,
+                ["reach out to"] = 0.7,
+                ["contact"] = 0.65,
+                ["send"] = 0.6,
+                ["email"] = 0.55,
+                ["call"] = 0.55,
+                ["set up"] = 0.7,
+                ["book"] = 0.65,
+                ["remind"] = 0.6,
+                ["ensure"] = 0.65,
+                ["verify"] = 0.6,
+                ["complete"] = 0.7,
+                ["finish"] = 0.7,
+                ["deliver"] = 0.7,
+                ["present"] = 0.65,
+                ["review"] = 0.6,
+                ["update"] = 0.6
+            },
+
+            ["Requirement"] = new Dictionary<string, double>
+            {
+                // Requirement markers
+                ["requirement"] = 0.9,
+                ["requirements"] = 0.9,
+                ["require"] = 0.85,
+                ["requires"] = 0.85,
+                ["need"] = 0.8,
+                ["needs"] = 0.8,
+                ["specification"] = 0.85,
+                ["spec"] = 0.8,
+                ["functional"] = 0.75,
+                ["non-functional"] = 0.8,
+                ["constraint"] = 0.8,
+                ["limitations"] = 0.75,
+                ["mandatory"] = 0.85,
+                ["essential"] = 0.75,
+                ["critical"] = 0.75,
+                ["necessary"] = 0.7,
+                ["expected to"] = 0.75,
+                ["supposed to"] = 0.7,
+                ["ought to"] = 0.65,
+                ["has to"] = 0.8,
+                ["have to"] = 0.8,
+                ["capability"] = 0.7,
+                ["feature"] = 0.65,
+                ["functionality"] = 0.7,
+                ["performance"] = 0.7,
+                ["security"] = 0.75,
+                ["scalability"] = 0.75,
+                ["usability"] = 0.7,
+                ["accessibility"] = 0.75,
+                ["compliance"] = 0.75,
+                ["standard"] = 0.65,
+                ["criteria"] = 0.7,
+                ["acceptance criteria"] = 0.8,
+                ["definition of done"] = 0.85,
+                ["success criteria"] = 0.8
+            },
+
+            ["Risk"] = new Dictionary<string, double>
+            {
+                // Risk markers
+                ["risk"] = 0.9,
+                ["risks"] = 0.9,
+                ["risky"] = 0.85,
+                ["issue"] = 0.85,
+                ["issues"] = 0.85,
+                ["problem"] = 0.8,
+                ["problems"] = 0.8,
+                ["concern"] = 0.8,
+                ["concerns"] = 0.8,
+                ["worried"] = 0.75,
+                ["worry"] = 0.75,
+                ["danger"] = 0.85,
+                ["threat"] = 0.85,
+                ["vulnerability"] = 0.85,
+                ["exposure"] = 0.75,
+                ["impact"] = 0.7,
+                ["consequence"] = 0.75,
+                ["blocker"] = 0.9,
+                ["blocking"] = 0.85,
+                ["blocked"] = 0.85,
+                ["obstacle"] = 0.8,
+                ["bottleneck"] = 0.8,
+                ["challenge"] = 0.75,
+                ["difficult"] = 0.7,
+                ["complexity"] = 0.65,
+                ["uncertainty"] = 0.7,
+                ["unclear"] = 0.7,
+                ["ambiguous"] = 0.7,
+                ["untested"] = 0.75,
+                ["unknown"] = 0.65,
+                ["may fail"] = 0.8,
+                ["might break"] = 0.85,
+                ["could fail"] = 0.8,
+                ["potential failure"] = 0.85,
+                ["edge case"] = 0.75,
+                ["mitigation"] = 0.8,
+                ["contingency"] = 0.8,
+                ["fallback"] = 0.7,
+                ["backup plan"] = 0.75,
+                ["workaround"] = 0.7
+            },
+
+            ["Goal"] = new Dictionary<string, double>
+            {
+                // Goal markers
+                ["goal"] = 0.9,
+                ["goals"] = 0.9,
+                ["objective"] = 0.9,
+                ["objectives"] = 0.9,
+                ["target"] = 0.85,
+                ["aim"] = 0.8,
+                ["mission"] = 0.85,
+                ["vision"] = 0.8,
+                ["purpose"] = 0.75,
+                ["intent"] = 0.7,
+                ["aspiration"] = 0.75,
+                ["key result"] = 0.85,
+                ["okr"] = 0.9,
+                ["kpi"] = 0.85,
+                ["metric"] = 0.75,
+                ["outcome"] = 0.8,
+                ["deliverable"] = 0.75,
+                ["milestone"] = 0.8,
+                ["achievement"] = 0.75,
+                ["accomplish"] = 0.75,
+                ["reach"] = 0.7,
+                ["achieve"] = 0.8,
+                ["succeed"] = 0.75,
+                ["success"] = 0.75,
+                ["optimize"] = 0.7,
+                ["improve"] = 0.7,
+                ["enhance"] = 0.65,
+                ["increase"] = 0.7,
+                ["reduce"] = 0.7,
+                ["decrease"] = 0.7,
+                ["maximize"] = 0.75,
+                ["minimize"] = 0.75,
+                ["strive for"] = 0.7,
+                ["working toward"] = 0.7
+            },
+
+            ["Timeline"] = new Dictionary<string, double>
+            {
+                // Timeline markers
+                ["timeline"] = 0.9,
+                ["schedule"] = 0.85,
+                ["deadline"] = 0.9,
+                ["due date"] = 0.9,
+                ["milestone"] = 0.85,
+                ["phase"] = 0.7,
+                ["sprint"] = 0.8,
+                ["iteration"] = 0.75,
+                ["release"] = 0.8,
+                ["launch"] = 0.8,
+                ["deploy"] = 0.75,
+                ["rollout"] = 0.8,
+                ["go-live"] = 0.85,
+                ["start date"] = 0.8,
+                ["end date"] = 0.8,
+                ["duration"] = 0.75,
+                ["timeframe"] = 0.8,
+                ["period"] = 0.7,
+                ["quarter"] = 0.7,
+                ["q1"] = 0.75,
+                ["q2"] = 0.75,
+                ["q3"] = 0.75,
+                ["q4"] = 0.75,
+                ["this week"] = 0.75,
+                ["next week"] = 0.75,
+                ["this month"] = 0.7,
+                ["next month"] = 0.7,
+                ["this year"] = 0.7,
+                ["by end of"] = 0.8,
+                ["no later than"] = 0.85,
+                ["at the latest"] = 0.8,
+                ["asap"] = 0.75,
+                ["immediately"] = 0.75,
+                ["urgent"] = 0.7,
+                ["priority"] = 0.65,
+                ["soon"] = 0.6,
+                ["eventually"] = 0.55,
+                ["later"] = 0.55,
+                ["eventually"] = 0.55
+            },
+
+            ["Question"] = new Dictionary<string, double>
+            {
+                // Question markers
+                ["?"] = 0.8,
+                ["what is"] = 0.75,
+                ["what are"] = 0.75,
+                ["how do"] = 0.75,
+                ["how does"] = 0.75,
+                ["how can"] = 0.75,
+                ["how will"] = 0.75,
+                ["why is"] = 0.75,
+                ["why does"] = 0.75,
+                ["when will"] = 0.75,
+                ["where is"] = 0.7,
+                ["who will"] = 0.75,
+                ["who is"] = 0.7,
+                ["which"] = 0.7,
+                ["is there"] = 0.75,
+                ["are there"] = 0.75,
+                ["can we"] = 0.75,
+                ["could we"] = 0.7,
+                ["should we"] = 0.7,
+                ["would it"] = 0.7,
+                ["clarify"] = 0.75,
+                ["clarification"] = 0.75,
+                ["not sure"] = 0.7,
+                ["unclear"] = 0.75,
+                ["don't understand"] = 0.75,
+                ["confused"] = 0.7,
+                ["question"] = 0.8,
+                ["questions"] = 0.8,
+                ["wondering"] = 0.65,
+                ["curious"] = 0.6
+            },
+
+            ["Idea"] = new Dictionary<string, double>
+            {
+                // Idea markers
+                ["idea"] = 0.9,
+                ["ideas"] = 0.9,
+                ["suggestion"] = 0.85,
+                ["suggest"] = 0.8,
+                ["propose"] = 0.85,
+                ["proposal"] = 0.85,
+                ["consider"] = 0.75,
+                ["thinking"] = 0.7,
+                ["what if"] = 0.8,
+                ["how about"] = 0.75,
+                ["maybe"] = 0.7,
+                ["perhaps"] = 0.7,
+                ["possibly"] = 0.7,
+                ["alternative"] = 0.75,
+                ["option"] = 0.7,
+                ["approach"] = 0.7,
+                ["concept"] = 0.8,
+                ["design"] = 0.7,
+                ["architecture"] = 0.75,
+                ["solution"] = 0.75,
+                ["solve"] = 0.7,
+                ["address"] = 0.65,
+                ["improvement"] = 0.75,
+                ["enhancement"] = 0.8,
+                ["feature request"] = 0.85,
+                ["brainstorming"] = 0.8,
+                ["explore"] = 0.7,
+                ["experiment"] = 0.7,
+                ["pilot"] = 0.7,
+                ["proof of concept"] = 0.8,
+                ["poc"] = 0.8,
+                ["prototype"] = 0.75,
+                ["mvp"] = 0.8,
+                ["innovation"] = 0.8,
+                ["creative"] = 0.75,
+                ["optimization"] = 0.75,
+                ["refactor"] = 0.7,
+                ["redesign"] = 0.75
+            },
+
+            ["Resource"] = new Dictionary<string, double>
+            {
+                // Resource markers
+                ["resource"] = 0.9,
+                ["resources"] = 0.9,
+                ["tool"] = 0.85,
+                ["tools"] = 0.85,
+                ["software"] = 0.8,
+                ["framework"] = 0.85,
+                ["library"] = 0.85,
+                ["api"] = 0.85,
+                ["service"] = 0.75,
+                ["platform"] = 0.8,
+                ["technology"] = 0.8,
+                ["database"] = 0.8,
+                ["infrastructure"] = 0.85,
+                ["hardware"] = 0.8,
+                ["equipment"] = 0.8,
+                ["budget"] = 0.85,
+                ["cost"] = 0.8,
+                ["funding"] = 0.8,
+                ["investment"] = 0.75,
+                ["personnel"] = 0.8,
+                ["staffing"] = 0.8,
+                ["team member"] = 0.75,
+                ["expertise"] = 0.8,
+                ["skill"] = 0.75,
+                ["vendor"] = 0.8,
+                ["supplier"] = 0.8,
+                ["third-party"] = 0.8,
+                ["integration"] = 0.75,
+                ["dependency"] = 0.8,
+                ["license"] = 0.8,
+                ["subscription"] = 0.75,
+                ["contract"] = 0.75
+            },
+
+            ["Technical"] = new Dictionary<string, double>
+            {
+                // Technical markers
+                ["technical"] = 0.85,
+                ["technology"] = 0.8,
+                ["architecture"] = 0.85,
+                ["design pattern"] = 0.85,
+                ["algorithm"] = 0.9,
+                ["data structure"] = 0.9,
+                ["implementation"] = 0.8,
+                ["code"] = 0.8,
+                ["coding"] = 0.8,
+                ["programming"] = 0.85,
+                ["function"] = 0.75,
+                ["method"] = 0.75,
+                ["class"] = 0.75,
+                ["interface"] = 0.75,
+                ["module"] = 0.75,
+                ["component"] = 0.75,
+                ["system"] = 0.7,
+                ["backend"] = 0.85,
+                ["frontend"] = 0.85,
+                ["database"] = 0.8,
+                ["server"] = 0.8,
+                ["client"] = 0.75,
+                ["api"] = 0.85,
+                ["endpoint"] = 0.8,
+                ["json"] = 0.75,
+                ["xml"] = 0.75,
+                ["rest"] = 0.85,
+                ["graphql"] = 0.85,
+                ["microservice"] = 0.85,
+                ["container"] = 0.8,
+                ["docker"] = 0.85,
+                ["kubernetes"] = 0.85,
+                ["k8s"] = 0.85,
+                ["cloud"] = 0.8,
+                ["aws"] = 0.85,
+                ["azure"] = 0.85,
+                ["gcp"] = 0.85,
+                ["deployment"] = 0.8,
+                ["ci/cd"] = 0.85,
+                ["testing"] = 0.75,
+                ["unit test"] = 0.8,
+                ["integration"] = 0.75,
+                ["performance"] = 0.8,
+                ["scalability"] = 0.8,
+                ["security"] = 0.8,
+                ["authentication"] = 0.85,
+                ["authorization"] = 0.85,
+                ["encryption"] = 0.85
+            },
+
+            ["Stakeholder"] = new Dictionary<string, double>
+            {
+                // Stakeholder markers
+                ["customer"] = 0.85,
+                ["client"] = 0.85,
+                ["user"] = 0.8,
+                ["end user"] = 0.85,
+                ["stakeholder"] = 0.9,
+                ["sponsor"] = 0.85,
+                ["executive"] = 0.8,
+                ["management"] = 0.8,
+                ["manager"] = 0.8,
+                ["team lead"] = 0.8,
+                ["developer"] = 0.75,
+                ["engineer"] = 0.75,
+                ["designer"] = 0.75,
+                ["product owner"] = 0.85,
+                ["scrum master"] = 0.85,
+                ["business analyst"] = 0.85,
+                ["qa"] = 0.8,
+                ["tester"] = 0.75,
+                ["architect"] = 0.8,
+                ["consultant"] = 0.75,
+                ["vendor"] = 0.8,
+                ["partner"] = 0.8,
+                ["regulator"] = 0.8,
+                ["compliance"] = 0.8,
+                ["legal"] = 0.8,
+                ["hr"] = 0.75,
+                ["finance"] = 0.8,
+                ["marketing"] = 0.75,
+                ["sales"] = 0.75,
+                ["support"] = 0.75
+            }
+        };
+
+        return corpus;
+    }
+
+    private HashSet<string> InitializeStopWords()
+    {
+        return new HashSet<string>
+        {
+            "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+            "have", "has", "had", "do", "does", "did", "will", "would", "could",
+            "should", "may", "might", "must", "can", "shall", "to", "of", "in",
+            "for", "on", "with", "at", "by", "from", "as", "into", "through",
+            "during", "before", "after", "above", "below", "between", "under",
+            "and", "but", "or", "yet", "so", "if", "because", "although", "though",
+            "unless", "while", "where", "when", "that", "which", "who", "whom",
+            "whose", "what", "this", "these", "those", "i", "you", "he", "she",
+            "it", "we", "they", "them", "their", "there", "then", "than", "very",
+            "just", "now", "only", "also", "even", "back", "any", "some", "all",
+            "each", "every", "both", "few", "more", "most", "other", "such",
+            "no", "not", "nor", "too", "own", "same", "so", "than", "too"
+        };
+    }
+}

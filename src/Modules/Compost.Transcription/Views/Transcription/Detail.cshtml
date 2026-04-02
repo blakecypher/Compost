@@ -1,18 +1,19 @@
 @model Compost.Core.Models.Meeting
+@inject Compost.Core.Services.ITranscriptLocalizationService Localizer
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="text-success">
             <i class="fas fa-file-alt"></i> @Model.Title
         </h2>
-        <p class="text-muted">Recording from @Model.StartedAt.ToLocalTime().ToString("MMMM dd, yyyy HH:mm")</p>
+        <p class="text-muted">@Localizer.GetString("Transcript.Status.Recording") @Model.StartedAt.ToLocalTime().ToString("MMMM dd, yyyy HH:mm")</p>
     </div>
     <div class="btn-group">
         <a asp-action="Index" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Back
+            <i class="fas fa-arrow-left"></i> @Localizer.GetString("Transcript.Button.Back")
         </a>
         <button class="btn btn-primary" id="extract-insights">
-            <i class="fas fa-brain"></i> Extract Insights
+            <i class="fas fa-brain"></i> @Localizer.GetString("Transcript.Button.Extract")
         </button>
     </div>
 </div>
@@ -21,25 +22,38 @@
     <div class="col-md-8">
         <div class="card mb-4">
             <div class="card-header bg-success text-white">
-                <i class="fas fa-align-left"></i> Transcript
+                <i class="fas fa-align-left"></i> @Localizer.GetString("Transcript.Label.Transcript")
             </div>
             <div class="card-body bg-light overflow-auto" style="max-height: 600px;">
                 @if (Model.Transcript != null && Model.Transcript.Any())
                 {
                     @foreach (var segment in Model.Transcript)
                     {
+                        var culture = segment.Culture ?? "en-US";
+                        var speakerLabel = segment.Context?.TryGetValue("SpeakerLabel", out var label) == true 
+                            ? label 
+                            : Localizer.GetString("Transcript.Speaker.Unknown", culture);
                         <div class="mb-3 p-3 bg-white shadow-sm rounded border-start border-4 transcript-segment @(segment.SpeakerId == "1" ? "border-primary" : "border-info")">
                             <div class="d-flex justify-content-between mb-1">
-                                <span class="fw-bold">@(segment.SpeakerId ?? "Unknown Speaker")</span>
+                                <span class="fw-bold">@(segment.Context?.TryGetValue("SpeakerName", out var name) == true ? name : speakerLabel)</span>
                                 <small class="text-muted">@segment.StartTime.ToString(@"hh\:mm\:ss")</small>
                             </div>
                             <div>@segment.Text</div>
+                            @if (segment.Context?.Any() == true)
+                            {
+                                <div class="mt-2 small text-muted">
+                                    @foreach (var ctx in segment.Context.Where(c => c.Key != "SpeakerName" && c.Key != "SpeakerLabel"))
+                                    {
+                                        <span class="badge bg-light text-dark me-1">@ctx.Key: @ctx.Value</span>
+                                    }
+                                </div>
+                            }
                         </div>
                     }
                 }
                 else
                 {
-                    <p class="text-center py-5 text-muted italic">No transcript segments available.</p>
+                    <p class="text-center py-5 text-muted italic">@Localizer.GetString("Transcript.Text.Placeholder")</p>
                 }
             </div>
         </div>

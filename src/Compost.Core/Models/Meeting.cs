@@ -140,6 +140,16 @@ public class TranscriptSegment
     /// Whether this segment has been processed/reviewed
     /// </summary>
     public bool IsProcessed { get; set; }
+    
+    /// <summary>
+    /// Culture context for localization (e.g., "en-US", "es-ES", "fr-FR")
+    /// </summary>
+    public string Culture { get; set; } = "en-US";
+    
+    /// <summary>
+    /// Localized context dictionary for dynamic parameters
+    /// </summary>
+    public Dictionary<string, string> Context { get; set; } = new();
 }
 
 public class Speaker

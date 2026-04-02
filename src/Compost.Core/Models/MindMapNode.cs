@@ -175,7 +175,10 @@ public enum MindMapNodeType
     Action,
     Question,
     Decision,
-    Risk
+    Risk,
+    Goal,
+    Timeline,
+    Resource
 }
 
 public enum NodeSourceType

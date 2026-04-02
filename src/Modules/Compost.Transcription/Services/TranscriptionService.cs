@@ -16,6 +16,7 @@ using Compost.Transcription.Models;
 using YesSql;
 using System.Diagnostics;
 using System.Text;
+using Compost.Core.Services;
 using Microsoft.Extensions.Configuration;
 using Config = Microsoft.Extensions.Configuration.IConfiguration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,7 @@ public class TranscriptionService(
     ISession session,
     Config configuration,
     IAIIntegrationService aiIntegrationService,
+    ITranscriptContextExtractor contextExtractor,
     IServiceScopeFactory serviceScopeFactory)
     : ITranscriptionService
 {
@@ -1055,21 +1057,26 @@ public class TranscriptionService(
             return [];
         }
 
-        var transcriptText = FormatTranscriptWithContext(meeting);
-        var mindMapNodes = await aiIntegrationService.ExtractMindMapNodesFromTextAsync(transcriptText, meeting.Title);
-        
+        logger.LogInformation("Extracting mind map nodes for meeting {MeetingId} using intelligent context extraction", meetingId);
+
+        // Use the new intelligent context extractor for multi-node semantic extraction
+        var contextResult = await contextExtractor.ExtractContextAsync(meeting.Transcript, meeting.Title);
+        var mindMapNodes = contextResult.GeneratedNodes;
+
         // Ensure SourceMeetingId is set
         foreach(var node in mindMapNodes) node.SourceMeetingId = meetingId;
-        
+
         // Update the meeting with extracted mind map nodes
         meeting.ExtractedNodes = mindMapNodes;
-        
+
         // Update active storage if exists
         if (_activeMeetingsMemory.ContainsKey(meetingId))
         {
-            logger.LogInformation("Updated meeting {MeetingId} with {MindMapNodeCount} mind map nodes", meetingId, mindMapNodes.Count);
+            _activeMeetingsMemory[meetingId].ExtractedNodes = mindMapNodes;
+            logger.LogInformation("Updated meeting {MeetingId} with {MindMapNodeCount} mind map nodes from {SegmentCount} segments using {Method}",
+                meetingId, mindMapNodes.Count, contextResult.Metadata.TotalSegments, contextResult.Metadata.ExtractionMethod);
         }
-        
+
         return mindMapNodes;
     }
 

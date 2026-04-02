@@ -221,7 +221,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         {
             Name = name,
             WorkContextId = workContextId,
-            Description = $"Generated from meeting: {meetingId}",
+            Description = $"Generated from meeting transcript with {meetingNodes?.Count ?? 0} extracted nodes.",
             Nodes = ConvertMeetingNodesToMindMapNodes(meetingNodes, meetingId),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

@@ -1,5 +1,6 @@
 using System;
 using Compost.Core.Interfaces;
+using Compost.Core.Services;
 using Compost.Transcription.Services;
 using Compost.Transcription.Hubs;
 using Compost.Transcription.Drivers;
@@ -20,6 +21,8 @@ public class Startup : StartupBase
     public override void ConfigureServices(IServiceCollection services)
     {
         services.AddScoped<ITranscriptionService, TranscriptionService>();
+        services.AddSingleton<ITranscriptLocalizationService, TranscriptLocalizationService>();
+        services.AddScoped<ITranscriptContextExtractor, TranscriptContextExtractor>();
         services.AddHttpClient<IAIIntegrationService, Compost.Core.Services.AIIntegrationService>();
         services.AddSignalR();
         services.AddScoped<IContentPartDisplayDriver, MeetingPartDisplayDriver>();
