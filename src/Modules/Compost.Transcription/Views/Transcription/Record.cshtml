@@ -168,7 +168,7 @@
             if (interimTranscript) updateInterimBlock(interimTranscript);
             if (finalTranscript) {
                 if (currentInterimDiv) { currentInterimDiv.remove(); currentInterimDiv = null; }
-                appendTranscriptBlock(finalTranscript, 0.85, Date.now());
+                // Don't append locally - server will echo back via SignalR and ReceiveTranscriptSegment handler will display it
                 if (currentMeetingId) {
                     const now = Date.now();
                     const segment = {
