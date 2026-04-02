@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using OrchardCore.ContentManagement;
 
-namespace Compost.Patterns.Models;
+namespace Compost.Core.Models;
 
 /// <summary>
 /// Content part for Architectural Pattern - stores pattern templates and AI learning data

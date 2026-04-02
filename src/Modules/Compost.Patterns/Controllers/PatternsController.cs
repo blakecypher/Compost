@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Compost.Patterns.Models;
+using Compost.Core.Models;
 using Compost.Patterns.ViewModels;
-using Compost.Snippets.Models;
 using Microsoft.AspNetCore.Mvc;
 using OrchardCore.ContentManagement;
 using OrchardCore.ContentManagement.Records;
@@ -109,14 +108,17 @@ public class PatternsController(IContentManager contentManager, ISession session
         foreach (var snippetItem in snippets)
         {
             var snippetPart = snippetItem.As<CodeSnippetPart>();
-            if (snippetPart != null && snippetPart.RelatedPatternId == id)
+            string relatedPatternId = snippetPart?.RelatedPatternId;
+            if (snippetPart != null && relatedPatternId == id)
             {
-                var preview = snippetPart.Code?.Length > 200 ? snippetPart.Code[..200] + "..." : snippetPart.Code ?? "";
+                string code = snippetPart.Code;
+                string language = snippetPart.Language;
+                var preview = code?.Length > 200 ? code[..200] + "..." : code ?? "";
                 var item = new LinkedSnippetItem
                 {
                     ContentItemId = snippetItem.ContentItemId,
                     Title = snippetItem.DisplayText ?? "Snippet",
-                    Language = snippetPart.Language ?? "text",
+                    Language = language ?? "text",
                     CodePreview = preview
                 };
                 model.LinkedSnippets.Add(item);
@@ -229,18 +231,42 @@ public class PatternsController(IContentManager contentManager, ISession session
         
         try
         {
+            // Get both snippet and pattern
             var snippet = await contentManager.GetAsync(request.SnippetId, VersionOptions.DraftRequired);
+            var pattern = await contentManager.GetAsync(request.PatternId, VersionOptions.DraftRequired);
+            
             if (snippet == null)
             {
                 return Json(new { success = false, error = "Snippet not found" });
             }
             
-            snippet.Alter<CodeSnippetPart>(part => {
+            if (pattern == null)
+            {
+                return Json(new { success = false, error = "Pattern not found" });
+            }
+            
+            // Update snippet side (RelatedPatternId)
+            snippet.Alter<CodeSnippetPart>("CodeSnippetPart", part => {
                 part.RelatedPatternId = request.PatternId;
             });
             
             await contentManager.UpdateAsync(snippet);
             await contentManager.PublishAsync(snippet);
+            
+            // Update pattern side (RelatedSnippetIds) - bidirectional
+            pattern.Alter<ArchitecturalPatternPart>(part => {
+                if (part.RelatedSnippetIds == null)
+                {
+                    part.RelatedSnippetIds = new List<string>();
+                }
+                if (!part.RelatedSnippetIds.Contains(request.SnippetId))
+                {
+                    part.RelatedSnippetIds.Add(request.SnippetId);
+                }
+            });
+            
+            await contentManager.UpdateAsync(pattern);
+            await contentManager.PublishAsync(pattern);
             
             return Json(new { success = true });
         }
@@ -310,12 +336,26 @@ public class PatternsController(IContentManager contentManager, ISession session
             var snippet = await contentManager.GetAsync(request.SnippetId, VersionOptions.DraftRequired);
             if (snippet != null)
             {
-                snippet.Alter<CodeSnippetPart>(part => {
+                snippet.Alter<CodeSnippetPart>("CodeSnippetPart", part => {
                     part.RelatedPatternId = contentItem.ContentItemId;
                 });
                 
                 await contentManager.UpdateAsync(snippet);
                 await contentManager.PublishAsync(snippet);
+                
+                // Update pattern side - bidirectional
+                contentItem.Alter<ArchitecturalPatternPart>(part => {
+                    if (part.RelatedSnippetIds == null)
+                    {
+                        part.RelatedSnippetIds = new List<string>();
+                    }
+                    if (!part.RelatedSnippetIds.Contains(request.SnippetId))
+                    {
+                        part.RelatedSnippetIds.Add(request.SnippetId);
+                    }
+                });
+                await contentManager.UpdateAsync(contentItem);
+                await contentManager.PublishAsync(contentItem);
             }
             
             return Json(new { 

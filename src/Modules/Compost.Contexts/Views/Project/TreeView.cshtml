@@ -123,6 +123,12 @@
                                             <i class="fas fa-plus me-2"></i>Add Child
                                         </a>
                                     </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button type="button" class="dropdown-item" onclick="copyProjectToSession('@project.Id', '@project.Name.Replace("'", "\\'")', '@(project.Description?.Replace("'", "\\'") ?? "")', '@(project.Tags != null ? string.Join(",", project.Tags) : "")')">
+                                            <i class="fas fa-copy me-2 text-info"></i>Copy Item
+                                        </button>
+                                    </li>
                                     @if (!isActive)
                                     {
                                         <li>
@@ -794,6 +800,38 @@
         padding-top: 0.5rem;
         margin-top: 0.5rem;
     }
+    
+    /* Toast Notification Styles */
+    .toast-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        background: var(--bs-dark);
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 9999;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+    }
+    
+    .toast-notification.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .toast-success {
+        background: var(--bs-success);
+    }
+    
+    .toast-info {
+        background: var(--bs-info);
+    }
 </style>
 
 <script>
@@ -813,6 +851,36 @@
                 button.classList.add('btn-outline-secondary');
             }, 2000);
         });
+    }
+    
+    // Copy project to sessionStorage for cross-module paste
+    function copyProjectToSession(projectId, name, description, tags) {
+        const item = {
+            type: 'Project',
+            id: projectId,
+            name: name,
+            description: description,
+            tags: tags,
+            copiedAt: new Date().toISOString()
+        };
+        sessionStorage.setItem('copiedItem', JSON.stringify(item));
+        showToast('Item copied! You can now paste it into Patterns or Snippets.', 'success');
+    }
+    
+    // Toast notification
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification toast-${type}`;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
     
     function importSampleProjects() {

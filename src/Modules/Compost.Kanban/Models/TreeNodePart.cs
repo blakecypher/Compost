@@ -1,9 +1,41 @@
+using System;
 using System.Collections.Generic;
 using Compost.Core.Models;
 using OrchardCore.ContentManagement;
 using Newtonsoft.Json;
 
 namespace Compost.Kanban.Models;
+
+/// <summary>
+/// Handles reading SourceMeetingId as either string or object (for backward compatibility)
+/// </summary>
+public class TreeNodeSourceMeetingIdConverter : JsonConverter<string?>
+{
+    public override string? ReadJson(JsonReader reader, Type objectType, string? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        if (reader.TokenType == JsonToken.String)
+        {
+            return reader.Value?.ToString();
+        }
+        if (reader.TokenType == JsonToken.StartObject)
+        {
+            // Skip the object and return null (corrupted data)
+            reader.Skip();
+            return null;
+        }
+        if (reader.TokenType == JsonToken.Null)
+        {
+            return null;
+        }
+        // For any other type, try to read as string
+        return reader.Value?.ToString();
+    }
+
+    public override void WriteJson(JsonWriter writer, string? value, JsonSerializer serializer)
+    {
+        writer.WriteValue(value);
+    }
+}
 
 /// <summary>
 /// Content part for Tree Node - used for detailed requirement refinement
@@ -26,6 +58,7 @@ public class TreeNodePart : ContentPart
     /// Reference to the originating meeting ID
     /// </summary>
     [JsonProperty("sourceMeetingId")]
+    [JsonConverter(typeof(TreeNodeSourceMeetingIdConverter))]
     public string? SourceMeetingId { get; set; }
 
     /// <summary>

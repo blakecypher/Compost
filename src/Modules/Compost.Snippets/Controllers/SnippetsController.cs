@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Compost.Core.Services;
-using Compost.Snippets.Models;
+using Compost.Core.Models;
 using Compost.Snippets.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using OrchardCore.ContentManagement;
@@ -89,6 +90,27 @@ public class SnippetsController(IContentManager contentManager, ISession session
             await contentManager.CreateAsync(contentItem, VersionOptions.Draft);
             await contentManager.PublishAsync(contentItem);
             
+            // Update pattern side - bidirectional
+            if (!string.IsNullOrEmpty(model.RelatedPatternId))
+            {
+                var pattern = await contentManager.GetAsync(model.RelatedPatternId, VersionOptions.DraftRequired);
+                if (pattern != null)
+                {
+                    pattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
+                        if (part.RelatedSnippetIds == null)
+                        {
+                            part.RelatedSnippetIds = new List<string>();
+                        }
+                        if (!((List<string>)part.RelatedSnippetIds).Contains(contentItem.ContentItemId))
+                        {
+                            ((List<string>)part.RelatedSnippetIds).Add(contentItem.ContentItemId);
+                        }
+                    });
+                    await contentManager.UpdateAsync(pattern);
+                    await contentManager.PublishAsync(pattern);
+                }
+            }
+            
             return RedirectToAction(nameof(Index));
         }
         
@@ -146,6 +168,10 @@ public class SnippetsController(IContentManager contentManager, ISession session
             return NotFound();
         }
         
+        // Get current pattern ID before update
+        var currentPart = contentItem.As<CodeSnippetPart>();
+        var oldPatternId = currentPart?.RelatedPatternId;
+        
         contentItem.Alter<TitlePart>(part => {
             part.Title = model.Title;
         });
@@ -173,6 +199,48 @@ public class SnippetsController(IContentManager contentManager, ISession session
 
         await contentManager.UpdateAsync(contentItem);
         await contentManager.PublishAsync(contentItem);
+        
+        // Handle bidirectional updates
+        if (oldPatternId != model.RelatedPatternId)
+        {
+            // Remove from old pattern if exists
+            if (!string.IsNullOrEmpty(oldPatternId))
+            {
+                var oldPattern = await contentManager.GetAsync(oldPatternId, VersionOptions.DraftRequired);
+                if (oldPattern != null)
+                {
+                    oldPattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
+                        if (part.RelatedSnippetIds != null)
+                        {
+                            ((List<string>)part.RelatedSnippetIds).Remove(contentItem.ContentItemId);
+                        }
+                    });
+                    await contentManager.UpdateAsync(oldPattern);
+                    await contentManager.PublishAsync(oldPattern);
+                }
+            }
+            
+            // Add to new pattern if exists
+            if (!string.IsNullOrEmpty(model.RelatedPatternId))
+            {
+                var newPattern = await contentManager.GetAsync(model.RelatedPatternId, VersionOptions.DraftRequired);
+                if (newPattern != null)
+                {
+                    newPattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
+                        if (part.RelatedSnippetIds == null)
+                        {
+                            part.RelatedSnippetIds = new List<string>();
+                        }
+                        if (!((List<string>)part.RelatedSnippetIds).Contains(contentItem.ContentItemId))
+                        {
+                            ((List<string>)part.RelatedSnippetIds).Add(contentItem.ContentItemId);
+                        }
+                    });
+                    await contentManager.UpdateAsync(newPattern);
+                    await contentManager.PublishAsync(newPattern);
+                }
+            }
+        }
 
         return RedirectToAction(nameof(Index));
     }

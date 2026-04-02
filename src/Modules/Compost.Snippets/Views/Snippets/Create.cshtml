@@ -13,9 +13,14 @@
             </h1>
             <p class="text-muted mb-0">Add a new code snippet to your library</p>
         </div>
-        <a asp-action="Index" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
-            <i class="fas fa-arrow-left"></i> Back to List
-        </a>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-info" onclick="pasteFromWorkspaces()">
+                <i class="fas fa-paste me-1"></i>Paste from Workspaces
+            </button>
+            <a asp-action="Index" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
     </div>
 
     <div class="row">
@@ -28,7 +33,7 @@
                 <div class="card snippet-enhanced-card mb-3">
                     <div class="card-header d-flex align-items-center snippet-header-background">
                         <div class="snippet-icon me-2">
-                            <i class="fas fa-code text-theme-snippets"></i>
+                            <i class="fas fa-code" style="color: #f87171 !important;"></i>
                         </div>
                         <span class="fw-bold">Code Editor</span>
                     </div>
@@ -72,16 +77,16 @@
             <div class="card snippet-enhanced-card mb-3">
                 <div class="card-header d-flex align-items-center snippet-header-background">
                     <div class="snippet-icon me-2">
-                        <i class="fas fa-cog text-theme-snippets"></i>
+                        <i class="fas fa-cog" style="color: #f87171 !important;"></i>
                     </div>
                     <span class="fw-bold">Actions</span>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button type="button" onclick="document.getElementById('snippetForm').submit();" class="btn btn-success">
+                        <button type="button" onclick="document.getElementById('snippetForm').submit();" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
                             <i class="fas fa-save me-2"></i> Create Snippet
                         </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">
+                        <a asp-action="Index" class="btn btn-outline-secondary" style="border-color: #f87171 !important; color: #f87171 !important;">
                             <i class="fas fa-times me-2"></i> Cancel
                         </a>
                     </div>
@@ -92,7 +97,7 @@
             <div class="card snippet-enhanced-card mb-3">
                 <div class="card-header d-flex align-items-center snippet-header-background">
                     <div class="snippet-icon me-2">
-                        <i class="fas fa-tags text-theme-snippets"></i>
+                        <i class="fas fa-tags" style="color: #f87171 !important;"></i>
                     </div>
                     <span class="fw-bold">Metadata</span>
                 </div>
@@ -266,5 +271,57 @@
             .catch(error => {
                 resultDiv.innerHTML = `<div class="alert alert-danger py-1"><i class="fas fa-exclamation-circle me-1"></i>${error.message}</div>`;
             });
+        }
+        
+        function pasteFromWorkspaces() {
+            const copiedItem = sessionStorage.getItem('copiedItem');
+            if (!copiedItem) {
+                alert('No item copied. Please go to Workspaces and copy a project first.');
+                return;
+            }
+            
+            try {
+                const item = JSON.parse(copiedItem);
+                if (item.type === 'Project') {
+                    // Fill in the form fields
+                    document.getElementById('Title').value = item.name || '';
+                    // Use description as code if available
+                    if (item.description) {
+                        const codeField = document.getElementById('code-hidden-input');
+                        if (codeField && window.editor) {
+                            window.editor.setValue(item.description);
+                        }
+                    }
+                    // Optional: add tags to category if available
+                    if (item.tags) {
+                        const categoryField = document.getElementById('Category');
+                        if (categoryField && !categoryField.value) {
+                            categoryField.value = item.tags.split(',')[0] || '';
+                        }
+                    }
+                    
+                    // Visual feedback
+                    showToast('Project data pasted successfully!', 'success');
+                } else {
+                    alert('Copied item is not a project.');
+                }
+            } catch (e) {
+                console.error('Error parsing copied item:', e);
+                alert('Error pasting data. Please try copying again.');
+            }
+        }
+        
+        // Simple toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'info'} position-fixed`;
+            toast.style.cssText = 'bottom: 20px; right: 20px; z-index: 9999; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     </script>

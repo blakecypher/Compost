@@ -98,6 +98,8 @@
     const transcriptContent = document.getElementById('transcript-content');
     
     let currentInterimDiv = null;
+    let speechRecognition = null;
+    const isSpeechApiSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
     // Initialize SignalR connection
     connection = new signalR.HubConnectionBuilder()
         .withUrl('/TranscriptionHub')
@@ -145,6 +147,47 @@
     }
 
     startConnection();
+
+    // Web Speech API for live transcription (development mode)
+    function initSpeechRecognition() {
+        if (!isSpeechApiSupported) return null;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = (event) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) finalTranscript += transcript;
+                else interimTranscript += transcript;
+            }
+            if (interimTranscript) updateInterimBlock(interimTranscript);
+            if (finalTranscript) {
+                if (currentInterimDiv) { currentInterimDiv.remove(); currentInterimDiv = null; }
+                appendTranscriptBlock(finalTranscript, 0.85, Date.now());
+                if (currentMeetingId) {
+                    const now = Date.now();
+                    const segment = {
+                        text: finalTranscript,
+                        confidence: 0.85,
+                        startTime: '00:00:00',
+                        endTime: '00:00:00',
+                        isInterim: false
+                    };
+                    console.log('Sending transcript segment:', segment);
+                    connection.invoke('SendTranscriptSegment', currentMeetingId, segment)
+                        .catch(err => console.error('Error sending segment:', err));
+                }
+            }
+        };
+        recognition.onerror = (e) => console.error('Speech error:', e.error);
+        recognition.onend = () => { if (isRecording && currentMeetingId) try { recognition.start(); } catch(e) {} };
+        return recognition;
+    }
 
     // Check for MediaRecorder support
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -300,7 +343,21 @@
                 const meeting = await response.json();
                 currentMeetingId = meeting.id;
                 await connection.invoke('JoinMeeting', currentMeetingId);
-                updateStatus('recording', 'Recording');
+                
+                // Start Web Speech API for live transcription in development mode
+                if (isSpeechApiSupported) {
+                    speechRecognition = initSpeechRecognition();
+                    if (speechRecognition) {
+                        try {
+                            speechRecognition.start();
+                            console.log('Web Speech API started for live transcription');
+                        } catch (e) {
+                            console.error('Failed to start speech recognition:', e);
+                        }
+                    }
+                }
+                
+                updateStatus('recording', 'Recording (Live)');
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
             } else {
@@ -319,6 +376,16 @@
 
     stopBtn.onclick = async () => {
         isRecording = false;
+        
+        // Stop Web Speech API
+        if (speechRecognition) {
+            try {
+                speechRecognition.stop();
+                speechRecognition = null;
+            } catch (e) {
+                console.log('Speech recognition already stopped');
+            }
+        }
         
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();

@@ -13,9 +13,14 @@
             </h1>
             <p class="text-muted mb-0">Define a new architectural pattern</p>
         </div>
-        <a asp-action="Index" class="btn btn-theme-patterns" style="background-color: #a855f7 !important; border-color: #a855f7 !important; color: #fff !important;">
-            <i class="fas fa-arrow-left"></i> Back to List
-        </a>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-info" onclick="pasteFromWorkspaces()">
+                <i class="fas fa-paste me-1"></i>Paste from Workspaces
+            </button>
+            <a asp-action="Index" class="btn btn-theme-patterns" style="background-color: #a855f7 !important; border-color: #a855f7 !important; color: #fff !important;">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
     </div>
 
     <div class="row">
@@ -24,13 +29,13 @@
                 @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                 
-                <!-- Pattern Definition Card -->
+                <!-- Basic Information Card -->
                 <div class="card pattern-enhanced-card mb-3">
                     <div class="card-header d-flex align-items-center pattern-header-background">
                         <div class="pattern-icon me-2">
-                            <i class="fas fa-project-diagram text-theme-patterns"></i>
+                            <i class="fas fa-info-circle" style="color: #a855f7 !important;"></i>
                         </div>
-                        <span class="fw-bold">Pattern Definition</span>
+                        <span class="fw-bold">Basic Information</span>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
@@ -44,7 +49,18 @@
                             <input asp-for="Keywords" class="form-control" placeholder="scalability, data-access, messaging" />
                             <span asp-validation-for="Keywords" class="text-danger"></span>
                         </div>
-                        
+                    </div>
+                </div>
+
+                <!-- Problem & Solution Card -->
+                <div class="card pattern-enhanced-card mb-3">
+                    <div class="card-header d-flex align-items-center pattern-header-background">
+                        <div class="pattern-icon me-2">
+                            <i class="fas fa-lightbulb" style="color: #a855f7 !important;"></i>
+                        </div>
+                        <span class="fw-bold">Problem & Solution</span>
+                    </div>
+                    <div class="card-body">
                         <div class="mb-3">
                             <label asp-for="WhenToUse" class="form-label fw-bold">When to Use (Problem Statement)</label>
                             <textarea asp-for="WhenToUse" class="form-control" rows="3" placeholder="Describe the context and problem this pattern solves..."></textarea>
@@ -57,7 +73,18 @@
                             <small class="text-muted">Markdown supported</small>
                             <span asp-validation-for="HowItWorks" class="text-danger"></span>
                         </div>
-                        
+                    </div>
+                </div>
+
+                <!-- Gotchas & Resources Card -->
+                <div class="card pattern-enhanced-card mb-3">
+                    <div class="card-header d-flex align-items-center pattern-header-background">
+                        <div class="pattern-icon me-2">
+                            <i class="fas fa-exclamation-triangle" style="color: #a855f7 !important;"></i>
+                        </div>
+                        <span class="fw-bold">Gotchas & Resources</span>
+                    </div>
+                    <div class="card-body">
                         <div class="mb-3">
                             <label asp-for="Gotchas" class="form-label fw-bold">Gotchas & Pitfalls</label>
                             <textarea asp-for="Gotchas" class="form-control" rows="3" placeholder="What should developers be wary of when using this pattern?"></textarea>
@@ -79,16 +106,16 @@
             <div class="card pattern-enhanced-card mb-3">
                 <div class="card-header d-flex align-items-center pattern-header-background">
                     <div class="pattern-icon me-2">
-                        <i class="fas fa-cog text-theme-patterns"></i>
+                        <i class="fas fa-cog" style="color: #a855f7 !important;"></i>
                     </div>
                     <span class="fw-bold">Actions</span>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button type="button" onclick="document.getElementById('patternForm').submit();" class="btn btn-success">
+                        <button type="button" onclick="document.getElementById('patternForm').submit();" class="btn btn-theme-patterns" style="background-color: #a855f7 !important; border-color: #a855f7 !important; color: #fff !important;">
                             <i class="fas fa-save me-2"></i> Create Pattern
                         </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">
+                        <a asp-action="Index" class="btn btn-outline-secondary" style="border-color: #a855f7 !important; color: #a855f7 !important;">
                             <i class="fas fa-times me-2"></i> Cancel
                         </a>
                     </div>
@@ -97,3 +124,53 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    function pasteFromWorkspaces() {
+        const copiedItem = sessionStorage.getItem('copiedItem');
+        if (!copiedItem) {
+            alert('No item copied. Please go to Workspaces and copy a project first.');
+            return;
+        }
+        
+        try {
+            const item = JSON.parse(copiedItem);
+            if (item.type === 'Project') {
+                // Fill in the form fields
+                document.getElementById('Title').value = item.name || '';
+                document.getElementById('WhenToUse').value = item.description || '';
+                // Optional: add tags to keywords if available
+                if (item.tags) {
+                    const keywordsField = document.getElementById('Keywords');
+                    if (keywordsField && !keywordsField.value) {
+                        keywordsField.value = item.tags;
+                    }
+                }
+                
+                // Visual feedback
+                showToast('Project data pasted successfully!', 'success');
+            } else {
+                alert('Copied item is not a project.');
+            }
+        } catch (e) {
+            console.error('Error parsing copied item:', e);
+            alert('Error pasting data. Please try copying again.');
+        }
+    }
+    
+    // Simple toast notification
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'info'} position-fixed`;
+        toast.style.cssText = 'bottom: 20px; right: 20px; z-index: 9999; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+        toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+</script>
+}

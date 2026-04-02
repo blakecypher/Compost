@@ -83,6 +83,11 @@ public interface ITranscriptionService
     List<Meeting> GetActiveMeetings();
 
     /// <summary>
+    /// Add a transcript segment to a meeting (used during live recording)
+    /// </summary>
+    Task AddTranscriptSegmentAsync(string meetingId, TranscriptSegment segment);
+
+    /// <summary>
     /// Update an existing meeting's data in the database
     /// </summary>
     Task UpdateMeetingAsync(Meeting meeting);

@@ -3,8 +3,40 @@ using System.Collections.Generic;
 using Compost.Core.Models;
 using OrchardCore.ContentManagement;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Compost.Kanban.Models;
+
+/// <summary>
+/// Handles reading SourceMeetingId as either string or object (for backward compatibility)
+/// </summary>
+public class SourceMeetingIdConverter : JsonConverter<string?>
+{
+    public override string? ReadJson(JsonReader reader, Type objectType, string? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        if (reader.TokenType == JsonToken.String)
+        {
+            return reader.Value?.ToString();
+        }
+        if (reader.TokenType == JsonToken.StartObject)
+        {
+            // Skip the object and return null (corrupted data)
+            reader.Skip();
+            return null;
+        }
+        if (reader.TokenType == JsonToken.Null)
+        {
+            return null;
+        }
+        // For any other type, try to read as string
+        return reader.Value?.ToString();
+    }
+
+    public override void WriteJson(JsonWriter writer, string? value, JsonSerializer serializer)
+    {
+        writer.WriteValue(value);
+    }
+}
 
 /// <summary>
 /// Content part for Kanban Card - represents an actionable task
@@ -27,6 +59,7 @@ public class KanbanCardPart : ContentPart
     /// Reference to the source meeting if applicable
     /// </summary>
     [JsonProperty("sourceMeetingId")]
+    [JsonConverter(typeof(SourceMeetingIdConverter))]
     public string? SourceMeetingId { get; set; }
 
     /// <summary>

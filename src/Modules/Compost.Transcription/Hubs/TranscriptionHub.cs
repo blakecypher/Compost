@@ -20,6 +20,21 @@ public class TranscriptionHub : Hub
 
     public async Task SendTranscriptSegment(string meetingId, TranscriptSegment segment)
     {
+        Console.WriteLine($"[HUB] Received segment for meeting {meetingId}: Text='{segment.Text}', IsInterim={segment.IsInterim}");
+        
+        // Store the segment in the transcription service
+        var transcriptionService = Context.GetHttpContext()?.RequestServices.GetService(typeof(ITranscriptionService)) as ITranscriptionService;
+        if (transcriptionService != null && !segment.IsInterim)
+        {
+            Console.WriteLine($"[HUB] Storing segment in transcription service");
+            await transcriptionService.AddTranscriptSegmentAsync(meetingId, segment);
+        }
+        else
+        {
+            Console.WriteLine($"[HUB] Skipping storage: Service={transcriptionService != null}, IsInterim={segment.IsInterim}");
+        }
+        
+        // Broadcast to all clients (for live view)
         await Clients.Group($"meeting_{meetingId}").SendAsync("ReceiveTranscriptSegment", segment);
     }
 

@@ -123,18 +123,49 @@ public class TranscriptionService(
 
     public async Task StopRecordingAsync(string meetingId)
     {
+        logger.LogInformation("[STOP] StopRecordingAsync called for meeting {MeetingId}", meetingId);
+        
+        // First, check what's in active memory
+        if (_activeMeetingsMemory.TryGetValue(meetingId, out var checkActiveMeeting))
+        {
+            logger.LogInformation("[STOP] Active memory has meeting {MeetingId} with {Count} transcript segments", 
+                meetingId, checkActiveMeeting.Transcript.Count);
+        }
+        else
+        {
+            logger.LogWarning("[STOP] Meeting {MeetingId} NOT found in active memory!", meetingId);
+        }
+        
         var meeting = await GetMeetingByIdAsync(meetingId);
         if (meeting != null)
         {
+            logger.LogInformation("[STOP] Found meeting in DB: {MeetingId}, current transcript count: {Count}", 
+                meetingId, meeting.Transcript.Count);
+            
             meeting.Status = MeetingStatus.Processing;
             meeting.EndedAt = DateTime.UtcNow;
             meeting.DurationSeconds = (int)(meeting.EndedAt.Value - meeting.StartedAt).TotalSeconds;
             
+            // CRITICAL: Copy transcript from active memory (where browser sent it) to the DB meeting
+            if (_activeMeetingsMemory.TryGetValue(meetingId, out var activeMeetingForSync))
+            {
+                logger.LogInformation("[STOP] Syncing {Count} segments from active memory to DB meeting {MeetingId}", 
+                    activeMeetingForSync.Transcript.Count, meetingId);
+                meeting.Transcript = new List<TranscriptSegment>(activeMeetingForSync.Transcript);
+                logger.LogInformation("[STOP] After sync, meeting transcript count: {Count}", meeting.Transcript.Count);
+            }
+            else
+            {
+                logger.LogWarning("[STOP] Could not find meeting in active memory for sync!");
+            }
+            
             // Notify clients about processing status
             await hubContext.Clients.Group($"meeting_{meetingId}").SendAsync("ReceiveRecordingStatus", "processing", "Processing transcription...");
             
-            // Persist status immediately to database
-            await PersistMeetingTranscriptAsync(meetingId);
+            // Persist meeting with transcript to database
+            logger.LogInformation("[STOP] Calling UpdateMeetingAsync for {MeetingId}", meetingId);
+            await UpdateMeetingAsync(meeting);
+            logger.LogInformation("[STOP] UpdateMeetingAsync completed for {MeetingId}", meetingId);
 
             // Clean up Azure Speech resources if active
             if (_activeStreams.TryGetValue(meetingId, out var pushStream))
@@ -162,8 +193,7 @@ public class TranscriptionService(
         else
         {
             // If meeting not found in database, still trigger processing if we have active transcript
-        // Check if meeting exists in active memory
-        if (_activeMeetingsMemory.ContainsKey(meetingId))
+            if (_activeMeetingsMemory.TryGetValue(meetingId, out var activeMeeting))
             {
                 logger.LogWarning("Meeting not found in database, but active transcript exists. Triggering processing for {MeetingId}", meetingId);
                 
@@ -194,14 +224,17 @@ public class TranscriptionService(
             return;
         }
 
-        if (_forceMock || string.IsNullOrEmpty(_azureSpeechKey) || string.IsNullOrEmpty(_azureSpeechRegion))
+        // NOTE: Browser Web Speech API handles live transcription in development mode.
+        // The mock loop is disabled to prevent simulated content from mixing with real recordings.
+        // Only use Azure Speech in production when keys are configured.
+        if (!string.IsNullOrEmpty(_azureSpeechKey) && !string.IsNullOrEmpty(_azureSpeechRegion))
         {
-            logger.LogInformation("Starting Mock Live Transcription Loop for meeting {MeetingId}", meetingId);
-            _ = Task.Run(async () => await StartMockLiveTranscriptionLoopAsync(meetingId));
+            logger.LogInformation("Real-time transcription for meeting {MeetingId} will use Azure Speech via streaming chunks.", meetingId);
         }
         else
         {
-            logger.LogInformation("Real-time transcription for meeting {MeetingId} will use Azure Speech via streaming chunks.", meetingId);
+            logger.LogInformation("Browser Web Speech API will handle transcription for meeting {MeetingId}. Server mock loop disabled.", meetingId);
+            // Mock loop intentionally disabled - browser handles transcription via SignalR
         }
     }
 
@@ -235,13 +268,67 @@ public class TranscriptionService(
         }
     }
 
+    public async Task AddTranscriptSegmentAsync(string meetingId, TranscriptSegment segment)
+    {
+        if (_activeMeetingsMemory.TryGetValue(meetingId, out var meeting))
+        {
+            meeting.Transcript.Add(segment);
+            logger.LogInformation("[SEGMENT] Added transcript segment to meeting {MeetingId}: '{Text}' (Total: {Count})", meetingId, segment.Text, meeting.Transcript.Count);
+        }
+        else
+        {
+            logger.LogWarning("[SEGMENT] Cannot add segment - meeting {MeetingId} not found in active memory", meetingId);
+        }
+    }
+
     public async Task PersistMeetingTranscriptAsync(string meetingId)
     {
         try
         {
             if (!_activeMeetingsMemory.TryGetValue(meetingId, out var meeting)) return;
-            await UpdateMeetingAsync(meeting);
-            logger.LogInformation("Persisted transcript for meeting {MeetingId} via UpdateMeetingAsync", meetingId);
+            
+            // Create a new scope to avoid disposed session issues in background tasks
+            using var scope = serviceScopeFactory.CreateScope();
+            var session = scope.ServiceProvider.GetRequiredService<ISession>();
+            var contentManager = scope.ServiceProvider.GetRequiredService<IContentManager>();
+            
+            // Query for existing content item
+            var contentItem = await session.Query<ContentItem, ContentItemIndex>()
+                .Where(ci => ci.ContentType == nameof(Meeting) && ci.DisplayText == meeting.Title)
+                .FirstOrDefaultAsync();
+            
+            if (contentItem == null && !string.IsNullOrEmpty(meeting.Id))
+            {
+                contentItem = await contentManager.GetAsync(meeting.Id, VersionOptions.Latest);
+            }
+            
+            if (contentItem != null)
+            {
+                var meetingPart = contentItem.As<MeetingPart>();
+                if (meetingPart != null)
+                {
+                    // Sync all properties
+                    meetingPart.MeetingId = meeting.Id;
+                    meetingPart.Title = meeting.Title;
+                    meetingPart.WorkContextId = meeting.WorkContextId;
+                    meetingPart.Status = meeting.Status.ToString();
+                    meetingPart.StartedAt = meeting.StartedAt;
+                    meetingPart.EndedAt = meeting.EndedAt;
+                    meetingPart.DurationSeconds = meeting.DurationSeconds;
+                    meetingPart.Transcript = meeting.Transcript;
+                    meetingPart.ActionItems = meeting.ActionItems;
+                    meetingPart.ExtractedNodes = meeting.ExtractedNodes;
+                    meetingPart.TranscriptionCompletedAt = meeting.TranscriptionCompletedAt;
+                    meetingPart.IsProcessed = meeting.IsProcessed;
+                    meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
+
+                    contentItem.Apply(meetingPart);
+                    await contentManager.UpdateAsync(contentItem);
+                    await contentManager.PublishAsync(contentItem);
+                    
+                    logger.LogInformation("Persisted transcript for meeting {MeetingId} with {Count} segments", meetingId, meeting.Transcript.Count);
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -984,6 +1071,16 @@ public class TranscriptionService(
     {
         if (string.IsNullOrEmpty(meetingId)) return null;
 
+        // First check active memory (no DB query needed)
+        if (_activeMeetingsMemory.TryGetValue(meetingId, out var activeMeeting))
+        {
+            return activeMeeting;
+        }
+
+        // Create a new scope to avoid disposed session issues
+        using var scope = serviceScopeFactory.CreateScope();
+        var session = scope.ServiceProvider.GetRequiredService<ISession>();
+
         // Query Orchard Core content items for Meeting content type
         var meetingItems = await session.Query<ContentItem, ContentItemIndex>()
             .Where(ci => ci.ContentType == nameof(Meeting) && ci.Published)
@@ -1014,55 +1111,77 @@ public class TranscriptionService(
             }
         }
         
-        // If not found in database, check active transcript storage
-        if (!_activeMeetingsMemory.TryGetValue(meetingId, out var activeMeeting)) return null;
-        logger.LogInformation("Meeting not found in database, but found in active storage for {MeetingId}", meetingId);
-        return activeMeeting;
+        return null;
     }
 
     public async Task UpdateMeetingAsync(Meeting meeting)
     {
         if (meeting == null || string.IsNullOrEmpty(meeting.Id)) return;
 
-        // Query Orchard Core content items for Meeting content type
-        var meetingItems = await session.Query<ContentItem, ContentItemIndex>()
-            .Where(ci => ci.ContentType == nameof(Meeting))
-            .ListAsync();
-
-        var contentItem = meetingItems.FirstOrDefault(ci => ci.As<MeetingPart>()?.MeetingId == meeting.Id || ci.ContentItemId == meeting.Id);
-
-        if (contentItem != null)
+        try
         {
-            var meetingPart = contentItem.As<MeetingPart>();
-            if (meetingPart != null)
-            {
-                // Sync all properties
-                meetingPart.MeetingId = meeting.Id;
-                meetingPart.Title = meeting.Title;
-                meetingPart.WorkContextId = meeting.WorkContextId;
-                meetingPart.Status = meeting.Status.ToString();
-                meetingPart.StartedAt = meeting.StartedAt;
-                meetingPart.EndedAt = meeting.EndedAt;
-                meetingPart.DurationSeconds = meeting.DurationSeconds;
-                meetingPart.Transcript = meeting.Transcript;
-                meetingPart.ActionItems = meeting.ActionItems;
-                meetingPart.ExtractedNodes = meeting.ExtractedNodes;
-                meetingPart.TranscriptionCompletedAt = meeting.TranscriptionCompletedAt;
-                meetingPart.IsProcessed = meeting.IsProcessed;
-                meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
+            // Create a new scope to avoid disposed session issues
+            using var scope = serviceScopeFactory.CreateScope();
+            var session = scope.ServiceProvider.GetRequiredService<ISession>();
+            var contentManager = scope.ServiceProvider.GetRequiredService<IContentManager>();
+            
+            // Query Orchard Core content items for Meeting content type
+            var meetingItems = await session.Query<ContentItem, ContentItemIndex>()
+                .Where(ci => ci.ContentType == nameof(Meeting))
+                .ListAsync();
 
-                contentItem.Apply(meetingPart);
-                await contentManager.UpdateAsync(contentItem);
-                await contentManager.PublishAsync(contentItem);
-                
-                logger.LogInformation("Successfully updated meeting {MeetingId} in database", meeting.Id);
+            var contentItem = meetingItems.FirstOrDefault(ci => ci.As<MeetingPart>()?.MeetingId == meeting.Id || ci.ContentItemId == meeting.Id);
+
+            if (contentItem != null)
+            {
+                var meetingPart = contentItem.As<MeetingPart>();
+                if (meetingPart != null)
+                {
+                    // Sync all properties
+                    meetingPart.MeetingId = meeting.Id;
+                    meetingPart.Title = meeting.Title;
+                    meetingPart.WorkContextId = meeting.WorkContextId;
+                    meetingPart.Status = meeting.Status.ToString();
+                    meetingPart.StartedAt = meeting.StartedAt;
+                    meetingPart.EndedAt = meeting.EndedAt;
+                    meetingPart.DurationSeconds = meeting.DurationSeconds;
+                    meetingPart.Transcript = meeting.Transcript;
+                    meetingPart.ActionItems = meeting.ActionItems;
+                    meetingPart.ExtractedNodes = meeting.ExtractedNodes;
+                    meetingPart.TranscriptionCompletedAt = meeting.TranscriptionCompletedAt;
+                    meetingPart.IsProcessed = meeting.IsProcessed;
+                    meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
+
+                    contentItem.Apply(meetingPart);
+                    await contentManager.UpdateAsync(contentItem);
+                    await contentManager.PublishAsync(contentItem);
+                    
+                    logger.LogInformation("[DB] Successfully updated meeting {MeetingId} with {Count} transcript segments", meeting.Id, meeting.Transcript.Count);
+                }
+                else
+                {
+                    logger.LogWarning("[DB] MeetingPart not found on content item {MeetingId}", meeting.Id);
+                }
             }
+            else
+            {
+                logger.LogWarning("[DB] Meeting {MeetingId} not found in database", meeting.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[DB] Failed to update meeting {MeetingId}", meeting.Id);
+            throw;
         }
     }
 
     public async Task<List<Meeting>> GetAllMeetingsAsync()
     {
         var meetings = new List<Meeting>();
+        
+        // Create a new scope to avoid disposed session issues
+        using var scope = serviceScopeFactory.CreateScope();
+        var session = scope.ServiceProvider.GetRequiredService<ISession>();
         
         // Query Orchard Core content items for Meeting content type
         var meetingItems = await session.Query<ContentItem, ContentItemIndex>()
@@ -1103,6 +1222,10 @@ public class TranscriptionService(
     public async Task<List<Meeting>> GetMeetingsByContextAsync(string projectId)
     {
         var meetings = new List<Meeting>();
+        
+        // Create a new scope to avoid disposed session issues
+        using var scope = serviceScopeFactory.CreateScope();
+        var session = scope.ServiceProvider.GetRequiredService<ISession>();
         
         // Query Orchard Core content items for Meeting content type
         var meetingItems = await session.Query<ContentItem, ContentItemIndex>()
@@ -1146,6 +1269,11 @@ public class TranscriptionService(
 
         // 1. Remove from active memory if it exists
         bool removedFromMemory = _activeMeetingsMemory.Remove(meetingId);
+
+        // Create a new scope to avoid disposed session issues
+        using var scope = serviceScopeFactory.CreateScope();
+        var session = scope.ServiceProvider.GetRequiredService<ISession>();
+        var contentManager = scope.ServiceProvider.GetRequiredService<IContentManager>();
 
         // 2. Find and remove from Orchard Core database
         var meetingItems = await session.Query<ContentItem, ContentItemIndex>()

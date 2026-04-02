@@ -12,6 +12,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Compost.Core\Compost.Core.csproj" />
-    <ProjectReference Include="..\Compost.Snippets\Compost.Snippets.csproj" />
   </ItemGroup>
 </Project>

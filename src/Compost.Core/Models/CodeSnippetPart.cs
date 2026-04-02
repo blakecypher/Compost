@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using OrchardCore.ContentManagement;
 
-namespace Compost.Snippets.Models;
+namespace Compost.Core.Models;
 
 /// <summary>
 /// Content part for Code Snippet - stores code, language, and metadata

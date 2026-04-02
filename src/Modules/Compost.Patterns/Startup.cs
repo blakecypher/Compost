@@ -1,5 +1,5 @@
 using System;
-using Compost.Patterns.Models;
+using Compost.Core.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
