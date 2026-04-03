@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Compost.Core.Interfaces;
 using Compost.Core.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace Compost.Transcription.Controllers;
@@ -199,7 +199,7 @@ public class TranscriptionController(
         {
             _logger.LogInformation("Delete called for meeting {MeetingId}", id);
             
-            bool deleted = await transcriptionService.DeleteMeetingAsync(id);
+            var deleted = await transcriptionService.DeleteMeetingAsync(id);
             
             if (deleted)
             {
@@ -253,7 +253,7 @@ public class PromoteToKanbanRequest
 public class SaveMeetingModel
 {
     public string Title { get; set; } = string.Empty;
-    public string? ContextId { get; set; }
+    public string ContextId { get; set; }
     public List<string> Transcript { get; set; } = [];
 }
 

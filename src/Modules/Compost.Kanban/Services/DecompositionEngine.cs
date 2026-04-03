@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Compost.Core.Interfaces;
@@ -17,17 +17,17 @@ public class DecompositionEngine(
     IContentManager contentManager,
     ISession session,
     ILogger<DecompositionEngine> logger,
-    AIIntegrationService aiService,
+    AiIntegrationService aiService,
     ITranscriptionService transcriptionService,
     IMindMapService mindMapService) : IDecompositionEngine
 {
-    private readonly AIIntegrationService _aiService = aiService;
+    private readonly AiIntegrationService _aiService = aiService;
     private readonly ITranscriptionService _transcriptionService = transcriptionService;
     private readonly IMindMapService _mindMapService = mindMapService;
 
     // ========== Mind Map Operations (Simplified for now) ==========
 
-    public Task<MindMapNode> CreateMindMapNodeAsync(string projectId, string title, string content, string? parentNodeId = null)
+    public Task<MindMapNode> CreateMindMapNodeAsync(string projectId, string title, string content, string parentNodeId = null)
     {
         // For now, return a mock or implement if we migrate MindMap to Content Items
         var node = new MindMapNode
@@ -46,10 +46,7 @@ public class DecompositionEngine(
     {
         // Search all mind maps for the node
         var allMaps = await _mindMapService.GetAllMindMapsAsync();
-        string? projectId = null;
-        string? title = "New Tree Node (Promoted)";
-        string? notes = "";
-        string? sourceText = "";
+        const string title = "New Tree Node (Promoted)";
 
         foreach (var mapSummary in allMaps)
         {
@@ -69,7 +66,7 @@ public class DecompositionEngine(
         
         treeNodeItem.DisplayText = title;
         part.SourceMindMapNodeId = mindMapNodeId;
-        part.WorkContextId = projectId ?? "default";
+        part.WorkContextId = "default";
         
         treeNodeItem.Apply(part);
         await contentManager.CreateAsync(treeNodeItem);
@@ -80,7 +77,7 @@ public class DecompositionEngine(
 
     // ========== Tree Operations ==========
 
-    public async Task<TreeNode> CreateTreeNodeAsync(string projectId, string title, string description, string? sourceMindMapNodeId = null, string? sourceMeetingId = null, string? sourceTranscriptExcerpt = null)
+    public async Task<TreeNode> CreateTreeNodeAsync(string projectId, string title, string description, string sourceMindMapNodeId = null, string sourceMeetingId = null, string sourceTranscriptExcerpt = null)
     {
         var item = await contentManager.NewAsync(nameof(TreeNode));
         item.DisplayText = title;
@@ -186,7 +183,7 @@ public class DecompositionEngine(
         if (!string.IsNullOrEmpty(sourceMeetingId))
         {
             var meeting = await _transcriptionService.GetMeetingByIdAsync(sourceMeetingId);
-            if (meeting != null && meeting.Transcript != null && meeting.Transcript.Count > 0)
+            if (meeting is { Transcript.Count: > 0 })
             {
                 var transcriptText = string.Join("\n", meeting.Transcript.Select(s => $"[{s.StartTime:mm\\:ss}] {s.SpeakerId}: {s.Text}"));
                 description += $"\n\n### Full Transcript\n{transcriptText}";
@@ -215,7 +212,7 @@ public class DecompositionEngine(
 
     // ========== Kanban Operations ==========
 
-    public async Task<KanbanCard> CreateKanbanCardAsync(string projectId, string title, string description, string? sourceTreeNodeId = null)
+    public async Task<KanbanCard> CreateKanbanCardAsync(string projectId, string title, string description, string sourceTreeNodeId = null)
     {
         var item = await contentManager.NewAsync(nameof(KanbanCard));
         item.DisplayText = title;
@@ -296,7 +293,7 @@ public class DecompositionEngine(
         var treePart = treeItem.As<TreeNodePart>();
         
         // Check if this tree node has children (hierarchical structure requirement)
-        var childNodes = await GetChildTreeNodesAsync(treeNodeId);
+        var childNodes = await GetChildTreeNodesAsync();
         if (childNodes.Count == 0)
         {
             logger.LogWarning("Tree node {NodeId} has no children, cannot promote to structure", treeNodeId);
@@ -332,19 +329,26 @@ public class DecompositionEngine(
         return structureNode;
     }
 
-    public async Task<StructureNode> CreateStructureNodeAsync(string projectId, string title, string description, StructureType structureType, string? sourceTreeNodeId = null)
+    public Task<StructureNode> CreateStructureNodeAsync(string projectId, string title, string description, StructureType structureType, string sourceTreeNodeId = null)
     {
-        var structureNode = new StructureNode
+        try
         {
-            Title = title,
-            Description = description,
-            WorkContextId = projectId,
-            SourceTreeNodeId = sourceTreeNodeId,
-            StructureType = structureType
-        };
+            var structureNode = new StructureNode
+            {
+                Title = title,
+                Description = description,
+                WorkContextId = projectId,
+                SourceTreeNodeId = sourceTreeNodeId,
+                StructureType = structureType
+            };
 
-        logger.LogInformation("Created structure node {StructureId} of type {Type}", structureNode.Id, structureType);
-        return structureNode;
+            logger.LogInformation("Created structure node {StructureId} of type {Type}", structureNode.Id, structureType);
+            return Task.FromResult(structureNode);
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException<StructureNode>(exception);
+        }
     }
 
     public async Task UpdateStructureNodeAsync(StructureNode node)
@@ -372,45 +376,59 @@ public class DecompositionEngine(
         await Task.CompletedTask;
     }
 
-    public async Task<KanbanBoard> CreateKanbanBoardForStructureAsync(string structureId)
+    public Task<KanbanBoard> CreateKanbanBoardForStructureAsync(string structureId)
     {
-        var board = new KanbanBoard
+        try
         {
-            Title = $"Structure Board - {structureId}",
-            Description = $"Kanban board for structure {structureId}",
-            StructureNodeId = structureId,
-            WorkContextId = "context-id" // Would be fetched from structure
-        };
+            var board = new KanbanBoard
+            {
+                Title = $"Structure Board - {structureId}",
+                Description = $"Kanban board for structure {structureId}",
+                StructureNodeId = structureId,
+                WorkContextId = "context-id" // Would be fetched from structure
+            };
 
-        logger.LogInformation("Created kanban board {BoardId} for structure {StructureId}", board.Id, structureId);
-        return board;
+            logger.LogInformation("Created kanban board {BoardId} for structure {StructureId}", board.Id, structureId);
+            return Task.FromResult(board);
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException<KanbanBoard>(exception);
+        }
     }
 
-    public async Task<List<KanbanCard>> PromoteStructureToKanbanAsync(string structureId)
+    public Task<List<KanbanCard>> PromoteStructureToKanbanAsync(string structureId)
     {
-        var cards = new List<KanbanCard>();
-        
-        // Create kanban cards from structure objectives and child structures
-        var structureCard = new KanbanCard
+        try
         {
-            Title = $"Structure Management - {structureId}",
-            Description = "Manage structure operations and objectives",
-            SourceStructureNodeId = structureId,
-            WorkContextId = "context-id" // Would be fetched from structure
-        };
-
-        cards.Add(structureCard);
+            var cards = new List<KanbanCard>();
         
-        logger.LogInformation("Promoted structure {StructureId} to {CardCount} kanban cards", structureId, cards.Count);
-        return cards;
+            // Create kanban cards from structure objectives and child structures
+            var structureCard = new KanbanCard
+            {
+                Title = $"Structure Management - {structureId}",
+                Description = "Manage structure operations and objectives",
+                SourceStructureNodeId = structureId,
+                WorkContextId = "context-id" // Would be fetched from structure
+            };
+
+            cards.Add(structureCard);
+        
+            logger.LogInformation("Promoted structure {StructureId} to {CardCount} kanban cards", structureId, cards.Count);
+            return Task.FromResult(cards);
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException<List<KanbanCard>>(exception);
+        }
     }
 
     // ========== Kanban Board Operations ==========
 
-    public async Task<KanbanBoard?> GetKanbanBoardAsync(string boardId)
+    public async Task<KanbanBoard> GetKanbanBoardAsync(string boardId)
     {
         // Stub implementation
-        return await Task.FromResult<KanbanBoard?>(null);
+        return await Task.FromResult<KanbanBoard>(null);
     }
 
     public async Task UpdateKanbanBoardAsync(KanbanBoard board)
@@ -443,9 +461,9 @@ public class DecompositionEngine(
         cardPart.SourceTranscriptExcerpt = actionItem.OriginalTranscript;
         cardPart.Status = KanbanStatus.Backlog;
         
-        var description = $"## Action Item Detail\n{actionItem.Description ?? "No description provided."}\n\n---\n*Source Meeting: {meeting.Title}*";
+        var description = $"## Action Item Detail\n{actionItem.Description}\n\n---\n*Source Meeting: {meeting.Title}*";
         
-        if (meeting.Transcript != null && meeting.Transcript.Count > 0)
+        if (meeting.Transcript is { Count: > 0 })
         {
             var transcriptText = string.Join("\n", meeting.Transcript.Select(s => $"**{s.SpeakerId ?? "Unknown"}**: {s.Text}"));
             description += $"\n\n### Full Transcript\n{transcriptText}";
@@ -467,22 +485,27 @@ public class DecompositionEngine(
 
     // ========== Helper Methods ==========
 
-    private async Task<List<TreeNode>> GetChildTreeNodesAsync(string parentNodeId)
+    private static async Task<List<TreeNode>> GetChildTreeNodesAsync()
     {
         // In production, this would query for child tree nodes
         return await Task.FromResult(new List<TreeNode>());
     }
 
-    private StructureType DetermineStructureType(string title, int childCount)
+    private static StructureType DetermineStructureType(string title, int childCount)
     {
-        if (childCount > 10) return StructureType.Department;
-        if (childCount > 5) return StructureType.Team;
-        if (title.ToLower().Contains("project")) return StructureType.Project;
-        if (title.ToLower().Contains("initiative")) return StructureType.Initiative;
-        return StructureType.Team;
+        switch (childCount)
+        {
+            case > 10:
+                return StructureType.Department;
+            case > 5:
+                return StructureType.Team;
+        }
+
+        if (title.Contains("project", StringComparison.CurrentCultureIgnoreCase)) return StructureType.Project;
+        return title.Contains("initiative", StringComparison.CurrentCultureIgnoreCase) ? StructureType.Initiative : StructureType.Team;
     }
 
-    private string GetStructureColor(string title)
+    private static string GetStructureColor(string title)
     {
         var colors = new List<string> { "#2196f3", "#4caf50", "#ff9800", "#9c27b0", "#f44336", "#00bcd4" };
         var hash = title.GetHashCode();

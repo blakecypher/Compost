@@ -10,12 +10,12 @@ public class Migrations(IContentDefinitionManager contentDefinitionManager) : Da
     public int Create()
     {
         // Define CodeSnippetPart
-        contentDefinitionManager.AlterPartDefinition(nameof(CodeSnippetPart), part => part
+        contentDefinitionManager.AlterPartDefinitionAsync(nameof(CodeSnippetPart), part => part
             .WithDescription("Provides fields for code snippets collection.")
         );
 
         // Define CodeSnippet Content Type
-        contentDefinitionManager.AlterTypeDefinition("CodeSnippet", type => type
+        contentDefinitionManager.AlterTypeDefinitionAsync("CodeSnippet", type => type
             .WithPart("TitlePart", part => part.WithPosition("1"))
             .WithPart(nameof(CodeSnippetPart), part => part.WithPosition("2"))
             .Creatable()

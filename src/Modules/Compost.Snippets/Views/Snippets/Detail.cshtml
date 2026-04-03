@@ -162,13 +162,13 @@
                     <div class="col-6">
                         <div class="mb-2">
                             <label class="form-label text-muted small mb-1">Characters</label>
-                            <div class="text-muted small">@(snippet?.Code?.Length ?? 0)</div>
+                            <div class="text-muted small">@(snippet?.Code.Length ?? 0)</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="mb-2">
                             <label class="form-label text-muted small mb-1">Lines</label>
-                            <div class="text-muted small">@(snippet?.Code?.Split('\n').Length ?? 0)</div>
+                            <div class="text-muted small">@(snippet?.Code.Split('\n').Length ?? 0)</div>
                         </div>
                     </div>
                 </div>

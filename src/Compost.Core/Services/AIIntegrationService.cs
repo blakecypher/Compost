@@ -7,27 +7,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Compost.Core.Services;
 
-public class AIIntegrationService : IAIIntegrationService
+public class AiIntegrationService(
+    ILogger<AiIntegrationService> logger,
+    IConfiguration configuration,
+    HttpClient httpClient)
+    : IaiIntegrationService
 {
-    private readonly ILogger<AIIntegrationService> _logger;
-    private readonly IConfiguration _configuration;
-    private readonly HttpClient _httpClient;
-    private readonly string? _geminiApiKey;
-    private readonly string? _geminiModel;
-    private static readonly char[] separator = ['.', '!', '?'];
-
-    public AIIntegrationService(
-        ILogger<AIIntegrationService> logger,
-        IConfiguration configuration,
-        HttpClient httpClient)
-    {
-        _logger = logger;
-        _configuration = configuration;
-        _httpClient = httpClient;
-        
-        _geminiApiKey = configuration["Compost:Gemini:ApiKey"];
-        _geminiModel = configuration["Compost:Gemini:Model"] ?? "gemini-2.0-flash";
-    }
+    private readonly IConfiguration _configuration = configuration;
+    private readonly string? _geminiApiKey = configuration["Compost:Gemini:ApiKey"];
+    private readonly string? _geminiModel = configuration["Compost:Gemini:Model"] ?? "gemini-2.0-flash";
+    private static readonly char[] Separator = ['.', '!', '?'];
 
     public async Task<int> EstimateStoryPointsAsync(string requirement, string? context = null)
     {
@@ -47,7 +36,7 @@ public class AIIntegrationService : IAIIntegrationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error estimating story points with Gemini AI");
+            logger.LogError(ex, "Error estimating story points with Gemini AI");
             return GetFallbackStoryPointEstimate(requirement);
         }
     }
@@ -56,7 +45,7 @@ public class AIIntegrationService : IAIIntegrationService
     {
         if (string.IsNullOrEmpty(_geminiApiKey))
         {
-            return GetFallbackPatternRecognition(code, language);
+            return GetFallbackPatternRecognition(code);
         }
 
         try
@@ -69,8 +58,8 @@ public class AIIntegrationService : IAIIntegrationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error recognizing patterns with Gemini AI");
-            return GetFallbackPatternRecognition(code, language);
+            logger.LogError(ex, "Error recognizing patterns with Gemini AI");
+            return GetFallbackPatternRecognition(code);
         }
     }
 
@@ -90,7 +79,7 @@ public class AIIntegrationService : IAIIntegrationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating code suggestion with Gemini AI");
+            logger.LogError(ex, "Error generating code suggestion with Gemini AI");
             return GetFallbackCodeSuggestion(requirement, language);
         }
     }
@@ -112,7 +101,7 @@ public class AIIntegrationService : IAIIntegrationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error extracting action items with Gemini AI");
+            logger.LogError(ex, "Error extracting action items with Gemini AI");
             return GetFallbackActionItemExtraction(text);
         }
     }
@@ -134,7 +123,7 @@ public class AIIntegrationService : IAIIntegrationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error extracting mind map nodes with Gemini AI");
+            logger.LogError(ex, "Error extracting mind map nodes with Gemini AI");
             return GetFallbackMindMapNodeExtraction(text);
         }
     }
@@ -166,7 +155,7 @@ public class AIIntegrationService : IAIIntegrationService
 
         var url = $"https://generativelanguage.googleapis.com/v1beta/models/{_geminiModel}:generateContent?key={_geminiApiKey}";
         
-        var response = await _httpClient.PostAsync(url, content);
+        var response = await httpClient.PostAsync(url, content);
         
         if (!response.IsSuccessStatusCode)
         {
@@ -180,7 +169,7 @@ public class AIIntegrationService : IAIIntegrationService
         return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text ?? string.Empty;
     }
 
-    private async Task<string> CallOpenAIAsync(string prompt)
+    private async Task<string> CallOpenAiAsync(string prompt)
     {
         // Deprecated - redirects to Gemini
         return await CallGeminiAsync(prompt);
@@ -360,7 +349,7 @@ public class AIIntegrationService : IAIIntegrationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error parsing action items from AI response");
+            logger.LogError(ex, "Error parsing action items from AI response");
             return [];
         }
     }
@@ -398,7 +387,7 @@ public class AIIntegrationService : IAIIntegrationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error parsing mind map nodes from AI response");
+            logger.LogError(ex, "Error parsing mind map nodes from AI response");
             return [];
         }
     }
@@ -430,7 +419,7 @@ public class AIIntegrationService : IAIIntegrationService
         return 3; // Default to medium
     }
 
-    private List<ArchitecturalPattern> GetFallbackPatternRecognition(string code, string language)
+    private static List<ArchitecturalPattern> GetFallbackPatternRecognition(string code)
     {
         var patterns = new List<ArchitecturalPattern>();
         
@@ -479,7 +468,7 @@ public class AIIntegrationService : IAIIntegrationService
     private List<ActionItem> GetFallbackActionItemExtraction(string text)
     {
         var actionItems = new List<ActionItem>();
-        var sentences = text.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+        var sentences = text.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
         
         var actionKeywords = new[] { 
             "need to", "should", "must", "will", "task", "action item", "todo", "follow up", 
@@ -596,7 +585,7 @@ public class AIIntegrationService : IAIIntegrationService
 
         // Final pass: Group short adjacent notes from the same speaker if they form a larger thought
         var finalNodes = new List<MindMapNode>();
-        for (int i = 0; i < nodes.Count; i++)
+        for (var i = 0; i < nodes.Count; i++)
         {
             var current = nodes[i];
             
@@ -643,7 +632,7 @@ public class Part
 }
 
 // Legacy OpenAI response models (kept for compatibility)
-public class OpenAIResponse
+public class OpenAiResponse
 {
     public List<Choice>? Choices { get; set; }
 }

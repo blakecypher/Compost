@@ -3,18 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Compost.Contexts.ViewComponents;
 
-public class ActiveProjectIndicatorViewComponent : ViewComponent
+public class ActiveProjectIndicatorViewComponent(IProjectManager projectManager) : ViewComponent
 {
-    private readonly IProjectManager _projectManager;
-
-    public ActiveProjectIndicatorViewComponent(IProjectManager projectManager)
-    {
-        _projectManager = projectManager;
-    }
-
     public async Task<IViewComponentResult> InvokeAsync()
     {
-        var activeProject = await _projectManager.GetActiveProjectAsync();
+        var activeProject = await projectManager.GetActiveProjectAsync();
         return View(activeProject);
     }
 }

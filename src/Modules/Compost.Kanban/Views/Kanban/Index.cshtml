@@ -1,3 +1,4 @@
+@using System.Web
 @using Compost.Core.Models
 @using Compost.Kanban.Models
 @using OrchardCore.ContentManagement
@@ -409,7 +410,7 @@
                                     @if (!string.IsNullOrEmpty(part?.Assignee))
                                     {
                                         <img
-                                            src="https://ui-avatars.com/api/?name=@System.Web.HttpUtility.UrlEncode(part.Assignee)&background=random"
+                                            src="https://ui-avatars.com/api/?name=@HttpUtility.UrlEncode(part.Assignee)&background=random"
                                             class="rounded-circle border border-white" width="24" height="24"
                                             alt="@part.Assignee" title="@part.Assignee">
                                     }

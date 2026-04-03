@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Threading.Tasks;
-using Compost.Core.Models;
 using Compost.Core.Interfaces;
+using Compost.Core.Models;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Compost.Transcription.Hubs;
 
@@ -38,7 +38,7 @@ public class TranscriptionHub : Hub
         await Clients.Group($"meeting_{meetingId}").SendAsync("ReceiveTranscriptSegment", segment);
     }
 
-    public async Task SendRecordingStatus(string meetingId, string status, string? message = null)
+    public async Task SendRecordingStatus(string meetingId, string status, string message = null)
     {
         await Clients.Group($"meeting_{meetingId}").SendAsync("ReceiveRecordingStatus", status, message);
     }
@@ -50,15 +50,14 @@ public class TranscriptionHub : Hub
 
     public async Task SendAudioChunk(string meetingId, string base64Audio)
     {
-        var transcriptionService = Context.GetHttpContext()?.RequestServices.GetService(typeof(ITranscriptionService)) as ITranscriptionService;
-        if (transcriptionService != null)
+        if (Context.GetHttpContext()?.RequestServices.GetService(typeof(ITranscriptionService)) is ITranscriptionService transcriptionService)
         {
             var audioData = Convert.FromBase64String(base64Audio);
             await transcriptionService.ProcessAudioSegmentAsync(meetingId, audioData);
         }
     }
 
-    public override async Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(Exception exception)
     {
         // Clean up any meeting subscriptions when client disconnects
         await base.OnDisconnectedAsync(exception);

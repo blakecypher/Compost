@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using OrchardCore.ContentManagement;
 using Compost.Core.Models;
 using Newtonsoft.Json;
+using OrchardCore.ContentManagement;
 
 namespace Compost.Transcription.Models;
 
@@ -24,13 +24,13 @@ public class MeetingPart : ContentPart
     public string Status { get; set; } = string.Empty;
     
     [JsonProperty("audioFilePath")]
-    public string? AudioFilePath { get; set; }
+    public string AudioFilePath { get; set; }
     
     [JsonProperty("transcriptText")]
-    public string? TranscriptText { get; set; }
+    public string TranscriptText { get; set; }
     
     [JsonProperty("transcriptJson")]
-    public string? TranscriptJson { get; set; }
+    public string TranscriptJson { get; set; }
     
     [JsonIgnore]
     public List<TranscriptSegment> Transcript
@@ -72,10 +72,10 @@ public class MeetingPart : ContentPart
     public bool IsProcessed { get; set; }
     
     [JsonProperty("notes")]
-    public string? Notes { get; set; }
+    public string Notes { get; set; }
     
     [JsonProperty("summary")]
-    public string? Summary { get; set; }
+    public string Summary { get; set; }
     
     [JsonProperty("autoExtractMindMapNodes", NullValueHandling = NullValueHandling.Ignore)]
     [DefaultValue(true)]

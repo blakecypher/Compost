@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Compost.Core.Services;
 using Compost.Core.Models;
+using Compost.Core.Services;
 using Compost.Snippets.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using OrchardCore.ContentManagement;
@@ -13,7 +12,7 @@ using YesSql;
 
 namespace Compost.Snippets.Controllers;
 
-public class SnippetsController(IContentManager contentManager, ISession session, AIIntegrationService aiService)
+public class SnippetsController(IContentManager contentManager, ISession session, AiIntegrationService aiService)
     : Controller
 {
     public async Task<IActionResult> Index(string query)
@@ -36,11 +35,11 @@ public class SnippetsController(IContentManager contentManager, ISession session
             var filtered = allSnippets.Where(item => 
             {
                 var part = item.As<CodeSnippetPart>();
-                return (item.DisplayText != null && item.DisplayText.ToLower().Contains(search))
-                    || (part?.Language != null && part.Language.ToLower().Contains(search))
-                    || (part?.Category != null && part.Category.ToLower().Contains(search))
-                    || (part?.Documentation != null && part.Documentation.ToLower().Contains(search))
-                    || (part?.Tags != null && part.Tags.Any(t => t.ToLower().Contains(search)));
+                return (item.DisplayText != null && item.DisplayText.Contains(search, StringComparison.CurrentCultureIgnoreCase))
+                    || (part?.Language != null && part.Language.Contains(search, StringComparison.CurrentCultureIgnoreCase))
+                    || (part?.Category != null && part.Category.Contains(search, StringComparison.CurrentCultureIgnoreCase))
+                    || (part?.Documentation != null && part.Documentation.Contains(search, StringComparison.CurrentCultureIgnoreCase))
+                    || (part?.Tags != null && part.Tags.Any(t => t.Contains(search, StringComparison.CurrentCultureIgnoreCase)));
             });
             
             ViewBag.SearchQuery = query;
@@ -91,26 +90,20 @@ public class SnippetsController(IContentManager contentManager, ISession session
             await contentManager.PublishAsync(contentItem);
             
             // Update pattern side - bidirectional
-            if (!string.IsNullOrEmpty(model.RelatedPatternId))
+            if (string.IsNullOrEmpty(model.RelatedPatternId)) return RedirectToAction(nameof(Index));
             {
                 var pattern = await contentManager.GetAsync(model.RelatedPatternId, VersionOptions.DraftRequired);
-                if (pattern != null)
-                {
-                    pattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
-                        if (part.RelatedSnippetIds == null)
-                        {
-                            part.RelatedSnippetIds = new List<string>();
-                        }
-                        if (!((List<string>)part.RelatedSnippetIds).Contains(contentItem.ContentItemId))
-                        {
-                            ((List<string>)part.RelatedSnippetIds).Add(contentItem.ContentItemId);
-                        }
-                    });
-                    await contentManager.UpdateAsync(pattern);
-                    await contentManager.PublishAsync(pattern);
-                }
+                if (pattern == null) return RedirectToAction(nameof(Index));
+                pattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
+                    if (!part.RelatedSnippetIds.Contains(contentItem.ContentItemId))
+                    {
+                        part.RelatedSnippetIds.Add(contentItem.ContentItemId);
+                    }
+                });
+                await contentManager.UpdateAsync(pattern);
+                await contentManager.PublishAsync(pattern);
             }
-            
+
             return RedirectToAction(nameof(Index));
         }
         
@@ -201,7 +194,7 @@ public class SnippetsController(IContentManager contentManager, ISession session
         await contentManager.PublishAsync(contentItem);
         
         // Handle bidirectional updates
-        if (oldPatternId != model.RelatedPatternId)
+        if (oldPatternId == model.RelatedPatternId) return RedirectToAction(nameof(Index));
         {
             // Remove from old pattern if exists
             if (!string.IsNullOrEmpty(oldPatternId))
@@ -209,11 +202,9 @@ public class SnippetsController(IContentManager contentManager, ISession session
                 var oldPattern = await contentManager.GetAsync(oldPatternId, VersionOptions.DraftRequired);
                 if (oldPattern != null)
                 {
-                    oldPattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
-                        if (part.RelatedSnippetIds != null)
-                        {
-                            ((List<string>)part.RelatedSnippetIds).Remove(contentItem.ContentItemId);
-                        }
+                    oldPattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part =>
+                    {
+                        part.RelatedSnippetIds.Remove(contentItem.ContentItemId);
                     });
                     await contentManager.UpdateAsync(oldPattern);
                     await contentManager.PublishAsync(oldPattern);
@@ -221,24 +212,18 @@ public class SnippetsController(IContentManager contentManager, ISession session
             }
             
             // Add to new pattern if exists
-            if (!string.IsNullOrEmpty(model.RelatedPatternId))
+            if (string.IsNullOrEmpty(model.RelatedPatternId)) return RedirectToAction(nameof(Index));
             {
                 var newPattern = await contentManager.GetAsync(model.RelatedPatternId, VersionOptions.DraftRequired);
-                if (newPattern != null)
-                {
-                    newPattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
-                        if (part.RelatedSnippetIds == null)
-                        {
-                            part.RelatedSnippetIds = new List<string>();
-                        }
-                        if (!((List<string>)part.RelatedSnippetIds).Contains(contentItem.ContentItemId))
-                        {
-                            ((List<string>)part.RelatedSnippetIds).Add(contentItem.ContentItemId);
-                        }
-                    });
-                    await contentManager.UpdateAsync(newPattern);
-                    await contentManager.PublishAsync(newPattern);
-                }
+                if (newPattern == null) return RedirectToAction(nameof(Index));
+                newPattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
+                    if (!part.RelatedSnippetIds.Contains(contentItem.ContentItemId))
+                    {
+                        part.RelatedSnippetIds.Add(contentItem.ContentItemId);
+                    }
+                });
+                await contentManager.UpdateAsync(newPattern);
+                await contentManager.PublishAsync(newPattern);
             }
         }
 
@@ -274,7 +259,7 @@ public class SnippetsController(IContentManager contentManager, ISession session
 
         try
         {
-            var patterns = await aiService.RecognizePatternsAsync(part.Code, part.Language ?? "csharp");
+            var patterns = await aiService.RecognizePatternsAsync(part.Code, part.Language);
             
             // Store detected patterns in session or return as JSON
             return Json(new { 
@@ -352,3 +337,4 @@ public class AnalyzeCodeRequest
     public string Code { get; set; }
     public string Language { get; set; }
 }
+

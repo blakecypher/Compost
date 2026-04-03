@@ -1,5 +1,6 @@
+@using Compost.Core.Services
 @model Compost.Core.Models.Meeting
-@inject Compost.Core.Services.ITranscriptLocalizationService Localizer
+@inject ITranscriptLocalizationService Localizer
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -25,21 +26,21 @@
                 <i class="fas fa-align-left"></i> @Localizer.GetString("Transcript.Label.Transcript")
             </div>
             <div class="card-body bg-light overflow-auto" style="max-height: 600px;">
-                @if (Model.Transcript != null && Model.Transcript.Any())
+                @if (Model.Transcript.Any())
                 {
                     @foreach (var segment in Model.Transcript)
                     {
-                        var culture = segment.Culture ?? "en-US";
-                        var speakerLabel = segment.Context?.TryGetValue("SpeakerLabel", out var label) == true 
+                        var culture = segment.Culture;
+                        var speakerLabel = segment.Context.TryGetValue("SpeakerLabel", out var label) 
                             ? label 
                             : Localizer.GetString("Transcript.Speaker.Unknown", culture);
                         <div class="mb-3 p-3 bg-white shadow-sm rounded border-start border-4 transcript-segment @(segment.SpeakerId == "1" ? "border-primary" : "border-info")">
                             <div class="d-flex justify-content-between mb-1">
-                                <span class="fw-bold">@(segment.Context?.TryGetValue("SpeakerName", out var name) == true ? name : speakerLabel)</span>
+                                <span class="fw-bold">@(segment.Context.TryGetValue("SpeakerName", out var name) ? name : speakerLabel)</span>
                                 <small class="text-muted">@segment.StartTime.ToString(@"hh\:mm\:ss")</small>
                             </div>
                             <div>@segment.Text</div>
-                            @if (segment.Context?.Any() == true)
+                            @if (segment.Context.Any())
                             {
                                 <div class="mt-2 small text-muted">
                                     @foreach (var ctx in segment.Context.Where(c => c.Key != "SpeakerName" && c.Key != "SpeakerLabel"))
@@ -85,7 +86,7 @@
                 <i class="fas fa-tasks"></i> Action Items
             </div>
             <div class="card-body" id="action-items">
-                @if (Model.ActionItems != null && Model.ActionItems.Any())
+                @if (Model.ActionItems.Any())
                 {
                     <ul class="list-group list-group-flush">
                         @foreach (var item in Model.ActionItems)
@@ -109,7 +110,7 @@
                 <i class="fas fa-brain"></i> Mind Map Links
             </div>
             <div class="card-body" id="mindmap-links">
-                @if (Model.ExtractedNodes != null && Model.ExtractedNodes.Any())
+                @if (Model.ExtractedNodes.Any())
                 {
                     <p class="small">Extracted @Model.ExtractedNodes.Count nodes to mind map.</p>
                     <button class="btn btn-sm btn-outline-primary w-100" id="create-mindmap-btn" data-meeting-id="@Model.Id">
@@ -200,7 +201,7 @@
                     <h6 class="mb-2">Processing Meeting Data</h6>
                     <p class="text-muted mb-0" id="progress-loading-message">Analyzing transcript and extracting key concepts...</p>
                     <div class="progress mt-3" style="height: 6px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progress-bar"></div>
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0" id="progress-bar"></div>
                     </div>
                 </div>
                 

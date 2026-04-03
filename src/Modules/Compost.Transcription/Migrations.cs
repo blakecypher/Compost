@@ -1,7 +1,7 @@
+using System.Threading.Tasks;
 using OrchardCore.ContentManagement.Metadata;
 using OrchardCore.ContentManagement.Metadata.Settings;
 using OrchardCore.Data.Migration;
-using System.Threading.Tasks;
 
 namespace Compost.Transcription;
 

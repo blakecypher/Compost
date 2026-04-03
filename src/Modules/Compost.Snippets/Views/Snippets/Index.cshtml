@@ -49,29 +49,15 @@
                     var snippet = item.As<CodeSnippetPart>();
                     if (snippet == null) continue;
 
-                    string GetBaseColor(string lang) => lang?.ToLower() switch
-                    {
-                        "csharp" => "primary",
-                        "javascript" => "warning",
-                        "typescript" => "info",
-                        "python" => "success",
-                        "sql" => "secondary",
-                        "json" => "dark",
-                        "xml" => "danger",
-                        "html" => "danger",
-                        "css" => "info",
-                        _ => "secondary"
-                    };
-
                     var baseColor = GetBaseColor(snippet.Language);
                     var headerClass = $"bg-{baseColor} {(baseColor is "warning" or "info" ? "text-dark" : "text-white")}";
-                    var buttonClass = $"btn-outline-{baseColor}";
                     var textColorClass = baseColor is "warning" or "info" ? "text-dark" : "text-white";
                     
                     <div class="col-md-6 mb-4">
                         <div class="card h-100 snippet-card border-0" style="border-top: 4px solid #ffc107; transition: transform 0.1s, box-shadow 0.2s; background: var(--bs-body-bg) !important; border-left: 1px solid var(--bs-border-color); border-right: 1px solid var(--bs-border-color); border-bottom: 1px solid var(--bs-border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                             <div class="card-header @headerClass d-flex justify-content-between align-items-center">
-                                <span class="fw-bold"><i class="fas fa-code me-1"></i> @(snippet.Language?.ToUpper() ?? "TEXT")</span>
+                                <span class="fw-bold"><i class="fas fa-code me-1"></i> @snippet.Language.ToUpper()
+                                </span>
                                 <div class="dropdown">
                                     <button class="btn btn-link @textColorClass p-0" type="button" data-bs-toggle="dropdown" style="text-decoration: none;">
                                         <i class="fas fa-ellipsis-v"></i>
@@ -91,12 +77,9 @@
                                     @(snippet.Documentation?.Length > 100 ? snippet.Documentation[..100] + "..." : snippet.Documentation)
                                 </p>
                                 <div class="mt-2 mb-3">
-                                   @if(snippet.Tags != null)
+                                    @foreach(var tag in snippet.Tags.Take(3))
                                    {
-                                       @foreach(var tag in snippet.Tags.Take(3))
-                                       {
-                                           <span class="badge bg-light text-dark border me-1">@tag</span>
-                                       }
+                                       <span class="badge bg-light text-dark border me-1">@tag</span>
                                    }
                                 </div>
                                  <!-- Code preview with theme support -->
@@ -116,6 +99,21 @@
                             </div>
                         </div>
                     </div>
+                    continue;
+
+                    string GetBaseColor(string lang) => lang?.ToLower() switch
+                    {
+                        "csharp" => "primary",
+                        "javascript" => "warning",
+                        "typescript" => "info",
+                        "python" => "success",
+                        "sql" => "secondary",
+                        "json" => "dark",
+                        "xml" => "danger",
+                        "html" => "danger",
+                        "css" => "info",
+                        _ => "secondary"
+                    };
                 }
             </div>
         </div>
@@ -175,9 +173,9 @@ else
 <!-- Include Prism for syntax highlighting in the list view with theme support -->
 <script>
     // Determine which Prism theme to load based on current theme
-    var isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    var prismTheme = isDarkMode ? 'prism-tomorrow.min.css' : 'prism.min.css';
-    var link = document.createElement('link');
+    const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const prismTheme = isDarkMode ? 'prism-tomorrow.min.css' : 'prism.min.css';
+    const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/' + prismTheme;
     document.head.appendChild(link);

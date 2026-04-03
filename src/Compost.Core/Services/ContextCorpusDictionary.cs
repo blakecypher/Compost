@@ -93,7 +93,7 @@ public class ContextCorpusDictionary
     {
         var corpus = new Dictionary<string, Dictionary<string, double>>
         {
-            ["Decision"] = new Dictionary<string, double>
+            ["Decision"] = new()
             {
                 // Agreement markers
                 ["decided"] = 0.9,
@@ -128,7 +128,7 @@ public class ContextCorpusDictionary
                 ["strategic"] = 0.55
             },
 
-            ["Action"] = new Dictionary<string, double>
+            ["Action"] = new()
             {
                 // Action verbs
                 ["will"] = 0.8,
@@ -176,7 +176,7 @@ public class ContextCorpusDictionary
                 ["update"] = 0.6
             },
 
-            ["Requirement"] = new Dictionary<string, double>
+            ["Requirement"] = new()
             {
                 // Requirement markers
                 ["requirement"] = 0.9,
@@ -216,7 +216,7 @@ public class ContextCorpusDictionary
                 ["success criteria"] = 0.8
             },
 
-            ["Risk"] = new Dictionary<string, double>
+            ["Risk"] = new()
             {
                 // Risk markers
                 ["risk"] = 0.9,
@@ -261,7 +261,7 @@ public class ContextCorpusDictionary
                 ["workaround"] = 0.7
             },
 
-            ["Goal"] = new Dictionary<string, double>
+            ["Goal"] = new()
             {
                 // Goal markers
                 ["goal"] = 0.9,
@@ -300,7 +300,7 @@ public class ContextCorpusDictionary
                 ["working toward"] = 0.7
             },
 
-            ["Timeline"] = new Dictionary<string, double>
+            ["Timeline"] = new()
             {
                 // Timeline markers
                 ["timeline"] = 0.9,
@@ -339,12 +339,11 @@ public class ContextCorpusDictionary
                 ["urgent"] = 0.7,
                 ["priority"] = 0.65,
                 ["soon"] = 0.6,
-                ["eventually"] = 0.55,
                 ["later"] = 0.55,
                 ["eventually"] = 0.55
             },
 
-            ["Question"] = new Dictionary<string, double>
+            ["Question"] = new()
             {
                 // Question markers
                 ["?"] = 0.8,
@@ -379,7 +378,7 @@ public class ContextCorpusDictionary
                 ["curious"] = 0.6
             },
 
-            ["Idea"] = new Dictionary<string, double>
+            ["Idea"] = new()
             {
                 // Idea markers
                 ["idea"] = 0.9,
@@ -422,7 +421,7 @@ public class ContextCorpusDictionary
                 ["redesign"] = 0.75
             },
 
-            ["Resource"] = new Dictionary<string, double>
+            ["Resource"] = new()
             {
                 // Resource markers
                 ["resource"] = 0.9,
@@ -459,7 +458,7 @@ public class ContextCorpusDictionary
                 ["contract"] = 0.75
             },
 
-            ["Technical"] = new Dictionary<string, double>
+            ["Technical"] = new()
             {
                 // Technical markers
                 ["technical"] = 0.85,
@@ -512,7 +511,7 @@ public class ContextCorpusDictionary
                 ["encryption"] = 0.85
             },
 
-            ["Stakeholder"] = new Dictionary<string, double>
+            ["Stakeholder"] = new()
             {
                 // Stakeholder markers
                 ["customer"] = 0.85,
@@ -553,8 +552,8 @@ public class ContextCorpusDictionary
 
     private HashSet<string> InitializeStopWords()
     {
-        return new HashSet<string>
-        {
+        return
+        [
             "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
             "have", "has", "had", "do", "does", "did", "will", "would", "could",
             "should", "may", "might", "must", "can", "shall", "to", "of", "in",
@@ -567,6 +566,6 @@ public class ContextCorpusDictionary
             "just", "now", "only", "also", "even", "back", "any", "some", "all",
             "each", "every", "both", "few", "more", "most", "other", "such",
             "no", "not", "nor", "too", "own", "same", "so", "than", "too"
-        };
+        ];
     }
 }

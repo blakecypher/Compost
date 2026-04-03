@@ -2,8 +2,8 @@ using System;
 using System.Threading.Tasks;
 using Compost.Transcription.Models;
 using OrchardCore.ContentManagement.Display.ContentDisplay;
-using OrchardCore.ContentManagement.Display.ViewModels;
 using OrchardCore.ContentManagement.Display.Models;
+using OrchardCore.ContentManagement.Display.ViewModels;
 using OrchardCore.DisplayManagement.ModelBinding;
 using OrchardCore.DisplayManagement.Views;
 
@@ -68,6 +68,6 @@ public class MeetingPartViewModel : ContentPartViewModel
     // Edit properties
     public bool AutoExtractMindMapNodes { get; set; } = true;
     public bool AutoExtractActionItems { get; set; } = true;
-    public string? Notes { get; set; }
-    public string? Summary { get; set; }
+    public string Notes { get; set; }
+    public string Summary { get; set; }
 }

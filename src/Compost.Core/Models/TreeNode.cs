@@ -151,7 +151,7 @@ public enum DependencyType
 {
     InternalNode,       // Depends on another tree node
     ExternalTeam,       // Depends on another team
-    ExternalAPI,        // Depends on external API/service
+    ExternalApi,        // Depends on external API/service
     Infrastructure,     // Depends on infrastructure changes
     DataMigration,      // Depends on data migration
     Other

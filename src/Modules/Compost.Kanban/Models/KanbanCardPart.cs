@@ -1,38 +1,50 @@
 using System;
 using System.Collections.Generic;
 using Compost.Core.Models;
-using OrchardCore.ContentManagement;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using OrchardCore.ContentManagement;
 
 namespace Compost.Kanban.Models;
 
 /// <summary>
 /// Handles reading SourceMeetingId as either string or object (for backward compatibility)
 /// </summary>
-public class SourceMeetingIdConverter : JsonConverter<string?>
+public class SourceMeetingIdConverter : JsonConverter<string>
 {
-    public override string? ReadJson(JsonReader reader, Type objectType, string? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override string ReadJson(JsonReader reader, Type objectType, string existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        if (reader.TokenType == JsonToken.String)
+        switch (reader.TokenType)
         {
-            return reader.Value?.ToString();
+            case JsonToken.String:
+                return reader.Value?.ToString();
+            case JsonToken.StartObject:
+                // Skip the object and return null (corrupted data)
+                reader.Skip();
+                return null;
+            case JsonToken.Null:
+                return null;
+            case JsonToken.None:
+            case JsonToken.StartArray:
+            case JsonToken.StartConstructor:
+            case JsonToken.PropertyName:
+            case JsonToken.Comment:
+            case JsonToken.Raw:
+            case JsonToken.Integer:
+            case JsonToken.Float:
+            case JsonToken.Boolean:
+            case JsonToken.Undefined:
+            case JsonToken.EndObject:
+            case JsonToken.EndArray:
+            case JsonToken.EndConstructor:
+            case JsonToken.Date:
+            case JsonToken.Bytes:
+            default:
+                // For any other type, try to read as string
+                return reader.Value?.ToString();
         }
-        if (reader.TokenType == JsonToken.StartObject)
-        {
-            // Skip the object and return null (corrupted data)
-            reader.Skip();
-            return null;
-        }
-        if (reader.TokenType == JsonToken.Null)
-        {
-            return null;
-        }
-        // For any other type, try to read as string
-        return reader.Value?.ToString();
     }
 
-    public override void WriteJson(JsonWriter writer, string? value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, string value, JsonSerializer serializer)
     {
         writer.WriteValue(value);
     }
@@ -47,26 +59,26 @@ public class KanbanCardPart : ContentPart
     /// Reference to the project context
     /// </summary>
     [JsonProperty("workContextId")]
-    public string? WorkContextId { get; set; }
+    public string WorkContextId { get; set; }
 
     /// <summary>
     /// Reference to the source tree node
     /// </summary>
     [JsonProperty("sourceTreeNodeId")]
-    public string? SourceTreeNodeId { get; set; }
+    public string SourceTreeNodeId { get; set; }
 
     /// <summary>
     /// Reference to the source meeting if applicable
     /// </summary>
     [JsonProperty("sourceMeetingId")]
     [JsonConverter(typeof(SourceMeetingIdConverter))]
-    public string? SourceMeetingId { get; set; }
+    public string SourceMeetingId { get; set; }
 
     /// <summary>
     /// The excerpt from the transcript that generated this card
     /// </summary>
     [JsonProperty("sourceTranscriptExcerpt")]
-    public string? SourceTranscriptExcerpt { get; set; }
+    public string SourceTranscriptExcerpt { get; set; }
 
     /// <summary>
     /// Story points estimation
@@ -96,7 +108,7 @@ public class KanbanCardPart : ContentPart
     /// Assigned user for this card
     /// </summary>
     [JsonProperty("assignee")]
-    public string? Assignee { get; set; }
+    public string Assignee { get; set; }
 
     /// <summary>
     /// Tags for categorizing and filtering cards
@@ -144,5 +156,5 @@ public class KanbanCardPart : ContentPart
     /// Reason for being blocked
     /// </summary>
     [JsonProperty("blockedReason")]
-    public string? BlockedReason { get; set; }
+    public string BlockedReason { get; set; }
 }

@@ -1,3 +1,6 @@
+@using Compost.Core.Models
+@using Microsoft.AspNetCore.Antiforgery
+@using Microsoft.AspNetCore.Html
 @using Microsoft.Extensions.DependencyInjection
 @model List<Compost.Core.Models.Project>
 
@@ -6,9 +9,6 @@
     
     var rootProjects = Model.Where(p => string.IsNullOrEmpty(p.ParentProjectId)).OrderBy(p => p.DisplayOrder).ToList();
     var allProjects = Model.OrderBy(p => p.DisplayOrder).ToList();
-    
-    Func<string, List<Compost.Core.Models.Project>> getChildren = parentId =>
-        Model.Where(p => p.ParentProjectId == parentId).OrderBy(p => p.DisplayOrder).ToList();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -26,7 +26,7 @@
 
 <!-- Active Project Banner -->
 @{
-    var activeProject = ViewBag.ActiveProject as Compost.Core.Models.Project;
+    var activeProject = ViewBag.ActiveProject as Project;
 }
 @if (activeProject != null)
 {
@@ -89,7 +89,7 @@ else
 <!-- Search and Filter Bar -->
 <div class="card bg-light mb-4">
     <div class="card-body">
-        <form asp-action="TreeView" method="get">
+        <form asp-action="TreeView" asp-controller="Project" method="get">
             <div class="row g-3">
                 <div class="col-md-6">
                     <input type="text" name="query" class="form-control" placeholder="Search project names, descriptions..." value="@ViewBag.SearchQuery">
@@ -110,7 +110,7 @@ else
                         </button>
                         @if (ViewBag.SearchQuery != null)
                         {
-                            <a asp-action="TreeView" class="btn btn-outline-danger">
+                            <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-danger">
                                 <i class="fas fa-times"></i> Clear
                             </a>
                         }
@@ -184,7 +184,7 @@ else
                                         <li>
                                             <form action="/Compost.Contexts/Project/Switch/@project.Id" method="post" style="display:inline;">
                                             @{
-                                                var antiforgery = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var antiforgery = ViewContext.HttpContext.RequestServices.GetService<IAntiforgery>();
                                                 var tokens = antiforgery?.GetAndStoreTokens(ViewContext.HttpContext);
                                                 var tokenValue = tokens?.RequestToken ?? "";
                                             }
@@ -200,7 +200,7 @@ else
                                         <li>
                                             <form action="/Compost.Contexts/Project/EndSession/@project.Id" method="post" style="display:inline;">
                                             @{
-                                                var antiforgery2 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var antiforgery2 = ViewContext.HttpContext.RequestServices.GetService<IAntiforgery>();
                                                 var tokens2 = antiforgery2?.GetAndStoreTokens(ViewContext.HttpContext);
                                                 var tokenValue2 = tokens2?.RequestToken ?? "";
                                             }
@@ -216,7 +216,7 @@ else
                                         <li>
                                             <form action="/Compost.Contexts/Project/StartSession/@project.Id" method="post" style="display:inline;">
                                             @{
-                                                var antiforgery3 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var antiforgery3 = ViewContext.HttpContext.RequestServices.GetService<IAntiforgery>();
                                                 var tokens3 = antiforgery3?.GetAndStoreTokens(ViewContext.HttpContext);
                                                 var tokenValue3 = tokens3?.RequestToken ?? "";
                                             }
@@ -414,13 +414,13 @@ else
 
 @functions {
 
-    private Microsoft.AspNetCore.Html.IHtmlContent RenderTreeNode(Compost.Core.Models.Project project, int level)
+    private IHtmlContent RenderTreeNode(Project project, int level)
     {
         var children = Model.Where(c => c.ParentProjectId == project.Id).OrderBy(c => c.DisplayOrder).ToList();
         var hasChildren = children.Any();
         var isActive = project.IsActive;
         
-        var content = new Microsoft.AspNetCore.Html.HtmlContentBuilder();
+        var content = new HtmlContentBuilder();
         
         // Start tree node div
         content.AppendHtml($"<div class=\"tree-node {(hasChildren ? "has-children" : "")} {(isActive ? "active-context" : "")}\" data-context-id=\"{project.Id}\" data-parent-id=\"{project.ParentProjectId}\" style=\"margin-left: {level * 30}px\">");
@@ -481,7 +481,7 @@ else
         
         if (!isActive)
         {
-            var tokens = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>()?.GetAndStoreTokens(ViewContext.HttpContext);
+            var tokens = ViewContext.HttpContext.RequestServices.GetService<IAntiforgery>()?.GetAndStoreTokens(ViewContext.HttpContext);
             var tokenValue = tokens?.RequestToken ?? "";
             content.AppendHtml($"<form action=\"/Compost.Contexts/Project/Switch/{project.Id}\" method=\"post\" style=\"display:inline;\"><input type=\"hidden\" name=\"__RequestVerificationToken\" value=\"{tokenValue}\" /><button type=\"submit\" class=\"btn btn-sm btn-outline-success\" title=\"Activate\"><i class=\"fas fa-play\"></i></button></form>");
         }

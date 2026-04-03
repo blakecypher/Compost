@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using Compost.Core.Models;
-using OrchardCore.ContentManagement;
 using Newtonsoft.Json;
+using OrchardCore.ContentManagement;
 
 namespace Compost.Kanban.Models;
 
 /// <summary>
 /// Handles reading SourceMeetingId as either string or object (for backward compatibility)
 /// </summary>
-public class TreeNodeSourceMeetingIdConverter : JsonConverter<string?>
+public class TreeNodeSourceMeetingIdConverter : JsonConverter<string>
 {
-    public override string? ReadJson(JsonReader reader, Type objectType, string? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override string ReadJson(JsonReader reader, Type objectType, string existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         if (reader.TokenType == JsonToken.String)
         {
@@ -31,7 +31,7 @@ public class TreeNodeSourceMeetingIdConverter : JsonConverter<string?>
         return reader.Value?.ToString();
     }
 
-    public override void WriteJson(JsonWriter writer, string? value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, string value, JsonSerializer serializer)
     {
         writer.WriteValue(value);
     }
@@ -46,32 +46,32 @@ public class TreeNodePart : ContentPart
     /// Reference to the project context
     /// </summary>
     [JsonProperty("workContextId")]
-    public string? WorkContextId { get; set; }
+    public string WorkContextId { get; set; }
 
     /// <summary>
     /// Reference to the originating mind map node
     /// </summary>
     [JsonProperty("sourceMindMapNodeId")]
-    public string? SourceMindMapNodeId { get; set; }
+    public string SourceMindMapNodeId { get; set; }
 
     /// <summary>
     /// Reference to the originating meeting ID
     /// </summary>
     [JsonProperty("sourceMeetingId")]
     [JsonConverter(typeof(TreeNodeSourceMeetingIdConverter))]
-    public string? SourceMeetingId { get; set; }
+    public string SourceMeetingId { get; set; }
 
     /// <summary>
     /// The excerpt from the transcript that generated this requirement
     /// </summary>
     [JsonProperty("sourceTranscriptExcerpt")]
-    public string? SourceTranscriptExcerpt { get; set; }
+    public string SourceTranscriptExcerpt { get; set; }
 
     /// <summary>
     /// Parent tree node ID (for hierarchy)
     /// </summary>
     [JsonProperty("parentNodeId")]
-    public string? ParentNodeId { get; set; }
+    public string ParentNodeId { get; set; }
 
     /// <summary>
     /// Acceptance criteria for this requirement
@@ -119,5 +119,5 @@ public class TreeNodePart : ContentPart
     /// Reference to the structure node if promoted
     /// </summary>
     [JsonProperty("structureNodeId")]
-    public string? StructureNodeId { get; set; }
+    public string StructureNodeId { get; set; }
 }

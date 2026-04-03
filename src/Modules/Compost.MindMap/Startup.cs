@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using OrchardCore.Modules;
 using OrchardCore.Navigation;
+using IMindMapService = Compost.Core.Interfaces.IMindMapService;
 
 namespace Compost.MindMap;
 
@@ -13,8 +14,8 @@ public class Startup : StartupBase
     public override void ConfigureServices(IServiceCollection services)
     {
         // Register mind map services - both Core interface and MindMap-specific interface
-        services.AddScoped<Compost.Core.Interfaces.IMindMapService, MindMapService>();
-        services.AddScoped<Compost.MindMap.Services.IMindMapService, MindMapService>();
+        services.AddScoped<IMindMapService, MindMapService>();
+        services.AddScoped<Services.IMindMapService, MindMapService>();
         
         // Register navigation
         services.AddScoped<INavigationProvider, MindMapMenu>();
@@ -77,7 +78,7 @@ public class Startup : StartupBase
 
 public class MindMapMenu(IStringLocalizer<MindMapMenu> localizer) : INavigationProvider
 {
-    private readonly IStringLocalizer S = localizer;
+    private readonly IStringLocalizer _s = localizer;
 
     public Task BuildNavigationAsync(string name, NavigationBuilder builder)
     {
@@ -87,12 +88,12 @@ public class MindMapMenu(IStringLocalizer<MindMapMenu> localizer) : INavigationP
         }
 
         builder
-            .Add(S["Mind Maps"], "after:Content", mindmap => mindmap
-                .Add(S["All Mind Maps"], "1", list => list
+            .Add(_s["Mind Maps"], "after:Content", mindmap => mindmap
+                .Add(_s["All Mind Maps"], "1", list => list
                     .Action(nameof(Index), nameof(MindMap), new { area = "Compost.MindMap" })
                     .LocalNav()
                 )
-                .Add(S["Create New"], "2", create => create
+                .Add(_s["Create New"], "2", create => create
                     .Action("Create", nameof(MindMap), new { area = "Compost.MindMap" })
                     .LocalNav()
                 )

@@ -123,7 +123,7 @@
                     
                     <div class="mb-3">
                         <label asp-for="RelatedPatternId" class="form-label fw-bold">Related Pattern</label>
-                        <select asp-for="RelatedPatternId" class="form-select" asp-items="@(new SelectList(Model.AvailablePatterns, "Key", "Value"))">
+                        <select asp-for="RelatedPatternId" class="form-select" asp-items="@(Model.AvailablePatterns?.Select(p => new SelectListItem { Value = p.Key, Text = p.Value }) ?? Enumerable.Empty<SelectListItem>())">
                             <option value="">-- None --</option>
                         </select>
                         <span asp-validation-for="RelatedPatternId" class="text-danger"></span>
@@ -155,12 +155,12 @@
     <script>
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
         
-        require(['vs/editor/editor.main'], function() {
-            var languageSelect = document.getElementById('language-select');
-            var codeInput = document.getElementById('code-hidden-input');
-            
+        require(['vs/editor/editor.main'], function (index) {
+            const languageSelect = document.getElementById('language-select');
+            const codeInput = document.getElementById('code-hidden-input');
+
             // Map our language values to Monaco language IDs
-            var languageMap = {
+            const languageMap = {
                 'csharp': 'csharp',
                 'javascript': 'javascript',
                 'typescript': 'typescript',
@@ -172,34 +172,34 @@
                 'html': 'html',
                 'css': 'css'
             };
-            
+
             // Get initial code safely from the server-side model
             // We encode it to JSON to handle newlines, quotes, etc. safely
-            var initialCode = @Html.Raw(Json.Serialize(Model.Code ?? ""));
-            
-            // Determine theme based on current data-bs-theme
-            var isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-            var editorTheme = isDarkMode ? 'vs-dark' : 'vs';
+            const initialCode = @Html.Raw(Json.Serialize(Model.Code ?? ""));
 
-            var editor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+            // Determine theme based on current data-bs-theme
+            const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            const editorTheme = isDarkMode ? 'vs-dark' : 'vs';
+
+            const editor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
                 value: initialCode,
                 language: languageMap[languageSelect.value] || 'plaintext',
                 theme: editorTheme,
                 automaticLayout: true,
-                minimap: { enabled: true }
+                minimap: {enabled: true}
             });
-            
+
             // Listen for theme changes
-            var observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
+            const observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
-                        var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-                        var newTheme = isDark ? 'vs-dark' : 'vs';
+                        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                        const newTheme = isDark ? 'vs-dark' : 'vs';
                         monaco.editor.setTheme(newTheme);
                     }
                 });
             });
-            
+
             observer.observe(document.documentElement, {
                 attributes: true,
                 attributeFilter: ['data-bs-theme']
@@ -207,13 +207,13 @@
             
             // Update editor language when select changes
             languageSelect.addEventListener('change', function() {
-                var newLang = languageMap[this.value] || 'plaintext';
+                const newLang = languageMap[this.value] || 'plaintext';
                 monaco.editor.setModelLanguage(editor.getModel(), newLang);
             });
             
             // Sync content to hidden input on change
             editor.onDidChangeModelContent(function(e) {
-                codeInput.value = editor.getValue();
+                codeInput.value = editor.getValue(index);
             });
             
             // Make editor globally accessible for pattern detection
@@ -221,8 +221,8 @@
         });
         
         // AI Pattern Detection function
-        function detectPatterns() {
-            const code = window.monacoEditor ? window.monacoEditor.getValue() : document.getElementById('code-hidden-input').value;
+        function detectPatterns(index) {
+            const code = window.monacoEditor ? window.monacoEditor.getValue(index) : document.getElementById('code-hidden-input').value;
             const language = document.getElementById('language-select').value;
             const resultDiv = document.getElementById('detected-patterns');
             

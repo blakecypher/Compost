@@ -1,5 +1,6 @@
 using System;
 using Compost.Core.Models;
+using Compost.Core.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,8 +18,8 @@ public class Startup : StartupBase
         services.AddContentPart<CodeSnippetPart>();
 
         // Register AI service
-        services.AddHttpClient<Core.Services.AIIntegrationService>();
-        services.AddScoped<Core.Services.AIIntegrationService>();
+        services.AddHttpClient<AiIntegrationService>();
+        services.AddScoped<AiIntegrationService>();
 
         // Register Migrations
         services.AddScoped<IDataMigration, Migrations>();

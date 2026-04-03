@@ -1,18 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using OrchardCore.ContentManagement.Metadata;
 using OrchardCore.ContentManagement.Metadata.Settings;
-using OrchardCore.Data.Migration;
 
 namespace Compost.Web.Controllers
 {
     public class DirectMigrationController(
-        IDataMigrationManager migrationManager,
         IContentDefinitionManager contentDefinitionManager,
         ILogger<DirectMigrationController> logger)
         : Controller
     {
-        private readonly IDataMigrationManager _migrationManager = migrationManager;
-
         [HttpGet]
         [Route("/run-transcription-migration")]
         public async Task<IActionResult> RunTranscriptionMigration()

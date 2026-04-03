@@ -39,4 +39,9 @@
     <Folder Include="wwwroot\css\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="App_Data\Sites\Default\appsettings.json" />
+    <Content Include="App_Data\Sites\Default\yessql.db" />
+  </ItemGroup>
+
 </Project>

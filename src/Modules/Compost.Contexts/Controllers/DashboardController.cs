@@ -1,6 +1,8 @@
 using Compost.Core.Interfaces;
+using Compost.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using OrchardCore.ContentManagement;
+using OrchardCore.ContentManagement.Records;
 using YesSql;
 using ISession = YesSql.ISession;
 
@@ -27,21 +29,21 @@ public class DashboardController(
         var latestMindMaps = mindMaps.OrderByDescending(m => m.UpdatedAt).Take(5).ToList();
 
         // Get latest Kanban cards
-        var cards = await session.Query<ContentItem, OrchardCore.ContentManagement.Records.ContentItemIndex>()
+        var cards = await session.Query<ContentItem, ContentItemIndex>()
             .Where(x => x.ContentType == "KanbanCard" && x.Latest && x.Published)
             .OrderByDescending(x => x.CreatedUtc)
             .Take(5)
             .ListAsync();
 
         // Get latest snippets
-        var snippets = await session.Query<ContentItem, OrchardCore.ContentManagement.Records.ContentItemIndex>()
+        var snippets = await session.Query<ContentItem, ContentItemIndex>()
             .Where(x => x.ContentType == "CodeSnippet" && x.Latest && x.Published)
             .OrderByDescending(x => x.CreatedUtc)
             .Take(5)
             .ListAsync();
 
         // Get latest patterns
-        var patterns = await session.Query<ContentItem, OrchardCore.ContentManagement.Records.ContentItemIndex>()
+        var patterns = await session.Query<ContentItem, ContentItemIndex>()
             .Where(x => x.ContentType == "ArchitecturalPattern" && x.Latest && x.Published)
             .OrderByDescending(x => x.CreatedUtc)
             .Take(5)
@@ -71,7 +73,7 @@ public class DashboardViewModel
     public int ActiveProjects { get; set; }
     public int TrackingProjects { get; set; }
     public TimeSpan TotalTimeSpent { get; set; }
-    public List<Compost.Core.Models.Project> LatestProjects { get; set; } = new();
+    public List<Project> LatestProjects { get; set; } = new();
     
     // Placeholders for other modules
     public List<MindMapSummary> LatestMindMaps { get; set; } = new();

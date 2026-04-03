@@ -1,41 +1,43 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Compost.Core.Interfaces;
 using Compost.Core.Models;
+using Compost.Kanban.Models;
 using Compost.MindMap.Models;
 using Compost.MindMap.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using OrchardCore.ContentManagement;
-using Compost.Kanban.Models;
 using Microsoft.Extensions.Logging;
+using OrchardCore.ContentManagement;
+using IMindMapService = Compost.MindMap.Services.IMindMapService;
 using MindMapNodeModel = Compost.MindMap.Models.MindMapNode;
 
 namespace Compost.MindMap.Controllers;
 
 public class MindMapController(
-    Compost.MindMap.Services.IMindMapService _mindMapService,
-    IProjectManager _projectManager,
-    IDecompositionEngine _decompositionEngine,
-    IContentManager _contentManager,
-    ILogger<MindMapController> _logger)
+    IMindMapService mindMapService,
+    IProjectManager projectManager,
+    IDecompositionEngine decompositionEngine,
+    IContentManager contentManager,
+    ILogger<MindMapController> logger)
     : Controller
 {
     // GET: /MindMap
     public async Task<IActionResult> Index()
     {
-        var contexts = await _projectManager.GetAllProjectsAsync();
+        var contexts = await projectManager.GetAllProjectsAsync();
         var mindMaps = new List<MindMapCollection>();
 
         // Load mind maps associated with contexts
         foreach (var context in contexts)
         {
-            var maps = await _mindMapService.GetMindMapsByContextAsync(context.Id);
+            var maps = await mindMapService.GetMindMapsByContextAsync(context.Id);
             mindMaps.AddRange(maps);
         }
 
         // Also load all mind maps to ensure we don't miss any (including those without contexts)
-        var allMindMaps = await _mindMapService.GetAllMindMapsAsync();
+        var allMindMaps = await mindMapService.GetAllMindMapsAsync();
 
         // Add any mind maps that aren't already in the list (avoid duplicates)
         foreach (var map in allMindMaps)
@@ -51,7 +53,7 @@ public class MindMapController(
     // GET: /MindMap/Latest
     public async Task<IActionResult> Latest()
     {
-        var allMindMaps = await _mindMapService.GetAllMindMapsAsync();
+        var allMindMaps = await mindMapService.GetAllMindMapsAsync();
         var latestMindMap = allMindMaps.OrderByDescending(m => m.CreatedAt).FirstOrDefault();
 
         if (latestMindMap == null) return RedirectToAction(nameof(Index));
@@ -62,7 +64,7 @@ public class MindMapController(
     // GET: /MindMap/View/abc123
     public async Task<IActionResult> ViewMap(string id)
     {
-        var mindMap = await _mindMapService.GetMindMapAsync(id);
+        var mindMap = await mindMapService.GetMindMapAsync(id);
         if (string.IsNullOrEmpty(mindMap.Name)) return NotFound();
 
         return View(mindMap);
@@ -75,11 +77,11 @@ public class MindMapController(
         try
         {
             // Debug logging
-            System.Diagnostics.Debug.WriteLine($"FromMeeting called with meetingId: '{meetingId}'");
+            Debug.WriteLine($"FromMeeting called with meetingId: '{meetingId}'");
 
             if (string.IsNullOrEmpty(meetingId))
             {
-                System.Diagnostics.Debug.WriteLine("Meeting ID is null or empty");
+                Debug.WriteLine("Meeting ID is null or empty");
                 return BadRequest("Meeting ID is required");
             }
 
@@ -101,7 +103,7 @@ public class MindMapController(
             var mindMapName = $"Meeting: {meeting.Title}";
             var workContextId = meeting.WorkContextId;
             var mindMap =
-                await _mindMapService.CreateMindMapFromMeetingNodesAsync(mindMapNodes, mindMapName, workContextId,
+                await mindMapService.CreateMindMapFromMeetingNodesAsync(mindMapNodes, mindMapName, workContextId,
                     meetingId);
 
             // Redirect to the mind map view
@@ -122,7 +124,7 @@ public class MindMapController(
         try
         {
             // Debug logging
-            System.Diagnostics.Debug.WriteLine(
+            Debug.WriteLine(
                 $"FromMeeting POST called with meetingId: '{meetingId}', name: '{model.Name}'");
 
             if (string.IsNullOrEmpty(meetingId)) return BadRequest("Meeting ID is required");
@@ -148,12 +150,12 @@ public class MindMapController(
             var description = model.Description;
 
             var mindMap =
-                await _mindMapService.CreateMindMapFromMeetingNodesAsync(mindMapNodes, mindMapName, workContextId,
+                await mindMapService.CreateMindMapFromMeetingNodesAsync(mindMapNodes, mindMapName, workContextId,
                     meetingId);
 
             // Update the mind map with custom description
             mindMap.Description = description;
-            await _mindMapService.SaveMindMapAsync(mindMap);
+            await mindMapService.SaveMindMapAsync(mindMap);
 
             // Redirect to the mind map view
             return RedirectToAction(nameof(ViewMap), new { id = mindMap.Id });
@@ -171,7 +173,7 @@ public class MindMapController(
     {
         try
         {
-            var mindMap = await _mindMapService.GetMindMapAsync(id);
+            var mindMap = await mindMapService.GetMindMapAsync(id);
             if (string.IsNullOrEmpty(mindMap.Name))
                 return Json(new { success = false, error = "MindMap not found" });
 
@@ -190,7 +192,7 @@ public class MindMapController(
     // GET: /MindMap/Create
     public async Task<IActionResult> Create(string? workContextId = null)
     {
-        var contexts = await _projectManager.GetAllProjectsAsync();
+        var contexts = await projectManager.GetAllProjectsAsync();
         ViewBag.WorkContexts = contexts;
         ViewBag.SelectedContextId = workContextId;
 
@@ -204,7 +206,7 @@ public class MindMapController(
     {
         if (!ModelState.IsValid)
         {
-            var contexts = await _projectManager.GetAllProjectsAsync();
+            var contexts = await projectManager.GetAllProjectsAsync();
             ViewBag.WorkContexts = contexts;
             return View(model);
         }
@@ -214,15 +216,15 @@ public class MindMapController(
         switch (model.SourceType)
         {
             case "Transcript":
-                mindMap = await _mindMapService.CreateMindMapFromTranscriptAsync(
+                mindMap = await mindMapService.CreateMindMapFromTranscriptAsync(
                     model.SourceText, model.Name, model.WorkContextId);
                 break;
             case "Requirements":
-                mindMap = await _mindMapService.CreateMindMapFromRequirementsAsync(
+                mindMap = await mindMapService.CreateMindMapFromRequirementsAsync(
                     model.SourceText, model.Name, model.WorkContextId);
                 break;
             default:
-                mindMap = await _mindMapService.CreateMindMapFromTextAsync(
+                mindMap = await mindMapService.CreateMindMapFromTextAsync(
                     model.SourceText, model.Name, model.WorkContextId);
                 break;
         }
@@ -236,7 +238,7 @@ public class MindMapController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(string id)
     {
-        await _mindMapService.DeleteMindMapAsync(id);
+        await mindMapService.DeleteMindMapAsync(id);
         TempData["SuccessMessage"] = "Mind map deleted.";
         return RedirectToAction(nameof(Index));
     }
@@ -244,7 +246,7 @@ public class MindMapController(
     // GET: /MindMap/FromContext/abc123
     public async Task<IActionResult> FromContext(string projectId)
     {
-        var context = await _projectManager.GetProjectByIdAsync(projectId);
+        var context = await projectManager.GetProjectByIdAsync(projectId);
         if (context == null) return NotFound();
 
         // Create mind map from context data
@@ -258,7 +260,7 @@ Testing Steps: {string.Join(", ", context.TestingSteps)}
 Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question))}
 ";
 
-        var mindMap = await _mindMapService.CreateMindMapFromTextAsync(
+        var mindMap = await mindMapService.CreateMindMapFromTextAsync(
             sourceText, $"Mind Map: {context.Name}", projectId);
 
         TempData["SuccessMessage"] = $"Mind map created from context '{context.Name}'.";
@@ -270,18 +272,18 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     {
         try
         {
-            var mindMap = await _mindMapService.GetMindMapAsync(id);
+            var mindMap = await mindMapService.GetMindMapAsync(id);
 
             switch (format.ToLower())
             {
                 case "json":
-                    var json = await _mindMapService.ExportToJsonAsync(id);
+                    var json = await mindMapService.ExportToJsonAsync(id);
                     return File(Encoding.UTF8.GetBytes(json),
                         "application/json", $"{mindMap.Name}.json");
 
                 case "markdown":
                 case "md":
-                    var markdown = await _mindMapService.ExportToMarkdownAsync(id);
+                    var markdown = await mindMapService.ExportToMarkdownAsync(id);
                     return File(Encoding.UTF8.GetBytes(markdown),
                         "text/markdown", $"{mindMap.Name}.md");
 
@@ -317,7 +319,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             using var reader = new StreamReader(file.OpenReadStream());
             var json = await reader.ReadToEndAsync();
 
-            var mindMap = await _mindMapService.ImportFromJsonAsync(json);
+            var mindMap = await mindMapService.ImportFromJsonAsync(json);
             TempData["SuccessMessage"] = $"Mind map '{mindMap.Name}' imported successfully.";
             return RedirectToAction(nameof(ViewMap), new { id = mindMap.Id });
         }
@@ -331,7 +333,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     // GET: /MindMap/AddNode/abc123
     public async Task<IActionResult> AddNode(string id, string? parentNodeId = null)
     {
-        var mindMap = await _mindMapService.GetMindMapAsync(id);
+        var mindMap = await mindMapService.GetMindMapAsync(id);
 
         ViewBag.MindMapId = id;
         ViewBag.MindMapName = mindMap.Name;
@@ -352,7 +354,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     {
         if (!ModelState.IsValid)
         {
-            var mindMap = await _mindMapService.GetMindMapAsync(id);
+            var mindMap = await mindMapService.GetMindMapAsync(id);
             ViewBag.MindMapId = id;
             ViewBag.MindMapName = mindMap?.Name;
             ViewBag.ExistingNodes = mindMap?.Nodes;
@@ -371,7 +373,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             SourceText = model.SourceText
         };
 
-        await _mindMapService.AddNodeAsync(id, node);
+        await mindMapService.AddNodeAsync(id, node);
         TempData["SuccessMessage"] = "Node added successfully.";
         return RedirectToAction(nameof(ViewMap), new { id });
     }
@@ -379,7 +381,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     // GET: /MindMap/EditNode/abc123?nodeId=xyz789
     public async Task<IActionResult> EditNode(string id, string nodeId)
     {
-        var mindMap = await _mindMapService.GetMindMapAsync(id);
+        var mindMap = await mindMapService.GetMindMapAsync(id);
 
         var node = mindMap.Nodes.FirstOrDefault(n => n.Id == nodeId);
         if (node == null)
@@ -409,11 +411,11 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     {
         if (!ModelState.IsValid)
         {
-            ViewBag.MindMapName = (await _mindMapService.GetMindMapAsync(id))?.Name;
+            ViewBag.MindMapName = (await mindMapService.GetMindMapAsync(id))?.Name;
             return View(model);
         }
 
-        var mindMap = await _mindMapService.GetMindMapAsync(id);
+        var mindMap = await mindMapService.GetMindMapAsync(id);
 
 
         var node = mindMap.Nodes.FirstOrDefault(n => n.Id == model.NodeId);
@@ -429,7 +431,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         node.Tags = model.Tags?.Split(',').Select(t => t.Trim()).ToList() ?? [];
         node.SourceText = model.SourceText;
 
-        await _mindMapService.SaveMindMapAsync(mindMap);
+        await mindMapService.SaveMindMapAsync(mindMap);
         TempData["SuccessMessage"] = "Node updated successfully.";
         return RedirectToAction(nameof(ViewMap), new { id });
     }
@@ -438,7 +440,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     [HttpPost]
     public async Task<IActionResult> DeleteNode(string id, string nodeId)
     {
-        await _mindMapService.DeleteNodeAsync(id, nodeId);
+        await mindMapService.DeleteNodeAsync(id, nodeId);
         TempData["SuccessMessage"] = "Node deleted successfully.";
         return RedirectToAction(nameof(ViewMap), new { id });
     }
@@ -455,7 +457,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
 
         try
         {
-            await _mindMapService.BulkDeleteNodesAsync(id, nodeIds);
+            await mindMapService.BulkDeleteNodesAsync(id, nodeIds);
             TempData["SuccessMessage"] = $"Deleted {nodeIds.Length} node(s) successfully.";
         }
         catch (Exception ex)
@@ -471,7 +473,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     {
         try
         {
-            var newMap = await _mindMapService.CloneMindMapAsync(id);
+            var newMap = await mindMapService.CloneMindMapAsync(id);
             TempData["SuccessMessage"] = $"Mind map cloned as '{newMap.Name}'.";
             return RedirectToAction(nameof(ViewMap), new { id = newMap.Id });
         }
@@ -494,7 +496,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
 
         try
         {
-            var mindMap = await _mindMapService.CreateFromTemplateAsync(templateName, name, workContextId);
+            var mindMap = await mindMapService.CreateFromTemplateAsync(templateName, name, workContextId);
             TempData["SuccessMessage"] = $"Mind map '{name}' created from {templateName} template.";
             return RedirectToAction(nameof(ViewMap), new { id = mindMap.Id });
         }
@@ -524,12 +526,12 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     // GET: /MindMap/Search?q=keyword&nodeType=Idea
     public async Task<IActionResult> Search(string q, string? nodeType, string? workContextId)
     {
-        var contexts = await _projectManager.GetAllProjectsAsync();
+        var contexts = await projectManager.GetAllProjectsAsync();
         var mindMaps = new List<MindMapCollection>();
 
         foreach (var context in contexts)
         {
-            var maps = await _mindMapService.GetMindMapsByContextAsync(context.Id);
+            var maps = await mindMapService.GetMindMapsByContextAsync(context.Id);
             mindMaps.AddRange(maps);
         }
 
@@ -567,7 +569,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     // GET: /MindMap/Stats/abc123
     public async Task<IActionResult> Stats(string id)
     {
-        var mindMap = await _mindMapService.GetMindMapAsync(id);
+        var mindMap = await mindMapService.GetMindMapAsync(id);
 
         var stats = new MindMapStatsViewModel
         {
@@ -615,7 +617,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     public async Task<IActionResult> ApiMap(string? id)
     {
         if (string.IsNullOrEmpty(id)) return BadRequest();
-        var mindMap = await _mindMapService.GetMindMapAsync(id);
+        var mindMap = await mindMapService.GetMindMapAsync(id);
         if (string.IsNullOrEmpty(mindMap.Name))
             return NotFound();
         return Json(new
@@ -643,7 +645,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             ParentId = dto.ParentId,
             Notes = dto.Content
         };
-        var updated = await _mindMapService.AddOrUpdateNodeAsync(mapId, node);
+        var updated = await mindMapService.AddOrUpdateNodeAsync(mapId, node);
         if (updated == null) return NotFound();
         return Json(updated);
     }
@@ -656,12 +658,12 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     {
         if (string.IsNullOrEmpty(mapId) || string.IsNullOrEmpty(nodeId))
             return BadRequest();
-        var mindMap = await _mindMapService.GetMindMapAsync(mapId);
+        var mindMap = await mindMapService.GetMindMapAsync(mapId);
         var node = mindMap?.Nodes?.FirstOrDefault(n => n.Id == nodeId);
         if (node == null) return NotFound();
         node.PositionX = dto.X;
         node.PositionY = dto.Y;
-        await _mindMapService.UpdateNodeAsync(mapId, node);
+        await mindMapService.UpdateNodeAsync(mapId, node);
         return Ok();
     }
 
@@ -672,13 +674,13 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     {
         if (string.IsNullOrEmpty(mapId) || string.IsNullOrEmpty(nodeId))
             return BadRequest();
-        var mindMap = await _mindMapService.GetMindMapAsync(mapId);
+        var mindMap = await mindMapService.GetMindMapAsync(mapId);
         var node = mindMap?.Nodes?.FirstOrDefault(n => n.Id == nodeId);
         if (node == null) return NotFound();
         var projectId = mindMap?.WorkContextId ?? "default";
-        _logger.LogInformation("Promoting mind map node '{NodeText}' (ID: {NodeId}) to project context: '{ProjectId}'", node.Text, nodeId, projectId);
+        logger.LogInformation("Promoting mind map node '{NodeText}' (ID: {NodeId}) to project context: '{ProjectId}'", node.Text, nodeId, projectId);
         
-        var treeNode = await _decompositionEngine.CreateTreeNodeAsync(projectId, node.Text, node.Notes ?? "", node.Id, node.SourceReference, node.SourceText);
+        var treeNode = await decompositionEngine.CreateTreeNodeAsync(projectId, node.Text, node.Notes ?? "", node.Id, node.SourceReference, node.SourceText);
         
         // Create Kanban card with transcript excerpt
         string? kanbanCardId = null;
@@ -693,7 +695,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         catch (Exception ex)
         {
             // Log error but don't fail the promotion
-            System.Diagnostics.Debug.WriteLine($"Failed to create Kanban card: {ex.Message}");
+            Debug.WriteLine($"Failed to create Kanban card: {ex.Message}");
         }
         
         node.IsPromoted = true;
@@ -705,7 +707,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             node.Notes = $"KanbanCard:{kanbanCardId}" + (string.IsNullOrEmpty(node.Notes) ? "" : $"\n\n{node.Notes}");
         }
         node.Status = "Approved";
-        await _mindMapService.UpdateNodeAsync(mapId, node);
+        await mindMapService.UpdateNodeAsync(mapId, node);
         var refinementUrl = Url.Action(nameof(Index), "Refinement", new { area = "Compost.Kanban", id = treeNode.Id });
         return Json(new { 
             treeNodeId = treeNode.Id, 
@@ -722,26 +724,26 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         if (string.IsNullOrEmpty(mapId) || string.IsNullOrEmpty(nodeId))
             return BadRequest();
 
-        var mindMap = await _mindMapService.GetMindMapAsync(mapId);
+        var mindMap = await mindMapService.GetMindMapAsync(mapId);
         var node = mindMap?.Nodes?.FirstOrDefault(n => n.Id == nodeId);
         if (node == null) return NotFound();
 
         // Check if node has children (hierarchical structure requirement)
-        var childNodes = mindMap?.Nodes?.Where(n => n.ParentId == nodeId).ToList() ?? new List<MindMapNodeModel>();
+        var childNodes = mindMap?.Nodes?.Where(n => n.ParentId == nodeId).ToList() ?? [];
         if (childNodes.Count == 0)
             return BadRequest(new { error = "Only nodes with children can be promoted to structure" });
 
         var projectId = mindMap?.WorkContextId ?? "default";
 
         // First create tree node, then promote to structure
-        var treeNode = await _decompositionEngine.CreateTreeNodeAsync(projectId, node.Text, node.Notes ?? "", node.Id, node.SourceReference, node.SourceText);
-        var structureNode = await _decompositionEngine.PromoteTreeToStructureAsync(treeNode.Id);
+        var treeNode = await decompositionEngine.CreateTreeNodeAsync(projectId, node.Text, node.Notes ?? "", node.Id, node.SourceReference, node.SourceText);
+        var structureNode = await decompositionEngine.PromoteTreeToStructureAsync(treeNode.Id);
 
         // Update mind map node
         node.IsPromoted = true;
         node.PromotedToId = structureNode.Id;
         node.Status = "Structure";
-        await _mindMapService.UpdateNodeAsync(mapId, node);
+        await mindMapService.UpdateNodeAsync(mapId, node);
 
         return Json(new
         {
@@ -759,7 +761,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         if (string.IsNullOrEmpty(mapId) || string.IsNullOrEmpty(nodeId))
             return BadRequest();
 
-        var mindMap = await _mindMapService.GetMindMapAsync(mapId);
+        var mindMap = await mindMapService.GetMindMapAsync(mapId);
         var node = mindMap?.Nodes?.FirstOrDefault(n => n.Id == nodeId);
         if (node == null) return NotFound();
 
@@ -771,7 +773,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             var description = !string.IsNullOrEmpty(node.SourceText) ? node.SourceText : 
                               !string.IsNullOrEmpty(node.Notes) ? node.Notes : node.Text;
             
-            var treeNode = await _decompositionEngine.CreateTreeNodeAsync(
+            var treeNode = await decompositionEngine.CreateTreeNodeAsync(
                 projectId, 
                 node.Text, 
                 description, 
@@ -784,7 +786,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
                 return BadRequest(new { error = "Failed to create tree node from mind map node" });
             }
             
-            var cards = await _decompositionEngine.PromoteTreeToKanbanAsync(treeNode.Id);
+            var cards = await decompositionEngine.PromoteTreeToKanbanAsync(treeNode.Id);
             if (cards == null || cards.Count == 0)
             {
                 return BadRequest(new { error = "Failed to create Kanban cards from tree node" });
@@ -794,7 +796,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             node.IsPromoted = true;
             node.PromotedToId = cards.FirstOrDefault()?.Id;
             node.Status = "Kanban";
-            await _mindMapService.UpdateNodeAsync(mapId, node);
+            await mindMapService.UpdateNodeAsync(mapId, node);
 
             var refinementUrl = Url.Action(nameof(Index), "Refinement", new { area = "Compost.Kanban", id = treeNode.Id });
             
@@ -820,7 +822,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     {
         if (string.IsNullOrEmpty(mapId) || string.IsNullOrEmpty(nodeId))
             return BadRequest();
-        await _mindMapService.RemoveNodeAsync(mapId, nodeId);
+        await mindMapService.RemoveNodeAsync(mapId, nodeId);
         return Ok();
     }
 
@@ -832,7 +834,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         if (string.IsNullOrEmpty(dto.MapId) || string.IsNullOrEmpty(dto.NodeId))
             return BadRequest();
 
-        var mindMap = await _mindMapService.GetMindMapAsync(dto.MapId);
+        var mindMap = await mindMapService.GetMindMapAsync(dto.MapId);
         var node = mindMap?.Nodes.FirstOrDefault(n => n.Id == dto.NodeId);
 
         if (node == null)
@@ -850,7 +852,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         if (dto.Size.HasValue)
             node.Size = dto.Size.Value;
 
-        await _mindMapService.UpdateNodeAsync(dto.MapId, node);
+        await mindMapService.UpdateNodeAsync(dto.MapId, node);
         return Ok(new { message = "Node style updated" });
     }
 
@@ -862,7 +864,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         if (string.IsNullOrEmpty(dto.MapId) || string.IsNullOrEmpty(dto.LayoutType))
             return BadRequest();
 
-        var mindMap = await _mindMapService.GetMindMapAsync(dto.MapId);
+        var mindMap = await mindMapService.GetMindMapAsync(dto.MapId);
         if (mindMap == null)
             return NotFound();
 
@@ -877,7 +879,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
                 node.PositionY = position.Y;
             }
 
-        await _mindMapService.UpdateMindMapAsync(mindMap);
+        await mindMapService.UpdateMindMapAsync(mindMap);
         return Ok(new { message = $"Applied {dto.LayoutType} layout", positions = layoutPositions });
     }
 
@@ -885,7 +887,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     [HttpGet]
     public async Task<IActionResult> ExportAsImage(string id, string format = "png")
     {
-        var mindMap = await _mindMapService.GetMindMapAsync(id);
+        var mindMap = await mindMapService.GetMindMapAsync(id);
         if (mindMap == null)
             return NotFound();
 
@@ -905,7 +907,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     [HttpGet]
     public async Task<IActionResult> ExportAsJson(string id)
     {
-        var mindMap = await _mindMapService.GetMindMapAsync(id);
+        var mindMap = await mindMapService.GetMindMapAsync(id);
         if (mindMap == null)
             return NotFound();
 
@@ -943,7 +945,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             mindMap.CreatedAt = DateTime.UtcNow;
             mindMap.UpdatedAt = DateTime.UtcNow;
 
-            await _mindMapService.SaveMindMapAsync(mindMap);
+            await mindMapService.SaveMindMapAsync(mindMap);
             return RedirectToAction(nameof(ViewMap), new { id = mindMap.Id });
         }
         catch (Exception ex)
@@ -1207,7 +1209,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         try
         {
             // Create new Kanban card content item
-            var cardItem = await _contentManager.NewAsync(nameof(KanbanCard));
+            var cardItem = await contentManager.NewAsync(nameof(KanbanCard));
             
             // Set basic properties
             cardItem.DisplayText = node.Text;
@@ -1238,14 +1240,14 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             
             // Apply changes and create
             cardItem.Apply(cardPart);
-            await _contentManager.CreateAsync(cardItem);
-            await _contentManager.PublishAsync(cardItem);
+            await contentManager.CreateAsync(cardItem);
+            await contentManager.PublishAsync(cardItem);
             
             return cardItem;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error creating Kanban card: {ex.Message}");
+            Debug.WriteLine($"Error creating Kanban card: {ex.Message}");
             return null;
         }
     }

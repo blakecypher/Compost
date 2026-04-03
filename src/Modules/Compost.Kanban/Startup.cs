@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Compost.Core.Interfaces;
+using Compost.Core.Services;
 using Compost.Kanban.Drivers;
 using Compost.Kanban.Models;
 using Compost.Kanban.Services;
@@ -28,7 +29,7 @@ public class Startup : StartupBase
 
         // Register services
         services.AddScoped<IDecompositionEngine, DecompositionEngine>();
-        services.AddHttpClient<IAIIntegrationService, Compost.Core.Services.AIIntegrationService>();
+        services.AddHttpClient<IaiIntegrationService, AiIntegrationService>();
 
         // Register Migrations
         services.AddScoped<IDataMigration, Migrations>();
@@ -130,7 +131,7 @@ public class Startup : StartupBase
 
 public class KanbanMenu(IStringLocalizer<KanbanMenu> localizer) : INavigationProvider
 {
-    private readonly IStringLocalizer S = localizer;
+    private readonly IStringLocalizer _s = localizer;
 
     public Task BuildNavigationAsync(string name, NavigationBuilder builder)
     {
@@ -140,12 +141,12 @@ public class KanbanMenu(IStringLocalizer<KanbanMenu> localizer) : INavigationPro
         }
 
         builder
-            .Add(S[nameof(Kanban)], "after:Mind Maps", kanban => kanban
-                .Add(S["Board"], "1", board => board
+            .Add(_s[nameof(Kanban)], "after:Mind Maps", kanban => kanban
+                .Add(_s["Board"], "1", board => board
                     .Action(nameof(Index), nameof(Kanban), new { area = "Compost.Kanban" })
                     .LocalNav()
                 )
-                .Add(S["Refinement"], "2", refinement => refinement
+                .Add(_s["Refinement"], "2", refinement => refinement
                     .Action(nameof(Index), "Refinement", new { area = "Compost.Kanban" })
                     .LocalNav()
                 )

@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Globalization;
-
 namespace Compost.Core.Services;
 
 public class TranscriptLocalizationService : ITranscriptLocalizationService
@@ -106,7 +103,7 @@ public class TranscriptLocalizationService : ITranscriptLocalizationService
         
         foreach (var param in parameters)
         {
-            template = template.Replace($"{{{param.Key}}}", param.Value?.ToString() ?? "");
+            template = template.Replace($"{{{param.Key}}}", param.Value.ToString() ?? "");
         }
         
         return template;

@@ -31,7 +31,7 @@
 <div class="mb-3">
     <label class="form-label">Acceptance Criteria</label>
     <div id="acceptance-criteria-container">
-        @for (int i = 0; i < Model.AcceptanceCriteria.Count; i++)
+        @for (var i = 0; i < Model.AcceptanceCriteria.Count; i++)
         {
             <div class="input-group mb-2">
                 <input name="AcceptanceCriteria[@i]" class="form-control" value="@Model.AcceptanceCriteria[i]" />
@@ -47,7 +47,7 @@
 <div class="mb-3">
     <label class="form-label">Technical Requirements</label>
     <div id="technical-requirements-container">
-        @for (int i = 0; i < Model.TechnicalRequirements.Count; i++)
+        @for (var i = 0; i < Model.TechnicalRequirements.Count; i++)
         {
             <div class="input-group mb-2">
                 <input name="TechnicalRequirements[@i]" class="form-control" value="@Model.TechnicalRequirements[i]" />

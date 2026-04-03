@@ -1,4 +1,6 @@
-@using System.IO
+@using Compost.Core.Models
+@using Microsoft.AspNetCore.Antiforgery
+@using Microsoft.AspNetCore.Html
 @using Microsoft.Extensions.DependencyInjection
 @model List<Compost.Core.Models.Project>
 
@@ -134,7 +136,7 @@
                                         <li>
                                             <form action="/Compost.Contexts/Project/Switch/@project.Id" method="post" style="display:inline;">
                                             @{
-                                                var antiforgery2 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var antiforgery2 = ViewContext.HttpContext.RequestServices.GetService<IAntiforgery>();
                                                 var tokens2 = antiforgery2?.GetAndStoreTokens(ViewContext.HttpContext);
                                                 var tokenValue2 = tokens2?.RequestToken ?? "";
                                             }
@@ -150,7 +152,7 @@
                                         <li>
                                             <form action="/Compost.Contexts/Project/EndSession/@project.Id" method="post" style="display:inline;">
                                             @{
-                                                var antiforgery3 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var antiforgery3 = ViewContext.HttpContext.RequestServices.GetService<IAntiforgery>();
                                                 var tokens3 = antiforgery3?.GetAndStoreTokens(ViewContext.HttpContext);
                                                 var tokenValue3 = tokens3?.RequestToken ?? "";
                                             }
@@ -166,7 +168,7 @@
                                         <li>
                                             <form action="/Compost.Contexts/Project/StartSession/@project.Id" method="post" style="display:inline;">
                                             @{
-                                                var antiforgery4 = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+                                                var antiforgery4 = ViewContext.HttpContext.RequestServices.GetService<IAntiforgery>();
                                                 var tokens4 = antiforgery4?.GetAndStoreTokens(ViewContext.HttpContext);
                                                 var tokenValue4 = tokens4?.RequestToken ?? "";
                                             }
@@ -342,9 +344,7 @@
 </div>
 
 <!-- Tree View (Hidden by default) -->
-<div class="tree-container p-3 bg-light rounded" id="treeView" style="display: none;"
-     ondragover="dragOver(event)" 
-     ondrop="dragDropRoot(event)">
+<div class="tree-container p-3 bg-light rounded" id="treeView" style="display: none;">
     
     @if (rootProjects.Any())
     {
@@ -364,13 +364,13 @@
 
 @functions {
 
-    private Microsoft.AspNetCore.Html.IHtmlContent RenderTreeNode(Compost.Core.Models.Project project, int level)
+    private IHtmlContent RenderTreeNode(Project project, int level)
     {
         var children = Model.Where(c => c.ParentProjectId == project.Id).OrderBy(c => c.DisplayOrder).ToList();
         var hasChildren = children.Any();
         var isActive = project.IsActive;
         
-        var content = new Microsoft.AspNetCore.Html.HtmlContentBuilder();
+        var content = new HtmlContentBuilder();
         
         // Start tree node div
         content.AppendHtml($"<div class=\"tree-node {(hasChildren ? "has-children" : "")} {(isActive ? "active-context" : "")}\" data-context-id=\"{project.Id}\" data-parent-id=\"{project.ParentProjectId}\" style=\"margin-left: {level * 30}px\">");
@@ -431,7 +431,7 @@
         
         if (!isActive)
         {
-            var tokens = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>()?.GetAndStoreTokens(ViewContext.HttpContext);
+            var tokens = ViewContext.HttpContext.RequestServices.GetService<IAntiforgery>()?.GetAndStoreTokens(ViewContext.HttpContext);
             var tokenValue = tokens?.RequestToken ?? "";
             var formHtml = $"<form action=\"/Compost.Contexts/Project/Switch/{project.Id}\" method=\"post\" style=\"display:inline;\"><input type=\"hidden\" name=\"__RequestVerificationToken\" value=\"{tokenValue}\" /><button type=\"submit\" class=\"btn btn-sm btn-outline-success\" title=\"Activate\"><i class=\"fas fa-play\"></i></button></form>";
             content.AppendHtml(formHtml);
@@ -460,76 +460,7 @@
 
 @section Scripts {
     <script>
-        // Board View Functions
-        function filterProjects() {
-            const searchTerm = document.getElementById('projectSearch').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            
-            const cards = document.querySelectorAll('.project-card');
-            
-            cards.forEach(card => {
-                const name = card.dataset.name || '';
-                const description = card.dataset.description || '';
-                const status = card.dataset.status || '';
-                
-                const matchesSearch = name.includes(searchTerm) || description.includes(searchTerm);
-                const matchesStatus = !statusFilter || status === statusFilter;
-                
-                if (matchesSearch && matchesStatus) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-        
-        function changeView() {
-            const viewType = document.getElementById('viewType').value;
-            const boardView = document.getElementById('projectsBoard');
-            const treeView = document.getElementById('treeView');
-            
-            if (viewType === 'tree') {
-                boardView.style.display = 'none';
-                treeView.style.display = 'block';
-            } else {
-                boardView.style.display = 'block';
-                treeView.style.display = 'none';
-            }
-        }
-        
-        function sortProjects(sortBy) {
-            const board = document.querySelector('.projects-board .row');
-            const cards = Array.from(board.querySelectorAll('.col-lg-4'));
-            
-            cards.sort((a, b) => {
-                const cardA = a.querySelector('.project-card');
-                const cardB = b.querySelector('.project-card');
-                
-                if (sortBy === 'name') {
-                    return cardA.dataset.name.localeCompare(cardB.dataset.name);
-                } else if (sortBy === 'date') {
-                    // Assuming we might add date data later
-                    return 0;
-                }
-                return 0;
-            });
-            
-            cards.forEach(card => board.appendChild(card));
-        }
-        
-        function viewProjectDetails(projectId) {
-            // Could open a modal or navigate to details page
-            console.log('View project details:', projectId);
-            // For now, just navigate to edit page
-            window.location.href = `/Compost.Contexts/Project/Edit/${projectId}`;
-        }
-        
-        function toggleChildren(projectId) {
-            // Could show/hide child projects in board view
-            console.log('Toggle children for:', projectId);
-        }
-        
-        // Tree View Functions (existing)
+        // Tree View Functions
         let draggedId = null;
         
         function dragStart(event, id) {

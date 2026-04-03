@@ -5,7 +5,6 @@ namespace Compost.Contexts.Services;
 public interface ITimeTrackingService
 {
     Task<TimeSpan> GetTotalTimeSpentAsync(string projectId);
-    Task<TimeSpan> GetCurrentSessionDurationAsync(string projectId);
     Task<Dictionary<string, TimeSpan>> GetTimeBreakdownAsync();
 }
 

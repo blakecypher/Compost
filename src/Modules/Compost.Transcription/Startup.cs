@@ -1,11 +1,11 @@
 using System;
 using Compost.Core.Interfaces;
 using Compost.Core.Services;
-using Compost.Transcription.Services;
-using Compost.Transcription.Hubs;
 using Compost.Transcription.Drivers;
 using Compost.Transcription.Handlers;
+using Compost.Transcription.Hubs;
 using Compost.Transcription.Models;
+using Compost.Transcription.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +23,7 @@ public class Startup : StartupBase
         services.AddScoped<ITranscriptionService, TranscriptionService>();
         services.AddSingleton<ITranscriptLocalizationService, TranscriptLocalizationService>();
         services.AddScoped<ITranscriptContextExtractor, TranscriptContextExtractor>();
-        services.AddHttpClient<IAIIntegrationService, Compost.Core.Services.AIIntegrationService>();
+        services.AddHttpClient<IaiIntegrationService, AiIntegrationService>();
         services.AddSignalR();
         services.AddScoped<IContentPartDisplayDriver, MeetingPartDisplayDriver>();
         services.AddScoped<IContentPartHandler, MeetingPartHandler>();

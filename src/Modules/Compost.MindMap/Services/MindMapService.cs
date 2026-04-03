@@ -2,8 +2,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Compost.Core.Interfaces;
+using Compost.Core.Models;
 using Compost.MindMap.Models;
 using Microsoft.Extensions.Logging;
+using MindMapNode = Compost.Core.Models.MindMapNode;
 
 namespace Compost.MindMap.Services;
 
@@ -11,17 +13,17 @@ public interface IMindMapService
 {
     Task<MindMapCollection> CreateMindMapFromTextAsync(string text, string name, string? workContextId = null);
     Task<MindMapCollection> CreateMindMapFromTranscriptAsync(string transcript, string name, string? workContextId = null);
-    Task<MindMapCollection> CreateMindMapFromMeetingNodesAsync(List<Compost.Core.Models.MindMapNode> meetingNodes, string name, string? workContextId = null, string? meetingId = null);
+    Task<MindMapCollection> CreateMindMapFromMeetingNodesAsync(List<MindMapNode> meetingNodes, string name, string? workContextId = null, string? meetingId = null);
     Task<MindMapCollection> CreateMindMapFromRequirementsAsync(string requirements, string name, string? workContextId = null);
     Task<MindMapCollection> GetMindMapAsync(string id);
     Task<List<MindMapCollection>> GetMindMapsByContextAsync(string workContextId);
     Task SaveMindMapAsync(MindMapCollection mindMap);
     Task UpdateMindMapAsync(MindMapCollection mindMap);
     Task DeleteMindMapAsync(string id);
-    Task UpdateNodeAsync(string mapId, MindMapNode node);
-    Task<MindMapNode?> AddOrUpdateNodeAsync(string mapId, MindMapNode node);
+    Task UpdateNodeAsync(string mapId, Models.MindMapNode node);
+    Task<Models.MindMapNode?> AddOrUpdateNodeAsync(string mapId, Models.MindMapNode node);
     Task RemoveNodeAsync(string mapId, string nodeId);
-    Task AddNodeAsync(string mapId, MindMapNode node);
+    Task AddNodeAsync(string mapId, Models.MindMapNode node);
     Task DeleteNodeAsync(string mapId, string nodeId);
     Task BulkDeleteNodesAsync(string mapId, string[] nodeIds);
     Task<string> PromoteNodeAsync(string mapId, string nodeId);
@@ -33,9 +35,9 @@ public interface IMindMapService
     Task<MindMapCollection> CreateFromTemplateAsync(string templateName, string name, string? workContextId = null);
 }
 
-public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapService
+public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 {
-    private static readonly Dictionary<string, MindMapCollection> _mindMaps = new();
+    private static readonly Dictionary<string, MindMapCollection> MindMaps = new();
     private readonly IProjectManager _projectManager;
     private readonly ILogger<MindMapService> _logger;
     private const string DataFilePath = "mindmaps.json";
@@ -50,20 +52,17 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
     private void LoadFromJson()
     {
-        try {
-            if (File.Exists(DataFilePath))
+        try
+        {
+            if (!File.Exists(DataFilePath)) return;
+            var json = File.ReadAllText(DataFilePath);
+            var data = JsonSerializer.Deserialize<Dictionary<string, MindMapCollection>>(json);
+            if (data == null) return;
+            foreach (var item in data)
             {
-                var json = File.ReadAllText(DataFilePath);
-                var data = JsonSerializer.Deserialize<Dictionary<string, MindMapCollection>>(json);
-                if (data != null)
-                {
-                    foreach (var item in data)
-                    {
-                        _mindMaps[item.Key] = item.Value;
-                    }
-                    _logger.LogInformation("Loaded {Count} mind maps from persistent storage.", _mindMaps.Count);
-                }
+                MindMaps[item.Key] = item.Value;
             }
+            _logger.LogInformation("Loaded {Count} mind maps from persistent storage.", MindMaps.Count);
         } catch (Exception ex) {
             _logger.LogError(ex, "Failed to load mind maps from JSON.");
         }
@@ -72,24 +71,24 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
     private void SaveToJson()
     {
         try {
-            var json = JsonSerializer.Serialize(_mindMaps);
+            var json = JsonSerializer.Serialize(MindMaps);
             File.WriteAllText(DataFilePath, json);
         } catch (Exception ex) {
             _logger.LogError(ex, "Failed to save mind maps to JSON.");
         }
     }
 
-    public async Task UpdateNodeAsync(string mapId, MindMapNode node)
+    public async Task UpdateNodeAsync(string mapId, Models.MindMapNode node)
     {
         _logger.LogInformation("UpdateNodeAsync called for Map: {MapId}, Node: {NodeId}", mapId, node.Id);
-        if (_mindMaps.TryGetValue(mapId, out var mindMap))
+        if (MindMaps.TryGetValue(mapId, out var mindMap))
         {
             var existingNode = mindMap.Nodes.FirstOrDefault(n => n.Id == node.Id);
             if (existingNode != null)
             {
                 _logger.LogInformation("Updating node: {NodeText}", node.Text);
                 existingNode.Text = node.Text;
-                existingNode.Tags = node.Tags ?? existingNode.Tags;
+                existingNode.Tags = node.Tags;
                 existingNode.Status = node.Status;
                 existingNode.Notes = node.Notes;
                 existingNode.NodeType = node.NodeType;
@@ -111,20 +110,20 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         await Task.CompletedTask;
     }
 
-    public async Task<MindMapNode?> AddOrUpdateNodeAsync(string mapId, MindMapNode node)
+    public async Task<Models.MindMapNode?> AddOrUpdateNodeAsync(string mapId, Models.MindMapNode node)
     {
-        if (!_mindMaps.TryGetValue(mapId, out var mindMap))
-            return await Task.FromResult<MindMapNode?>(null);
+        if (!MindMaps.TryGetValue(mapId, out var mindMap))
+            return await Task.FromResult<Models.MindMapNode?>(null);
         var existing = mindMap.Nodes.FirstOrDefault(n => n.Id == node.Id);
         if (existing != null)
         {
             existing.Text = node.Text;
-            existing.NodeType = node.NodeType ?? existing.NodeType;
+            existing.NodeType = node.NodeType;
             existing.Color = node.Color ?? existing.Color;
             existing.PositionX = node.PositionX;
             existing.PositionY = node.PositionY;
             existing.Notes = node.Notes;
-            existing.Tags = node.Tags ?? existing.Tags;
+            existing.Tags = node.Tags;
         }
         else
         {
@@ -132,12 +131,12 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         }
         mindMap.UpdatedAt = DateTime.UtcNow;
         SaveToJson();
-        return await Task.FromResult<MindMapNode?>(mindMap.Nodes.FirstOrDefault(n => n.Id == node.Id));
+        return await Task.FromResult(mindMap.Nodes.FirstOrDefault(n => n.Id == node.Id));
     }
 
     public async Task RemoveNodeAsync(string mapId, string nodeId)
     {
-        if (_mindMaps.TryGetValue(mapId, out var mindMap))
+        if (MindMaps.TryGetValue(mapId, out var mindMap))
         {
             var node = mindMap.Nodes.FirstOrDefault(n => n.Id == nodeId);
             if (node != null)
@@ -154,8 +153,8 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
     public async Task<string> PromoteNodeAsync(string mapId, string nodeId)
     {
-        _logger.LogInformation("PromoteNodeAsync called for Map: {MapId}, Node: {NodeId}. Current known maps: {TotalMaps}", mapId, nodeId, _mindMaps.Count);
-        if (_mindMaps.TryGetValue(mapId, out var mindMap))
+        _logger.LogInformation("PromoteNodeAsync called for Map: {MapId}, Node: {NodeId}. Current known maps: {TotalMaps}", mapId, nodeId, MindMaps.Count);
+        if (MindMaps.TryGetValue(mapId, out var mindMap))
         {
             var node = mindMap.Nodes.FirstOrDefault(n => n.Id == nodeId);
             if (node != null)
@@ -194,10 +193,10 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             Nodes = ParseTextToNodes(text)
         };
 
-        _mindMaps[mindMap.Id] = mindMap;
+        MindMaps[mindMap.Id] = mindMap;
         SaveToJson();
         _logger.LogInformation("Created mind map {MapId} with {NodeCount} nodes. Total maps: {TotalMaps}", 
-            mindMap.Id, mindMap.Nodes.Count, _mindMaps.Count);
+            mindMap.Id, mindMap.Nodes.Count, MindMaps.Count);
         return await Task.FromResult(mindMap);
     }
     
@@ -211,23 +210,23 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             Nodes = ParseTranscriptToNodes(transcript)
         };
 
-        _mindMaps[mindMap.Id] = mindMap;
+        MindMaps[mindMap.Id] = mindMap;
         return await Task.FromResult(mindMap);
     }
     
-    public async Task<MindMapCollection> CreateMindMapFromMeetingNodesAsync(List<Compost.Core.Models.MindMapNode> meetingNodes, string name, string? workContextId = null, string? meetingId = null)
+    public async Task<MindMapCollection> CreateMindMapFromMeetingNodesAsync(List<MindMapNode> meetingNodes, string name, string? workContextId = null, string? meetingId = null)
     {
         var mindMap = new MindMapCollection
         {
             Name = name,
             WorkContextId = workContextId,
-            Description = $"Generated from meeting transcript with {meetingNodes?.Count ?? 0} extracted nodes.",
+            Description = $"Generated from meeting transcript with {meetingNodes.Count} extracted nodes.",
             Nodes = ConvertMeetingNodesToMindMapNodes(meetingNodes, meetingId),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
-        _mindMaps[mindMap.Id] = mindMap;
+        MindMaps[mindMap.Id] = mindMap;
         SaveToJson();
         
         _logger.LogInformation("Created mind map {MapId} from meeting {MeetingId} with {NodeCount} nodes", 
@@ -246,26 +245,26 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             Nodes = ParseRequirementsToNodes(requirements)
         };
 
-        _mindMaps[mindMap.Id] = mindMap;
+        MindMaps[mindMap.Id] = mindMap;
         return await Task.FromResult(mindMap);
     }
     
     public async Task<MindMapCollection> GetMindMapAsync(string id)
     {
-        _mindMaps.TryGetValue(id, out var mindMap);
+        MindMaps.TryGetValue(id, out var mindMap);
         return await Task.FromResult(mindMap ?? new MindMapCollection { Name = "Not Found" });
     }
     
     public async Task<List<MindMapCollection>> GetMindMapsByContextAsync(string workContextId)
     {
-        var maps = _mindMaps.Values.Where(m => m.WorkContextId == workContextId).ToList();
+        var maps = MindMaps.Values.Where(m => m.WorkContextId == workContextId).ToList();
         return await Task.FromResult(maps);
     }
     
     public async Task SaveMindMapAsync(MindMapCollection mindMap)
     {
         mindMap.UpdatedAt = DateTime.UtcNow;
-        _mindMaps[mindMap.Id] = mindMap;
+        MindMaps[mindMap.Id] = mindMap;
         SaveToJson();
         await Task.CompletedTask;
     }
@@ -277,25 +276,25 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
     
     public async Task DeleteMindMapAsync(string id)
     {
-        _mindMaps.Remove(id);
+        MindMaps.Remove(id);
         SaveToJson();
         await Task.CompletedTask;
     }
 
     public async Task<List<MindMapCollection>> GetAllMindMapsAsync()
     {
-        return await Task.FromResult(_mindMaps.Values.ToList());
+        return await Task.FromResult(MindMaps.Values.ToList());
     }
     
     // ========== Parsing Logic ==========
     
-    private List<MindMapNode> ParseTextToNodes(string text)
+    private List<Models.MindMapNode> ParseTextToNodes(string text)
     {
-        var nodes = new List<MindMapNode>();
+        var nodes = new List<Models.MindMapNode>();
         var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         
         // Create root node at center
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Text = "Main Topic",
             NodeType = "Root",
@@ -307,7 +306,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         
         var currentParent = root;
         var level = 1;
-        var angleStep = (2 * Math.PI) / (lines.Count() > 8 ? lines.Count() : 8.0); // Distribute nodes in a circle
+        var angleStep = (2 * Math.PI) / (lines.Length > 8 ? lines.Length : 8.0); // Distribute nodes in a circle
         
         foreach (var line in lines.Select((line, index) => (Text: line.Trim(), Index: index)))
         {
@@ -321,7 +320,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             var x = 400 + radius * Math.Cos(angle);
             var y = 300 + radius * Math.Sin(angle);
             
-            var node = new MindMapNode
+            var node = new Models.MindMapNode
             {
                 Text = nodeText,
                 NodeType = nodeType,
@@ -359,14 +358,14 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         return nodes;
     }
     
-    private List<MindMapNode> ParseTranscriptToNodes(string transcript)
+    private List<Models.MindMapNode> ParseTranscriptToNodes(string transcript)
     {
-        var nodes = new List<MindMapNode>();
+        var nodes = new List<Models.MindMapNode>();
         
         // Extract key segments from transcript
         var segments = ExtractSegments(transcript);
         
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Text = "Meeting Summary",
             NodeType = "Root",
@@ -380,12 +379,12 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         var angleStep = 2 * Math.PI / Math.Max(segments.Count, 1);
         var radius = 200;
         
-        for (int i = 0; i < segments.Count; i++)
+        for (var i = 0; i < segments.Count; i++)
         {
             var segment = segments[i];
             var angle = i * angleStep;
             
-            var node = new MindMapNode
+            var node = new Models.MindMapNode
             {
                 Text = segment.Text.Length > 50 ? segment.Text[..50] + "..." : segment.Text,
                 NodeType = segment.SegmentType,
@@ -407,15 +406,15 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         return nodes;
     }
     
-    private List<MindMapNode> ParseRequirementsToNodes(string requirements)
+    private List<Models.MindMapNode> ParseRequirementsToNodes(string requirements)
     {
-        var nodes = new List<MindMapNode>();
+        var nodes = new List<Models.MindMapNode>();
         
         // Parse numbered or bulleted requirements
         var pattern = @"(?:^|\n)(?:\d+[.)]\s*|[-•]\s*|\[\s*(\d+)\s*\]\s*)(.+?)(?=\n(?:\d+[.)]\s*|[-•]\s*|\[\s*\d+\s*\]\s*)|$)";
         var matches = Regex.Matches(requirements, pattern, RegexOptions.Singleline);
         
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Text = "Requirements",
             NodeType = "Root",
@@ -427,20 +426,20 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         nodes.Add(root);
         
         var angleStep = 2 * Math.PI / Math.Max(matches.Count, 1);
-        var radius = 200;
+        const int radius = 200;
         
-        for (int i = 0; i < matches.Count; i++)
+        for (var i = 0; i < matches.Count; i++)
         {
             var match = matches[i];
             var reqText = match.Groups[2].Value.Trim();
             if (string.IsNullOrWhiteSpace(reqText)) continue;
             
             // Use enhanced node type recognition
-            var (nodeText, nodeType, detectedLevel) = AnalyzeLine(reqText);
+            var (nodeText, nodeType, _) = AnalyzeLine(reqText);
             
             var angle = i * angleStep;
             
-            var node = new MindMapNode
+            var node = new Models.MindMapNode
             {
                 Text = nodeText.Length > 60 ? nodeText[..60] + "..." : nodeText,
                 NodeType = nodeType,
@@ -461,10 +460,10 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         return nodes;
     }
     
-    private (string text, string type, int level) AnalyzeLine(string line)
+    private static (string text, string type, int level) AnalyzeLine(string line)
     {
-        int level = 1;
-        string type = "Idea";
+        var level = 1;
+        var type = "Idea";
         
         // Detect level by indentation or markers
         if (line.StartsWith("    ") || line.StartsWith("\t")) level = 2;
@@ -543,7 +542,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         foreach (var sentence in sentences.Where(s => !string.IsNullOrWhiteSpace(s)))
         {
             // Use enhanced node type recognition
-            var (nodeText, nodeType, detectedLevel) = AnalyzeLine(sentence);
+            var (nodeText, nodeType, _) = AnalyzeLine(sentence);
 
             var item = new ParsedSegment
             {
@@ -579,7 +578,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         };
     }
     
-    private string GetIconForNodeType(string nodeType)
+    private static string GetIconForNodeType(string nodeType)
     {
         return nodeType switch
         {
@@ -603,10 +602,8 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
     public async Task<string> ExportToJsonAsync(string id)
     {
         var mindMap = await GetMindMapAsync(id);
-        if (mindMap == null)
-            throw new ArgumentException("MindMap not found");
-        
-        return JsonSerializer.Serialize(mindMap, new JsonSerializerOptions { WriteIndented = true });
+        return mindMap == null ? throw new ArgumentException("MindMap not found") 
+            : JsonSerializer.Serialize(mindMap, new JsonSerializerOptions { WriteIndented = true });
     }
 
     public async Task<string> ExportToMarkdownAsync(string id)
@@ -637,7 +634,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         return markdown.ToString();
     }
 
-    private async Task ExportNodeToMarkdown(StringBuilder markdown, MindMapNode node, List<MindMapNode> allNodes, int level)
+    private static async Task ExportNodeToMarkdown(StringBuilder markdown, Models.MindMapNode node, List<Models.MindMapNode> allNodes, int level)
     {
         var indent = new string(' ', level * 2);
         var marker = level == 0 ? "#" : "-";
@@ -649,7 +646,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             markdown.AppendLine($"{indent}  *Source: {node.SourceText}*");
         }
         
-        if (node.Tags?.Any() == true)
+        if (node.Tags.Count != 0)
         {
             markdown.AppendLine($"{indent}  Tags: {string.Join(", ", node.Tags)}");
         }
@@ -740,7 +737,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             }
             
             // Update child IDs
-            for (int i = 0; i < node.ChildIds.Count; i++)
+            for (var i = 0; i < node.ChildIds.Count; i++)
             {
                 if (nodeMapping.ContainsKey(node.ChildIds[i]))
                 {
@@ -754,7 +751,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
     }
 
     // Wrapper methods for controller compatibility
-    public async Task AddNodeAsync(string mapId, MindMapNode node)
+    public async Task AddNodeAsync(string mapId, Models.MindMapNode node)
     {
         await AddOrUpdateNodeAsync(mapId, node);
     }
@@ -767,7 +764,6 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
     public async Task BulkDeleteNodesAsync(string mapId, string[] nodeIds)
     {
         var mindMap = await GetMindMapAsync(mapId);
-        if (mindMap == null) return;
 
         foreach (var nodeId in nodeIds)
         {
@@ -844,7 +840,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
     private void CreateProjectPlanningTemplate(MindMapCollection mindMap)
     {
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = mindMap.Name,
@@ -864,14 +860,14 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         };
 
         var angleStep = 2 * Math.PI / branches.Length;
-        var radius = 150;
+        const int radius = 150;
 
-        for (int i = 0; i < branches.Length; i++)
+        for (var i = 0; i < branches.Length; i++)
         {
             var (text, type) = branches[i];
             var angle = i * angleStep;
             
-            var node = new MindMapNode
+            var node = new Models.MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = text,
@@ -889,7 +885,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
     private void CreateBrainstormingTemplate(MindMapCollection mindMap)
     {
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = mindMap.Name,
@@ -903,13 +899,13 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         var ideas = new[] { "Idea 1", "Idea 2", "Idea 3", "Idea 4" };
         var angleStep = 2 * Math.PI / ideas.Length;
 
-        for (int i = 0; i < ideas.Length; i++)
+        for (var i = 0; i < ideas.Length; i++)
         {
             var angle = i * angleStep;
             var x = 400 + (int)(200 * Math.Cos(angle));
             var y = 300 + (int)(200 * Math.Sin(angle));
 
-            var node = new MindMapNode
+            var node = new Models.MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = ideas[i],
@@ -926,7 +922,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
     private void CreateDecisionTreeTemplate(MindMapCollection mindMap)
     {
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = "Decision: " + mindMap.Name,
@@ -942,7 +938,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
         foreach (var option in options)
         {
-            var node = new MindMapNode
+            var node = new Models.MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = option,
@@ -956,7 +952,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             root.ChildIds.Add(node.Id);
 
             // Add pros and cons
-            var pros = new MindMapNode
+            var pros = new Models.MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = "Pros",
@@ -969,7 +965,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             mindMap.Nodes.Add(pros);
             node.ChildIds.Add(pros.Id);
 
-            var cons = new MindMapNode
+            var cons = new Models.MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = "Cons",
@@ -988,7 +984,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
     private void CreateMeetingNotesTemplate(MindMapCollection mindMap)
     {
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = mindMap.Name,
@@ -1010,7 +1006,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
         foreach (var (text, type, x, y) in sections)
         {
-            var node = new MindMapNode
+            var node = new Models.MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = text,
@@ -1027,7 +1023,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
     private void CreateResearchTemplate(MindMapCollection mindMap)
     {
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = "Research: " + mindMap.Name,
@@ -1049,7 +1045,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
 
         foreach (var (text, type, x, y) in branches)
         {
-            var node = new MindMapNode
+            var node = new Models.MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = text,
@@ -1064,9 +1060,9 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         }
     }
     
-    private List<MindMapNode> ConvertMeetingNodesToMindMapNodes(List<Compost.Core.Models.MindMapNode> meetingNodes, string? meetingId)
+    private List<Models.MindMapNode> ConvertMeetingNodesToMindMapNodes(List<MindMapNode>? meetingNodes, string? meetingId)
     {
-        var mindMapNodes = new List<MindMapNode>();
+        var mindMapNodes = new List<Models.MindMapNode>();
         
         if (meetingNodes is not { Count: not 0 })
         {
@@ -1074,7 +1070,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         }
         
         // Create root node
-        var root = new MindMapNode
+        var root = new Models.MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = "Meeting Insights",
@@ -1089,14 +1085,14 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         mindMapNodes.Add(root);
         
         // Group nodes by type for better layout
-        var nodeGroups = meetingNodes.Where(n => n != null).GroupBy(n => n.NodeType);
-        var angleStep = nodeGroups.Any() ? 360.0 / nodeGroups.Count() : 360.0;
+        var nodeGroups = meetingNodes.GroupBy(n => n.NodeType).ToList();
+        var angleStep = nodeGroups.Count != 0 ? 360.0 / nodeGroups.Count : 360.0;
         var currentAngle = 0.0;
         
         foreach (var group in nodeGroups)
         {
             // Create category node
-            var categoryNode = new MindMapNode
+            var categoryNode = new Models.MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = GetCategoryName(group.Key),
@@ -1113,15 +1109,15 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             root.ChildIds.Add(categoryNode.Id);
             
             // Add individual nodes from this category
-            var groupList = group.Where(n => n != null && !string.IsNullOrEmpty(n.Title)).ToList();
+            var groupList = group.Where(n => !string.IsNullOrEmpty(n.Title)).ToList();
             if (groupList.Count != 0)
             {
-                var itemAngleStep = 60.0 / groupList.Count();
+                var itemAngleStep = 60.0 / groupList.Count;
                 var itemAngle = currentAngle - 30;
                 
                 foreach (var meetingNode in groupList)
                 {
-                    var node = new MindMapNode
+                    var node = new Models.MindMapNode
                     {
                         Id = Guid.NewGuid().ToString(),
                         Text = meetingNode.Title,
@@ -1148,39 +1144,39 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
         return mindMapNodes;
     }
     
-    private string GetCategoryName(Compost.Core.Models.MindMapNodeType nodeType)
+    private string GetCategoryName(MindMapNodeType nodeType)
     {
         return nodeType switch
         {
-            Core.Models.MindMapNodeType.Idea => "Ideas & Concepts",
-            Core.Models.MindMapNodeType.Requirement => "Requirements",
-            Core.Models.MindMapNodeType.Action => "Action Items",
-            Core.Models.MindMapNodeType.Question => "Questions",
-            Core.Models.MindMapNodeType.Decision => "Decisions",
-            Core.Models.MindMapNodeType.Risk => "Risks & Issues",
-            Core.Models.MindMapNodeType.Note => "Notes",
+            MindMapNodeType.Idea => "Ideas & Concepts",
+            MindMapNodeType.Requirement => "Requirements",
+            MindMapNodeType.Action => "Action Items",
+            MindMapNodeType.Question => "Questions",
+            MindMapNodeType.Decision => "Decisions",
+            MindMapNodeType.Risk => "Risks & Issues",
+            MindMapNodeType.Note => "Notes",
             _ => "General"
         };
     }
     
-    private string GetMindMapNodeTypeName(Compost.Core.Models.MindMapNodeType nodeType)
+    private string GetMindMapNodeTypeName(MindMapNodeType nodeType)
     {
         return nodeType switch
         {
-            Core.Models.MindMapNodeType.Idea => "Idea",
-            Core.Models.MindMapNodeType.Requirement => "Requirement",
-            Core.Models.MindMapNodeType.Action => nameof(Action),
-            Core.Models.MindMapNodeType.Question => "Question",
-            Core.Models.MindMapNodeType.Decision => "Decision",
-            Core.Models.MindMapNodeType.Risk => "Risk",
-            Core.Models.MindMapNodeType.Note => "Note",
+            MindMapNodeType.Idea => "Idea",
+            MindMapNodeType.Requirement => "Requirement",
+            MindMapNodeType.Action => nameof(Action),
+            MindMapNodeType.Question => "Question",
+            MindMapNodeType.Decision => "Decision",
+            MindMapNodeType.Risk => "Risk",
+            MindMapNodeType.Note => "Note",
             _ => "General"
         };
     }
     
     // ========== Core Interface Implementations ==========
     
-    async Task<List<MindMapSummary>> Compost.Core.Interfaces.IMindMapService.GetAllMindMapsAsync()
+    async Task<List<MindMapSummary>> Core.Interfaces.IMindMapService.GetAllMindMapsAsync()
     {
         var mindMaps = await GetAllMindMapsAsync();
         return mindMaps.Select(m => new MindMapSummary
@@ -1191,11 +1187,11 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             WorkContextId = m.WorkContextId,
             CreatedAt = m.CreatedAt,
             UpdatedAt = m.UpdatedAt,
-            NodeCount = m.Nodes?.Count ?? 0
+            NodeCount = m.Nodes.Count
         }).ToList();
     }
     
-    async Task<MindMapSummary?> Compost.Core.Interfaces.IMindMapService.GetMindMapSummaryAsync(string id)
+    async Task<MindMapSummary?> Core.Interfaces.IMindMapService.GetMindMapSummaryAsync(string id)
     {
         var mindMap = await GetMindMapAsync(id);
         if (string.IsNullOrEmpty(mindMap.Name))
@@ -1209,11 +1205,11 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             WorkContextId = mindMap.WorkContextId,
             CreatedAt = mindMap.CreatedAt,
             UpdatedAt = mindMap.UpdatedAt,
-            NodeCount = mindMap.Nodes?.Count ?? 0
+            NodeCount = mindMap.Nodes.Count
         };
     }
     
-    async Task<List<MindMapSummary>> Compost.Core.Interfaces.IMindMapService.GetMindMapsByContextAsync(string workContextId)
+    async Task<List<MindMapSummary>> Core.Interfaces.IMindMapService.GetMindMapsByContextAsync(string workContextId)
     {
         var mindMaps = await GetMindMapsByContextAsync(workContextId);
         return mindMaps.Select(m => new MindMapSummary
@@ -1224,7 +1220,7 @@ public class MindMapService : Compost.Core.Interfaces.IMindMapService, IMindMapS
             WorkContextId = m.WorkContextId,
             CreatedAt = m.CreatedAt,
             UpdatedAt = m.UpdatedAt,
-            NodeCount = m.Nodes?.Count ?? 0
+            NodeCount = m.Nodes.Count
         }).ToList();
     }
 }

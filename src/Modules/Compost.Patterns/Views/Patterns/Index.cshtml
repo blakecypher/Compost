@@ -52,8 +52,8 @@
             var pattern = item.As<ArchitecturalPatternPart>();
             if (pattern == null) continue;
             
-            var category = pattern.Keywords?.FirstOrDefault() ?? "General";
-            var tagCount = pattern.Keywords?.Count ?? 0;
+            var category = pattern.Keywords.FirstOrDefault() ?? "General";
+            var tagCount = pattern.Keywords.Count;
             var hasCodeExample = !string.IsNullOrEmpty(pattern.Gotchas) && pattern.Gotchas.Contains("Code Example:");
             var successScore = pattern.SuccessScore;
             
@@ -116,7 +116,7 @@
                         
                         <div class="mb-3">
                             <div class="d-flex flex-wrap gap-1">
-                                @if(pattern.Keywords != null && pattern.Keywords.Count > 1)
+                                @if(pattern.Keywords is { Count: > 1 })
                                 {
                                     @foreach(var tag in pattern.Keywords.Skip(1).Take(4))
                                     {
@@ -138,7 +138,7 @@
                                         <i class="fas fa-code me-1"></i>Code Example
                                     </span>
                                 }
-                                @if (pattern.ResourceUrls?.Any() == true)
+                                @if (pattern.ResourceUrls.Any() == true)
                                 {
                                     <span class="badge bg-secondary small">
                                         <i class="fas fa-link me-1"></i>@pattern.ResourceUrls.Count Resources

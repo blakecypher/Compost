@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Compost.Core.Models;
 
 namespace Compost.MindMap.Models;
 
@@ -42,7 +43,7 @@ public class MindMapNode
     public string? Shape { get; set; } = "circle";
     public int FontSize { get; set; } = 12;
     public double Size { get; set; } = 1.0;
-    public List<Compost.Core.Models.NodeEdge> Edges { get; set; } = [];
+    public List<NodeEdge> Edges { get; set; } = [];
     
     /// <summary>
     /// Source information - where this node came from
@@ -82,7 +83,7 @@ public class MindMapCollection
     public string? WorkContextId { get; set; }
     public string? Description { get; set; }
     public List<MindMapNode> Nodes { get; set; } = [];
-    public List<Compost.Core.Models.NodeEdge> Edges { get; set; } = [];
+    public List<NodeEdge> Edges { get; set; } = [];
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

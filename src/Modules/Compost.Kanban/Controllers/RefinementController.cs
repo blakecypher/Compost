@@ -3,8 +3,8 @@ using Compost.Core.Interfaces;
 using Compost.Core.Models;
 using Compost.Kanban.Models;
 using Microsoft.AspNetCore.Mvc;
-// Add this using
 using OrchardCore.ContentManagement;
+// Add this using
 
 namespace Compost.Kanban.Controllers;
 
@@ -17,7 +17,7 @@ public class RefinementFormData
 public class RefinementController(
     IContentManager contentManager,
     IDecompositionEngine decompositionEngine,
-    IAIIntegrationService aiService) : Controller
+    IaiIntegrationService aiService) : Controller
 {
     public async Task<IActionResult> Index(string id)
     {

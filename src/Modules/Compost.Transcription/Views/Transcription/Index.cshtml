@@ -84,7 +84,7 @@
                                     </div>
                                 }
                                 
-                                @if (meeting.Speakers?.Any() == true)
+                                @if (meeting.Speakers.Any())
                                 {
                                     <div class="mb-3">
                                         <small class="text-muted text-uppercase" style="font-size: 0.7rem;">Speakers</small>
@@ -118,7 +118,7 @@
                                             <i class="fas fa-users me-1"></i>@meeting.Speakers.Count speakers
                                         </span>
                                     }
-                                    @if (meeting.Transcript?.Any() == true)
+                                    @if (meeting.Transcript.Any())
                                     {
                                         <small class="text-muted">
                                             <i class="fas fa-align-left me-1"></i>@meeting.Transcript.Count segments

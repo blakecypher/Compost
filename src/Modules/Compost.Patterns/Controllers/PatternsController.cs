@@ -14,7 +14,7 @@ namespace Compost.Patterns.Controllers;
 
 public class PatternsController(IContentManager contentManager, ISession session) : Controller
 {
-    private static readonly char[] separator = ['\n', '\r'];
+    private static readonly char[] Separator = ['\n', '\r'];
 
     public async Task<IActionResult> Index(string query)
     {
@@ -108,21 +108,19 @@ public class PatternsController(IContentManager contentManager, ISession session
         foreach (var snippetItem in snippets)
         {
             var snippetPart = snippetItem.As<CodeSnippetPart>();
-            string relatedPatternId = snippetPart?.RelatedPatternId;
-            if (snippetPart != null && relatedPatternId == id)
+            var relatedPatternId = snippetPart?.RelatedPatternId;
+            if (snippetPart == null || relatedPatternId != id) continue;
+            var code = snippetPart.Code;
+            var language = snippetPart.Language;
+            var preview = code.Length > 200 ? code[..200] + "..." : code;
+            var item = new LinkedSnippetItem
             {
-                string code = snippetPart.Code;
-                string language = snippetPart.Language;
-                var preview = code?.Length > 200 ? code[..200] + "..." : code ?? "";
-                var item = new LinkedSnippetItem
-                {
-                    ContentItemId = snippetItem.ContentItemId,
-                    Title = snippetItem.DisplayText ?? "Snippet",
-                    Language = language ?? "text",
-                    CodePreview = preview
-                };
-                model.LinkedSnippets.Add(item);
-            }
+                ContentItemId = snippetItem.ContentItemId,
+                Title = snippetItem.DisplayText ?? "Snippet",
+                Language = language,
+                CodePreview = preview
+            };
+            model.LinkedSnippets.Add(item);
         }
 
         return View(model);
@@ -224,7 +222,7 @@ public class PatternsController(IContentManager contentManager, ISession session
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> AssociatePattern([FromBody] AssociatePatternRequest request)
     {
-        if (string.IsNullOrEmpty(request?.PatternId) || string.IsNullOrEmpty(request?.SnippetId))
+        if (string.IsNullOrEmpty(request?.PatternId) || string.IsNullOrEmpty(request.SnippetId))
         {
             return Json(new { success = false, error = "Pattern ID and Snippet ID are required" });
         }
@@ -255,10 +253,6 @@ public class PatternsController(IContentManager contentManager, ISession session
             
             // Update pattern side (RelatedSnippetIds) - bidirectional
             pattern.Alter<ArchitecturalPatternPart>(part => {
-                if (part.RelatedSnippetIds == null)
-                {
-                    part.RelatedSnippetIds = new List<string>();
-                }
                 if (!part.RelatedSnippetIds.Contains(request.SnippetId))
                 {
                     part.RelatedSnippetIds.Add(request.SnippetId);
@@ -281,7 +275,7 @@ public class PatternsController(IContentManager contentManager, ISession session
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> CreateFromSnippet([FromBody] CreatePatternFromSnippetRequest request)
     {
-        if (string.IsNullOrEmpty(request?.Name) || string.IsNullOrEmpty(request?.SnippetId))
+        if (string.IsNullOrEmpty(request?.Name) || string.IsNullOrEmpty(request.SnippetId))
         {
             return Json(new { success = false, error = "Pattern name and snippet ID are required" });
         }
@@ -309,7 +303,7 @@ public class PatternsController(IContentManager contentManager, ISession session
                 // Store category in Keywords as first item
                 if (!string.IsNullOrEmpty(request.Category))
                 {
-                    part.Keywords = new List<string> { request.Category };
+                    part.Keywords = [request.Category];
                 }
                 
                 if (!string.IsNullOrWhiteSpace(request.Tags))
@@ -345,10 +339,6 @@ public class PatternsController(IContentManager contentManager, ISession session
                 
                 // Update pattern side - bidirectional
                 contentItem.Alter<ArchitecturalPatternPart>(part => {
-                    if (part.RelatedSnippetIds == null)
-                    {
-                        part.RelatedSnippetIds = new List<string>();
-                    }
                     if (!part.RelatedSnippetIds.Contains(request.SnippetId))
                     {
                         part.RelatedSnippetIds.Add(request.SnippetId);
@@ -373,7 +363,7 @@ public class PatternsController(IContentManager contentManager, ISession session
     private static List<string> ParseResourceUrls(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return [];
-        return text.Split(separator, StringSplitOptions.RemoveEmptyEntries)
+        return text.Split(Separator, StringSplitOptions.RemoveEmptyEntries)
             .Select(u => u.Trim())
             .Where(u => u.Length > 0)
             .ToList();

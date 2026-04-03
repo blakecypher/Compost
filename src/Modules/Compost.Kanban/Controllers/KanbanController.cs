@@ -61,7 +61,7 @@ public class KanbanController(
 
         // Filter cards: if no project selected, show all; otherwise match by WorkContextId directly
         List<ContentItem> kanbanCards;
-        string selectedContextId = projectId; // null = All
+        var selectedContextId = projectId; // null = All
 
         if (string.IsNullOrEmpty(selectedContextId))
         {
@@ -78,13 +78,13 @@ public class KanbanController(
             // Normalize to ID if a name was passed
             var matchId = selectedProject?.Id ?? selectedContextId;
 
-            kanbanCards = new List<ContentItem>();
+            kanbanCards = [];
             foreach (var card in allCards)
             {
                 var part = card.As<KanbanCardPart>();
                 if (part == null) continue;
 
-                bool matches =
+                var matches =
                     // Direct WorkContextId match (covers raw labels like "research", "meeting")
                     string.Equals(part.WorkContextId, matchId, StringComparison.OrdinalIgnoreCase) ||
                     // Also match by registered project name
@@ -153,7 +153,7 @@ public class KanbanController(
                 }
                 break;
             case "storypoints":
-                if (int.TryParse(value, out int points))
+                if (int.TryParse(value, out var points))
                 {
                     part.StoryPoints = points;
                 }
@@ -329,24 +329,29 @@ public class KanbanController(
                 .ListAsync();
 
             var publishedCount = 0;
-            foreach (var card in allCards)
+            var contentItems = allCards.ToList();
+            foreach (var card in contentItems)
             {
                 // Try to get the latest version and publish it
                 var latestVersion = await contentManager.GetAsync(card.ContentItemId, VersionOptions.Latest);
-                if (latestVersion != null && !latestVersion.Published)
+                switch (latestVersion)
                 {
-                    await contentManager.PublishAsync(latestVersion);
-                    publishedCount++;
-                    logger.LogInformation("Published latest version of card: {CardId}", card.ContentItemId);
-                }
-                else if (latestVersion == null)
-                {
-                    // If no latest version, try to publish the current version
-                    if (!card.Published)
-                    {
-                        await contentManager.PublishAsync(card);
+                    case { Published: false }:
+                        await contentManager.PublishAsync(latestVersion);
                         publishedCount++;
-                        logger.LogInformation("Published card: {CardId}", card.ContentItemId);
+                        logger.LogInformation("Published latest version of card: {CardId}", card.ContentItemId);
+                        break;
+                    case null:
+                    {
+                        // If no latest version, try to publish the current version
+                        if (!card.Published)
+                        {
+                            await contentManager.PublishAsync(card);
+                            publishedCount++;
+                            logger.LogInformation("Published card: {CardId}", card.ContentItemId);
+                        }
+
+                        break;
                     }
                 }
             }
@@ -354,8 +359,8 @@ public class KanbanController(
             return Json(new { 
                 success = true, 
                 publishedCount = publishedCount,
-                totalCards = allCards.Count(),
-                message = $"Published {publishedCount} out of {allCards.Count()} cards"
+                totalCards = contentItems.Count,
+                message = $"Published {publishedCount} out of {contentItems.Count} cards"
             });
         }
         catch (Exception ex)
@@ -375,8 +380,10 @@ public class KanbanController(
                 .Where(x => x.ContentType == nameof(KanbanCard))
                 .ListAsync();
 
+            var allRowsList = allRows.ToList();
+
             // Group by ContentItemId to detect versioning duplicates
-            var grouped = allRows
+            var grouped = allRowsList
                 .GroupBy(c => c.ContentItemId)
                 .Select(g =>
                 {
@@ -408,7 +415,7 @@ public class KanbanController(
             return Json(new
             {
                 success = true,
-                totalCmsRows = allRows.Count(),
+                totalCmsRows = allRowsList.Count,
                 distinctCards = grouped.Count,
                 boardVisibleCount = boardCount,
                 notPublishedCount = notPublished,

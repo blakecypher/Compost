@@ -2,7 +2,7 @@ using Compost.Core.Models;
 
 namespace Compost.Core.Interfaces;
 
-public interface IAIIntegrationService
+public interface IaiIntegrationService
 {
     /// <summary>
     /// Estimates story points for a requirement using AI

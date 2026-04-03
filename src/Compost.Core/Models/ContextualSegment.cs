@@ -7,27 +7,27 @@ namespace Compost.Core.Models;
 /// </summary>
 public class ContextualSegment
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Id { get; init; } = Guid.NewGuid().ToString();
     
     /// <summary>
     /// The original transcript text
     /// </summary>
-    public string Text { get; set; } = string.Empty;
+    public string Text { get; init; } = string.Empty;
     
     /// <summary>
     /// Start time in the recording
     /// </summary>
-    public TimeSpan StartTime { get; set; }
+    public TimeSpan StartTime { get; init; }
     
     /// <summary>
     /// End time in the recording
     /// </summary>
-    public TimeSpan EndTime { get; set; }
+    public TimeSpan EndTime { get; init; }
     
     /// <summary>
     /// Speaker identifier
     /// </summary>
-    public string? SpeakerId { get; set; }
+    public string? SpeakerId { get; init; }
     
     /// <summary>
     /// Semantic classification of the segment
@@ -47,12 +47,12 @@ public class ContextualSegment
     /// <summary>
     /// Keywords extracted from this segment
     /// </summary>
-    public List<string> Keywords { get; set; } = [];
+    public List<string> Keywords { get; init; } = [];
     
     /// <summary>
     /// Related segment IDs (contextual proximity)
     /// </summary>
-    public List<string> RelatedSegmentIds { get; set; } = [];
+    public List<string> RelatedSegmentIds { get; init; } = [];
     
     /// <summary>
     /// Whether this segment is a key insight/important
@@ -130,42 +130,42 @@ public enum SegmentSemanticType
 /// </summary>
 public class ContextualTheme
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Id { get; init; } = Guid.NewGuid().ToString();
     
     /// <summary>
     /// Theme name/title
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
     
     /// <summary>
     /// Theme description
     /// </summary>
-    public string? Description { get; set; }
+    public string? Description { get; init; }
     
     /// <summary>
     /// Keywords associated with this theme
     /// </summary>
-    public List<string> Keywords { get; set; } = [];
+    public List<string> Keywords { get; init; } = [];
     
     /// <summary>
     /// Segment IDs belonging to this theme
     /// </summary>
-    public List<string> SegmentIds { get; set; } = [];
+    public List<string> SegmentIds { get; init; } = [];
     
     /// <summary>
     /// Importance/relevance score
     /// </summary>
-    public double RelevanceScore { get; set; }
+    public double RelevanceScore { get; init; }
     
     /// <summary>
     /// Suggested node type for this theme
     /// </summary>
-    public MindMapNodeType SuggestedNodeType { get; set; } = MindMapNodeType.Idea;
+    public MindMapNodeType SuggestedNodeType { get; init; } = MindMapNodeType.Idea;
     
     /// <summary>
     /// Whether this theme should be a top-level node
     /// </summary>
-    public bool IsTopLevelTheme { get; set; }
+    public bool IsTopLevelTheme { get; init; }
 }
 
 /// <summary>
@@ -201,7 +201,7 @@ public class TranscriptContextResult
     /// <summary>
     /// Processing metadata
     /// </summary>
-    public ExtractionMetadata Metadata { get; set; } = new();
+    public ExtractionMetadata Metadata { get; init; } = new();
 }
 
 /// <summary>
@@ -209,7 +209,7 @@ public class TranscriptContextResult
 /// </summary>
 public class ExtractionMetadata
 {
-    public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
+    public DateTime ProcessedAt { get; init; } = DateTime.UtcNow;
     public int TotalSegments { get; set; }
     public int ClassifiedSegments { get; set; }
     public int ThemesExtracted { get; set; }

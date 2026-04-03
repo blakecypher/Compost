@@ -1,3 +1,4 @@
+@using Compost.Core.Models
 @model Compost.Contexts.ViewModels.EditContextViewModel
 
 @{
@@ -126,7 +127,7 @@
                                     <label asp-for="ParentContextId" class="form-label fw-bold"></label>
                                     <select asp-for="ParentContextId" class="form-select">
                                         <option value="">(None - Root Project)</option>
-                                        @foreach (var context in ViewBag.AllContexts as List<Compost.Core.Models.Project> ?? [])
+                                        @foreach (var context in ViewBag.AllContexts as List<Project> ?? [])
                                         {
                                             @if (context.Id != Model.Id)
                                             {
@@ -163,7 +164,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button type="button" onclick="document.getElementById('editForm').submit();" class="btn btn-success">
+                        <button type="submit" class="btn btn-success">
                             <i class="fas fa-save me-2"></i> Save Changes
                         </button>
                         <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-secondary">
@@ -317,7 +318,6 @@
 <style>
     .project-enhanced-card {
         transition: transform 0.1s, box-shadow 0.2s;
-        background: var(--bs-body-bg) !important;
         border-left: 1px solid var(--bs-border-color);
         border-right: 1px solid var(--bs-border-color);
         border-bottom: 1px solid var(--bs-border-color);
