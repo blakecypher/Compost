@@ -34,6 +34,48 @@
             border-color: #7c3aed !important;
             color: #fff !important;
         }
+        
+        /* Module Summary Cards */
+        .module-summary-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+        }
+        .module-summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .module-summary-card.mindmap-theme {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        .module-summary-card.kanban-theme {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
+        .module-summary-card.snippets-theme {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+        }
+        .module-summary-card.patterns-theme {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+        }
+        .module-summary-card.transcription-theme {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        .module-summary-card .card-title {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .module-summary-card .card-text {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        .module-summary-card .icon-bg {
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 }
 
@@ -111,6 +153,95 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Module Summary Boxes -->
+    <div class="row mb-4">
+        <div class="col">
+            <a href="/MindMap" class="text-decoration-none">
+                <div class="card module-summary-card mindmap-theme text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="card-title mb-0">@Model.MindMapCount</h4>
+                                <p class="card-text mb-0">Mind Maps</p>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="fas fa-project-diagram fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="/Kanban" class="text-decoration-none">
+                <div class="card module-summary-card kanban-theme text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="card-title mb-0">@Model.KanbanCardCount</h4>
+                                <p class="card-text mb-0">Kanban Cards</p>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="fas fa-columns fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="/Snippets" class="text-decoration-none">
+                <div class="card module-summary-card snippets-theme text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="card-title mb-0">@Model.SnippetCount</h4>
+                                <p class="card-text mb-0">Snippets</p>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="fas fa-code fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="/Patterns" class="text-decoration-none">
+                <div class="card module-summary-card patterns-theme text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="card-title mb-0">@Model.PatternCount</h4>
+                                <p class="card-text mb-0">Patterns</p>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="fas fa-shapes fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="/Transcription" class="text-decoration-none">
+                <div class="card module-summary-card transcription-theme text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="card-title mb-0">@Model.TranscriptionCount</h4>
+                                <p class="card-text mb-0">Transcriptions</p>
+                            </div>
+                            <div class="icon-bg">
+                                <i class="fas fa-microphone fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
 

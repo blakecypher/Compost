@@ -2,18 +2,82 @@
 @model Compost.Core.Models.Meeting
 @inject ITranscriptLocalizationService Localizer
 
+@section Styles {
+    <style>
+        /* Transcription Theme - Subtle like Snippets */
+        :root {
+            --theme-transcription: #b74c4c;
+        }
+        
+        .text-transcription { color: #b74c4c !important; }
+        
+        /* Card styling matching Snippets */
+        .transcription-enhanced-card {
+            transition: transform 0.1s, box-shadow 0.2s;
+            border-left: 1px solid var(--bs-border-color);
+            border-right: 1px solid var(--bs-border-color);
+            border-bottom: 1px solid var(--bs-border-color);
+            border-top: 4px solid var(--theme-transcription) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 0.5rem;
+        }
+        
+        .transcription-enhanced-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Header background - subtle gradient like Snippets */
+        .transcription-header-background {
+            background: linear-gradient(135deg, rgba(183, 76, 76, 0.1) 0%, rgba(183, 76, 76, 0.05) 100%);
+            border-bottom: 1px solid rgba(183, 76, 76, 0.2);
+        }
+        
+        /* Buttons */
+        .btn-transcription {
+            background-color: var(--theme-transcription) !important;
+            border-color: var(--theme-transcription) !important;
+            color: #fff !important;
+        }
+        
+        .btn-transcription:hover,
+        .btn-transcription:focus,
+        .btn-transcription:active {
+            background-color: #9c3d3d !important;
+            border-color: #9c3d3d !important;
+            color: #fff !important;
+            filter: brightness(1.05);
+        }
+        
+        .btn-outline-transcription {
+            color: var(--theme-transcription);
+            border-color: var(--theme-transcription);
+            background-color: transparent;
+        }
+        
+        .btn-outline-transcription:hover {
+            background-color: var(--theme-transcription);
+            color: #fff;
+        }
+        
+        /* Modal Headers */
+        .modal-header.bg-transcription {
+            background-color: var(--theme-transcription) !important;
+        }
+    </style>
+}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="text-success">
-            <i class="fas fa-file-alt"></i> @Model.Title
+        <h2 class="text-transcription">
+            <i class="fas fa-file-alt me-2" style="color: #b74c4c !important;"></i> @Model.Title
         </h2>
         <p class="text-muted">@Localizer.GetString("Transcript.Status.Recording") @Model.StartedAt.ToLocalTime().ToString("MMMM dd, yyyy HH:mm")</p>
     </div>
     <div class="btn-group">
-        <a asp-action="Index" class="btn btn-outline-secondary">
+        <a asp-action="Index" class="btn btn-outline-transcription">
             <i class="fas fa-arrow-left"></i> @Localizer.GetString("Transcript.Button.Back")
         </a>
-        <button class="btn btn-primary" id="extract-insights">
+        <button class="btn btn-transcription" id="extract-insights">
             <i class="fas fa-brain"></i> @Localizer.GetString("Transcript.Button.Extract")
         </button>
     </div>
@@ -21,8 +85,8 @@
 
 <div class="row">
     <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header bg-success text-white">
+        <div class="card transcription-enhanced-card mb-4">
+            <div class="card-header transcription-header-background">
                 <i class="fas fa-align-left"></i> @Localizer.GetString("Transcript.Label.Transcript")
             </div>
             <div class="card-body bg-light overflow-auto" style="max-height: 600px;">
@@ -61,8 +125,8 @@
     </div>
 
     <div class="col-md-4">
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-info text-white">
+        <div class="card transcription-enhanced-card mb-4">
+            <div class="card-header transcription-header-background">
                 <i class="fas fa-info-circle"></i> Meeting Details
             </div>
             <div class="card-body">
@@ -81,8 +145,8 @@
             </div>
         </div>
 
-        <div class="card mb-4 shadow-sm border-warning">
-            <div class="card-header bg-warning text-dark">
+        <div class="card transcription-enhanced-card mb-4">
+            <div class="card-header transcription-header-background">
                 <i class="fas fa-tasks"></i> Action Items
             </div>
             <div class="card-body" id="action-items">
@@ -105,15 +169,15 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-primary">
-            <div class="card-header bg-primary text-white">
+        <div class="card transcription-enhanced-card">
+            <div class="card-header transcription-header-background">
                 <i class="fas fa-brain"></i> Mind Map Links
             </div>
             <div class="card-body" id="mindmap-links">
                 @if (Model.ExtractedNodes.Any())
                 {
                     <p class="small">Extracted @Model.ExtractedNodes.Count nodes to mind map.</p>
-                    <button class="btn btn-sm btn-outline-primary w-100" id="create-mindmap-btn" data-meeting-id="@Model.Id">
+                    <button class="btn btn-sm btn-outline-transcription w-100" id="create-mindmap-btn" data-meeting-id="@Model.Id">
                         <i class="fas fa-brain"></i> Create Mind Map
                     </button>
                 }
@@ -130,7 +194,7 @@
 <div class="modal fade" id="mindmapDetailsModal" tabindex="-1" aria-labelledby="mindmapDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header bg-transcription text-white">
                 <h5 class="modal-title" id="mindmapDetailsModalLabel">
                     <i class="fas fa-brain me-2"></i>
                     Create Mind Map
@@ -186,7 +250,7 @@
 <div class="modal fade" id="mindmapProgressModal" tabindex="-1" aria-labelledby="mindmapProgressModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header bg-transcription text-white">
                 <h5 class="modal-title" id="mindmapProgressModalLabel">
                     <i class="fas fa-brain me-2"></i>
                     <span id="progress-modal-title">Creating Mind Map</span>

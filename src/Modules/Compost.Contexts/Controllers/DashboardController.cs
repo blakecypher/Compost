@@ -49,6 +49,19 @@ public class DashboardController(
             .Take(5)
             .ListAsync();
 
+        // Get module counts
+        var mindMapCount = await mindMapService.GetAllMindMapsAsync().ContinueWith(t => t.Result.Count);
+        var kanbanCardCount = await session.Query<ContentItem, ContentItemIndex>()
+            .Where(x => x.ContentType == "KanbanCard" && x.Latest && x.Published)
+            .CountAsync();
+        var snippetCount = await session.Query<ContentItem, ContentItemIndex>()
+            .Where(x => x.ContentType == "CodeSnippet" && x.Latest && x.Published)
+            .CountAsync();
+        var patternCount = await session.Query<ContentItem, ContentItemIndex>()
+            .Where(x => x.ContentType == "ArchitecturalPattern" && x.Latest && x.Published)
+            .CountAsync();
+        var transcriptionCount = meetings.Count;
+
         var viewModel = new DashboardViewModel
         {
             TotalProjects = projects.Count,
@@ -60,7 +73,12 @@ public class DashboardController(
             LatestKanbanCards = cards.Cast<object>().ToList(),
             LatestSnippets = snippets.Cast<object>().ToList(),
             LatestPatterns = patterns.Cast<object>().ToList(),
-            LatestTranscriptions = latestMeetings.Cast<object>().ToList()
+            LatestTranscriptions = latestMeetings.Cast<object>().ToList(),
+            MindMapCount = mindMapCount,
+            KanbanCardCount = kanbanCardCount,
+            SnippetCount = snippetCount,
+            PatternCount = patternCount,
+            TranscriptionCount = transcriptionCount
         };
 
         return View(viewModel);
@@ -81,4 +99,11 @@ public class DashboardViewModel
     public List<object> LatestSnippets { get; set; } = new();
     public List<object> LatestPatterns { get; set; } = new();
     public List<object> LatestTranscriptions { get; set; } = new();
+    
+    // Module count summaries
+    public int MindMapCount { get; set; }
+    public int KanbanCardCount { get; set; }
+    public int SnippetCount { get; set; }
+    public int PatternCount { get; set; }
+    public int TranscriptionCount { get; set; }
 }
