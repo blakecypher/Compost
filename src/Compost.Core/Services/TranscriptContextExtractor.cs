@@ -531,14 +531,14 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
         };
     }
 
-    private string GenerateThemeName(SegmentSemanticType type, List<string> keywords)
+    private static string GenerateThemeName(SegmentSemanticType type, List<string> keywords)
     {
         var typeName = type.ToString();
         var keywordStr = string.Join(", ", keywords.Take(2));
         return $"{typeName}: {keywordStr}";
     }
 
-    private List<ContextualSegment> ExtractKeyInsights(List<ContextualSegment> segments)
+    private static List<ContextualSegment> ExtractKeyInsights(List<ContextualSegment> segments)
     {
         return segments
             .Where(s => s.IsKeyInsight || s.ClassificationConfidence > 0.8)
@@ -829,7 +829,7 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
         return null;
     }
 
-    private Dictionary<SegmentSemanticType, List<(Regex Pattern, double Weight)>> InitializeSemanticPatterns()
+    private static Dictionary<SegmentSemanticType, List<(Regex Pattern, double Weight)>> InitializeSemanticPatterns()
     {
         var patterns = new Dictionary<SegmentSemanticType, List<(Regex Pattern, double Weight)>>
         {

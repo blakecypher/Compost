@@ -2,8 +2,6 @@ namespace Compost.Core.Services;
 
 public class TranscriptLocalizationService : ITranscriptLocalizationService
 {
-    private string _currentCulture = "en-US";
-    
     // Localized dictionaries for different cultures
     private static readonly Dictionary<string, Dictionary<string, string>> LocalizedStrings = new()
     {
@@ -72,16 +70,16 @@ public class TranscriptLocalizationService : ITranscriptLocalizationService
         }
     };
 
-    public string CurrentCulture => _currentCulture;
+    public string CurrentCulture { get; private set; } = "en-US";
 
     public void SetCulture(string culture)
     {
-        _currentCulture = culture;
+        CurrentCulture = culture;
     }
 
     public string GetString(string key, string? culture = null)
     {
-        var targetCulture = culture ?? _currentCulture;
+        var targetCulture = culture ?? CurrentCulture;
         
         if (LocalizedStrings.TryGetValue(targetCulture, out var dict) && dict.TryGetValue(key, out var value))
         {
