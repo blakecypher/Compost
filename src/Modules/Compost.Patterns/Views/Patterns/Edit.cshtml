@@ -34,7 +34,7 @@
                 <div class="card pattern-enhanced-card mb-3">
                     <div class="card-header d-flex align-items-center pattern-header-background">
                         <div class="pattern-icon me-2">
-                            <i class="fas fa-info-circle text-theme-patterns"></i>
+                            <i class="fas fa-info-circle" style="color: #a855f7 !important;"></i>
                         </div>
                         <span class="fw-bold">Basic Information</span>
                     </div>
@@ -57,7 +57,7 @@
                 <div class="card pattern-enhanced-card mb-3">
                     <div class="card-header d-flex align-items-center pattern-header-background">
                         <div class="pattern-icon me-2">
-                            <i class="fas fa-lightbulb text-theme-patterns"></i>
+                            <i class="fas fa-lightbulb" style="color: #a855f7 !important;"></i>
                         </div>
                         <span class="fw-bold">Problem & Solution</span>
                     </div>
@@ -81,7 +81,7 @@
                 <div class="card pattern-enhanced-card mb-3">
                     <div class="card-header d-flex align-items-center pattern-header-background">
                         <div class="pattern-icon me-2">
-                            <i class="fas fa-exclamation-triangle text-theme-patterns"></i>
+                            <i class="fas fa-exclamation-triangle" style="color: #a855f7 !important;"></i>
                         </div>
                         <span class="fw-bold">Gotchas & Resources</span>
                     </div>
@@ -173,4 +173,58 @@
         }, 3000);
     }
 </script>
+
+<style>
+    .pattern-enhanced-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        border-top: 4px solid var(--theme-patterns) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 0.5rem;
+    }
+    
+    .pattern-enhanced-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .pattern-header-background {
+        background: linear-gradient(135deg, rgba(102, 41, 217, 0.1) 0%, rgba(102, 41, 217, 0.05) 100%);
+        border-bottom: 1px solid rgba(102, 41, 217, 0.2);
+    }
+    
+    .pattern-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(102, 41, 217, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-theme-patterns {
+        background-color: var(--theme-patterns);
+        border-color: var(--theme-patterns);
+        color: #fff;
+    }
+    
+    .btn-theme-patterns:hover {
+        background-color: var(--theme-patterns);
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .btn-outline-theme-patterns {
+        color: var(--theme-patterns);
+        border-color: var(--theme-patterns);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-patterns:hover {
+        background-color: var(--theme-patterns);
+        color: #fff;
+    }
+</style>
 }

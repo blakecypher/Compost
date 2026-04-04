@@ -9,30 +9,30 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
-        <i class="fas fa-code text-primary me-2"></i>@Model.DisplayText
-    </h2>
+    <h1 class="text-theme-snippets" style="color: #f87171 !important;">
+        <i class="fas fa-code me-2" style="color: #f87171 !important;"></i>@Model.DisplayText
+    </h1>
     <div class="d-flex gap-2">
-        <a asp-action="Edit" asp-route-id="@Model.ContentItemId" class="btn btn-primary">
+        <a asp-action="Edit" asp-route-id="@Model.ContentItemId" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
             <i class="fas fa-edit me-1"></i> Edit
         </a>
-        <a asp-action="Index" class="btn btn-outline-secondary">Back to list</a>
+        <a asp-action="Index" class="btn btn-outline-theme-snippets">Back to list</a>
     </div>
 </div>
 
 <div class="row">
     <!-- Main Content -->
     <div class="col-md-8">
-        <div class="card border-0 shadow-sm overflow-hidden mb-4">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+        <div class="card snippet-enhanced-card snippet-code-container mb-4 overflow-hidden">
+            <div class="card-header snippet-header-background d-flex justify-content-between align-items-center py-2">
                 <div class="d-flex align-items-center">
-                    <span class="small"><i class="fas fa-code me-1"></i>@(lang.ToUpperInvariant())</span>
+                    <span class="small"><i class="fas fa-code me-1" style="color: #f87171 !important;"></i>@(lang.ToUpperInvariant())</span>
                     @if (!string.IsNullOrEmpty(snippet?.Category))
                     {
                         <span class="badge bg-light text-dark border ms-2"><i class="fas fa-folder me-1"></i>@snippet.Category</span>
                     }
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-light" id="copy-btn-header" title="Copy code">
+                <button type="button" class="btn btn-sm btn-outline-theme-snippets" id="copy-btn-header" title="Copy code">
                     <i class="fas fa-copy"></i>
                 </button>
             </div>
@@ -45,16 +45,16 @@
     <!-- Right Sidebar -->
     <div class="col-md-4">
         <!-- AI Pattern Recognition Section -->
-        <div class="card border-primary mb-3">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-robot me-2"></i>AI Pattern Recognition</span>
-                <button type="button" class="btn btn-light btn-sm" id="recognize-btn" onclick="recognizePatterns()">
+        <div class="card snippet-enhanced-card mb-3">
+            <div class="card-header snippet-header-background d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-robot me-2" style="color: #f87171 !important;"></i>AI Pattern Recognition</span>
+                <button type="button" class="btn btn-theme-snippets btn-sm" id="recognize-btn" onclick="recognizePatterns()" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
                     <i class="fas fa-magic me-1"></i> Analyze Code
                 </button>
             </div>
             <div class="card-body" id="pattern-results" style="display: none;">
                 <div id="pattern-loading" class="text-center py-3" style="display: none;">
-                    <div class="spinner-border text-primary" role="status">
+                    <div class="spinner-border text-theme-snippets" role="status" style="color: #f87171 !important;">
                         <span class="visually-hidden">Analyzing...</span>
                     </div>
                     <p class="mt-2 text-muted">Analyzing code for architectural patterns...</p>
@@ -66,9 +66,9 @@
         </div>
 
         <!-- Code Details Container -->
-        <div class="card mb-3">
-            <div class="card-header">
-                <i class="fas fa-info-circle me-2"></i>Code Details
+        <div class="card snippet-enhanced-card mb-3">
+            <div class="card-header snippet-header-background">
+                <i class="fas fa-info-circle me-2" style="color: #f87171 !important;"></i><span class="fw-bold">Code Details</span>
             </div>
             <div class="card-body">
                 @if (!string.IsNullOrEmpty(snippet?.Documentation))
@@ -101,7 +101,7 @@
                         <h6 class="text-muted text-uppercase small mb-2">Related Pattern</h6>
                         @if (!string.IsNullOrEmpty(snippet?.RelatedPatternId))
                         {
-                            <a asp-area="Compost.Patterns" asp-controller="Patterns" asp-action="Detail" asp-route-id="@snippet.RelatedPatternId" class="btn btn-outline-secondary btn-sm w-100">
+                            <a asp-area="Compost.Patterns" asp-controller="Patterns" asp-action="Detail" asp-route-id="@snippet.RelatedPatternId" class="btn btn-outline-theme-snippets btn-sm w-100">
                                 <i class="fas fa-project-diagram me-1"></i> View
                             </a>
                         }
@@ -112,7 +112,7 @@
                     </div>
                     <div class="col-6">
                         <h6 class="text-muted text-uppercase small mb-2">Actions</h6>
-                        <button type="button" class="btn btn-outline-primary btn-sm w-100" id="copy-btn" title="Copy code">
+                        <button type="button" class="btn btn-outline-theme-snippets btn-sm w-100" id="copy-btn" title="Copy code">
                             <i class="fas fa-copy me-1"></i> Copy
                         </button>
                     </div>
@@ -131,9 +131,9 @@
         </div>
 
         <!-- Code Statistics -->
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-chart-bar me-2"></i>Code Statistics
+        <div class="card snippet-enhanced-card">
+            <div class="card-header snippet-header-background">
+                <i class="fas fa-chart-bar me-2" style="color: #f87171 !important;"></i><span class="fw-bold">Code Statistics</span>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -179,6 +179,49 @@
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css" rel="stylesheet" />
 <style>
+    /* Snippet Theme Styles */
+    .snippet-enhanced-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        border-top: 4px solid var(--theme-snippets) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 0.5rem;
+    }
+    
+    .snippet-enhanced-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .snippet-header-background {
+        background: linear-gradient(135deg, rgba(183, 76, 76, 0.1) 0%, rgba(183, 76, 76, 0.05) 100%);
+        border-bottom: 1px solid rgba(183, 76, 76, 0.2);
+    }
+
+    .btn-theme-snippets {
+        background-color: var(--theme-snippets);
+        border-color: var(--theme-snippets);
+        color: #fff;
+    }
+    
+    .btn-theme-snippets:hover {
+        background-color: var(--theme-snippets);
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .btn-outline-theme-snippets {
+        color: var(--theme-snippets);
+        border-color: var(--theme-snippets);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-snippets:hover {
+        background-color: var(--theme-snippets);
+        color: #fff;
+    }
+    
     /* Pattern Modal Styles - Theme Aware */
     .modal-content {
         background-color: var(--bs-body-bg);
@@ -219,6 +262,65 @@
     
     .font-monospace {
         font-family: var(--bs-font-monospace);
+    }
+    
+    /* Light mode - darken Prism syntax grays for better contrast */
+    [data-bs-theme="light"] .snippet-code-container code[class*="language-"],
+    [data-bs-theme="light"] .snippet-code-container pre[class*="language-"] {
+        color: #333 !important;
+    }
+    
+    [data-bs-theme="light"] .snippet-code-container .token.comment,
+    [data-bs-theme="light"] .snippet-code-container .token.prolog,
+    [data-bs-theme="light"] .snippet-code-container .token.doctype,
+    [data-bs-theme="light"] .snippet-code-container .token.cdata {
+        color: #555 !important;
+    }
+    
+    [data-bs-theme="light"] .snippet-code-container .token.punctuation {
+        color: #444 !important;
+    }
+    
+    [data-bs-theme="light"] .snippet-code-container .token.property,
+    [data-bs-theme="light"] .snippet-code-container .token.tag,
+    [data-bs-theme="light"] .snippet-code-container .token.boolean,
+    [data-bs-theme="light"] .snippet-code-container .token.number,
+    [data-bs-theme="light"] .snippet-code-container .token.constant,
+    [data-bs-theme="light"] .snippet-code-container .token.symbol {
+        color: #005cc5 !important;
+    }
+    
+    [data-bs-theme="light"] .snippet-code-container .token.selector,
+    [data-bs-theme="light"] .snippet-code-container .token.attr-name,
+    [data-bs-theme="light"] .snippet-code-container .token.string,
+    [data-bs-theme="light"] .snippet-code-container .token.char,
+    [data-bs-theme="light"] .snippet-code-container .token.builtin {
+        color: #032f62 !important;
+    }
+    
+    [data-bs-theme="light"] .snippet-code-container .token.operator,
+    [data-bs-theme="light"] .snippet-code-container .token.entity,
+    [data-bs-theme="light"] .snippet-code-container .token.url,
+    [data-bs-theme="light"] .snippet-code-container .language-css .token.string,
+    [data-bs-theme="light"] .snippet-code-container .style .token.string {
+        color: #d73a49 !important;
+    }
+    
+    [data-bs-theme="light"] .snippet-code-container .token.atrule,
+    [data-bs-theme="light"] .snippet-code-container .token.attr-value,
+    [data-bs-theme="light"] .snippet-code-container .token.keyword {
+        color: #d73a49 !important;
+    }
+    
+    [data-bs-theme="light"] .snippet-code-container .token.function,
+    [data-bs-theme="light"] .snippet-code-container .token.class-name {
+        color: #6f42c1 !important;
+    }
+    
+    [data-bs-theme="light"] .snippet-code-container .token.regex,
+    [data-bs-theme="light"] .snippet-code-container .token.important,
+    [data-bs-theme="light"] .snippet-code-container .token.variable {
+        color: #e36209 !important;
     }
     
     /* Alert notification styles */
@@ -269,7 +371,7 @@
             navigator.clipboard.writeText(code).then(function() {
                 const btn = document.getElementById('copy-btn');
                 const btnH = document.getElementById('copy-btn-header');
-                if (btn) { btn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!'; btn.classList.remove('btn-outline-primary'); btn.classList.add('btn-success'); setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy me-1"></i> Copy'; btn.classList.add('btn-outline-primary'); btn.classList.remove('btn-success'); }, 2000); }
+                if (btn) { btn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!'; btn.classList.remove('btn-outline-theme-snippets'); btn.classList.add('btn-theme-snippets'); btn.style.backgroundColor = '#22c55e'; btn.style.borderColor = '#22c55e'; setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy me-1"></i> Copy'; btn.classList.add('btn-outline-theme-snippets'); btn.classList.remove('btn-theme-snippets'); btn.style.backgroundColor = ''; btn.style.borderColor = ''; }, 2000); }
                 if (btnH) { btnH.innerHTML = '<i class="fas fa-check"></i>'; setTimeout(function() { btnH.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000); }
             });
         }

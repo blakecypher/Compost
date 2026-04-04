@@ -2,112 +2,156 @@
 @model Compost.Patterns.ViewModels.PatternViewModel
 
 @{
-        ViewData["Title"] = "Pattern Details";
-    }
-    
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <span class="badge bg-secondary mb-2">Architectural Pattern</span>
-                <h1>@Model.Title</h1>
-                @if(!string.IsNullOrEmpty(Model.Keywords))
+    ViewData["Title"] = "Pattern Details";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="badge bg-secondary mb-2">Architectural Pattern</span>
+            <h1 class="text-theme-patterns" style="color: #a855f7 !important;">@Model.Title</h1>
+            @if(!string.IsNullOrEmpty(Model.Keywords))
+            {
+                foreach(var tag in Model.Keywords.Split(','))
                 {
-                    foreach(var tag in Model.Keywords.Split(','))
-                    {
-                        <span class="badge bg-light text-dark border me-1">@tag.Trim()</span>
-                    }
+                    <span class="badge bg-light text-dark border me-1">@tag.Trim()</span>
                 }
-            </div>
-            <div>
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-theme-patterns me-2">
-                    <i class="fas fa-edit"></i> Edit
-                </a>
-                <a asp-action="Index" class="btn btn-theme-patterns">Back to List</a>
-            </div>
+            }
         </div>
-    
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-theme-patterns text-white">
-                        <i class="fas fa-question-circle me-2"></i> When to Use
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text lead">@Model.WhenToUse</p>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-theme-patterns me-2">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a asp-action="Index" class="btn btn-theme-patterns" style="background-color: #a855f7 !important; border-color: #a855f7 !important; color: #fff !important;">Back to List</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card pattern-enhanced-card mb-4">
+                <div class="card-header pattern-header-background">
+                    <i class="fas fa-question-circle me-2" style="color: #a855f7 !important;"></i><span class="fw-bold">When to Use</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text lead">@Model.WhenToUse</p>
+                </div>
+            </div>
+
+            <div class="card pattern-enhanced-card mb-4">
+                <div class="card-header pattern-header-background">
+                    <i class="fas fa-cogs me-2" style="color: #a855f7 !important;"></i><span class="fw-bold">How it Works</span>
+                </div>
+                <div class="card-body">
+                    <div class="markdown-content">
+                        @Html.Raw(Markdown.ToHtml(Model.HowItWorks ?? "").ToString())
                     </div>
                 </div>
-    
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-theme-patterns text-white">
-                        <i class="fas fa-cogs me-2"></i> How it Works
-                    </div>
-                    <div class="card-body">
-                        <div class="markdown-content">
-                            @Html.Raw(Markdown.ToHtml(Model.HowItWorks ?? ""))
-                        </div>
-                    </div>
-                </div>
-                
-                @if (!string.IsNullOrEmpty(Model.Gotchas))
-                {
-                    <div class="card mb-4 shadow-sm border-danger">
-                        <div class="card-header bg-theme-patterns text-white">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Gotchas
-                        </div>
-                        <div class="card-body text-theme-patterns">
-                            @Model.Gotchas
-                        </div>
-                    </div>
-                }
-                
-                @if (Model.ResourceUrls != null && Model.ResourceUrls.Any())
-                {
-                    <div class="card mb-4 shadow-sm">
-                        <div class="card-header bg-theme-patterns text-white">
-                            <i class="fas fa-external-link-alt me-2"></i> Resources
-                        </div>
-                        <div class="card-body">
-                            <ul class="mb-0">
-                                @foreach (var url in Model.ResourceUrls)
-                                {
-                                    <li class="mb-1"><a href="@url" target="_blank" rel="noopener">@url</a></li>
-                                }
-                            </ul>
-                        </div>
-                    </div>
-                }
             </div>
             
-            <div class="col-md-4">
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-theme-patterns text-white">
-                        <i class="fas fa-code me-2"></i> Linked Code Snippets
+            @if (!string.IsNullOrEmpty(Model.Gotchas))
+            {
+                <div class="card pattern-enhanced-card mb-4">
+                    <div class="card-header pattern-header-background">
+                        <i class="fas fa-exclamation-triangle me-2" style="color: #a855f7 !important;"></i><span class="fw-bold">Gotchas</span>
                     </div>
-                    <div class="list-group list-group-flush">
-                        @if (Model.LinkedSnippets != null && Model.LinkedSnippets.Any())
-                        {
-                            @foreach (var snippet in Model.LinkedSnippets)
+                    <div class="card-body">
+                        @Model.Gotchas
+                    </div>
+                </div>
+            }
+            
+            @if (Model.ResourceUrls != null && Model.ResourceUrls.Any())
+            {
+                <div class="card pattern-enhanced-card mb-4">
+                    <div class="card-header pattern-header-background">
+                        <i class="fas fa-external-link-alt me-2" style="color: #a855f7 !important;"></i><span class="fw-bold">Resources</span>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            @foreach (var url in Model.ResourceUrls)
                             {
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between align-items-center">
-                                        <h6 class="mb-1">@snippet.Title</h6>
-                                        <span class="badge bg-secondary">@snippet.Language</span>
-                                    </div>
-                                    <pre class="bg-light p-2 rounded small mb-2" style="max-height: 100px; overflow: hidden;"><code>@snippet.CodePreview</code></pre>
-                                    <a asp-area="Compost.Snippets" asp-controller="Snippets" asp-action="Edit" asp-route-id="@snippet.ContentItemId" class="btn btn-sm btn-outline-theme-patterns">Edit Snippet</a>
-                                </div>
+                                <li class="mb-1"><a href="@url" target="_blank" rel="noopener">@url</a></li>
                             }
-                        }
-                        else
+                        </ul>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card pattern-enhanced-card mb-4">
+                <div class="card-header pattern-header-background">
+                    <i class="fas fa-code me-2" style="color: #a855f7 !important;"></i><span class="fw-bold">Linked Code Snippets</span>
+                </div>
+                <div class="list-group list-group-flush">
+                    @if (Model.LinkedSnippets != null && Model.LinkedSnippets.Any())
+                    {
+                        @foreach (var snippet in Model.LinkedSnippets)
                         {
-                            <div class="list-group-item text-muted text-center py-4">
-                                <i class="fas fa-code-branch fa-2x mb-2"></i>
-                                <p class="mb-0">No code snippets linked yet.</p>
-                                <small>Go to the Snippets module and set "Related Architectural Pattern" to this pattern.</small>
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <h6 class="mb-1">@snippet.Title</h6>
+                                    <span class="badge bg-secondary">@snippet.Language</span>
+                                </div>
+                                <pre class="bg-light p-2 rounded small mb-2" style="max-height: 100px; overflow: hidden;"><code>@snippet.CodePreview</code></pre>
+                                <a asp-area="Compost.Snippets" asp-controller="Snippets" asp-action="Edit" asp-route-id="@snippet.ContentItemId" class="btn btn-sm btn-outline-theme-patterns">Edit Snippet</a>
                             </div>
                         }
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="list-group-item text-muted text-center py-4">
+                            <i class="fas fa-code-branch fa-2x mb-2"></i>
+                            <p class="mb-0">No code snippets linked yet.</p>
+                            <small>Go to the Snippets module and set "Related Architectural Pattern" to this pattern.</small>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<style>
+    .pattern-enhanced-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        border-top: 4px solid var(--theme-patterns) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 0.5rem;
+    }
+    
+    .pattern-enhanced-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .pattern-header-background {
+        background: linear-gradient(135deg, rgba(102, 41, 217, 0.1) 0%, rgba(102, 41, 217, 0.05) 100%);
+        border-bottom: 1px solid rgba(102, 41, 217, 0.2);
+    }
+
+    .btn-theme-patterns {
+        background-color: var(--theme-patterns);
+        border-color: var(--theme-patterns);
+        color: #fff;
+    }
+    
+    .btn-theme-patterns:hover {
+        background-color: var(--theme-patterns);
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .btn-outline-theme-patterns {
+        color: var(--theme-patterns);
+        border-color: var(--theme-patterns);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-patterns:hover {
+        background-color: var(--theme-patterns);
+        color: #fff;
+    }
+</style>

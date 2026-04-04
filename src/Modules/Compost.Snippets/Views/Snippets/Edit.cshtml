@@ -63,7 +63,12 @@
                         </div>
     
                         <div class="mb-3">
-                            <label asp-for="Code" class="form-label fw-bold">Code</label>
+                            <label class="form-label fw-bold">Editor Theme</label>
+                            <div class="btn-group w-100 mb-2" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="monaco.editor.setTheme('vs')">Light</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="monaco.editor.setTheme('vs-dark')">Dark</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="monaco.editor.setTheme('material-dark')">Material</button>
+                            </div>
                             <div id="monaco-editor-container" style="height: 500px; border: 1px solid #ccc;"></div>
                             <input type="hidden" asp-for="Code" id="code-hidden-input" />
                             <span asp-validation-for="Code" class="text-danger"></span>
@@ -131,7 +136,7 @@
                     
                     <!-- AI Pattern Detection -->
                     <div class="mb-3">
-                        <button type="button" class="btn btn-outline-info w-100" id="detect-patterns-btn" onclick="detectPatterns()">
+                        <button type="button" class="btn btn-outline-theme-snippets w-100" id="detect-patterns-btn" onclick="detectPatterns()">
                             <i class="fas fa-robot me-2"></i>Auto-Detect Patterns
                         </button>
                         <div id="detected-patterns" class="mt-2 small" style="display: none;">
@@ -179,8 +184,149 @@
 
             // Determine theme based on current data-bs-theme
             const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-            const editorTheme = isDarkMode ? 'vs-dark' : 'vs';
-
+            
+            // Define custom themes to match Prism styling exactly
+            monaco.editor.defineTheme('prism-light', {
+                base: 'vs',
+                inherit: true,
+                rules: [
+                    // Comments - #555
+                    { token: 'comment', foreground: '555555', fontStyle: 'italic' },
+                    { token: 'comment.block', foreground: '555555', fontStyle: 'italic' },
+                    { token: 'comment.line', foreground: '555555', fontStyle: 'italic' },
+                    
+                    // Punctuation - #444
+                    { token: 'delimiter', foreground: '444444' },
+                    { token: 'delimiter.bracket', foreground: '444444' },
+                    { token: 'delimiter.parenthesis', foreground: '444444' },
+                    { token: 'delimiter.square', foreground: '444444' },
+                    { token: 'delimiter.angle', foreground: '444444' },
+                    { token: 'delimiter.curly', foreground: '444444' },
+                    { token: 'punctuation', foreground: '444444' },
+                    
+                    // Keywords - #d73a49 (red)
+                    { token: 'keyword', foreground: 'D73A49' },
+                    { token: 'keyword.control', foreground: 'D73A49' },
+                    { token: 'keyword.operator', foreground: 'D73A49' },
+                    { token: 'keyword.other', foreground: 'D73A49' },
+                    { token: 'storage.type', foreground: 'D73A49' },
+                    { token: 'storage.modifier', foreground: 'D73A49' },
+                    
+                    // Operators - #d73a49 (red)
+                    { token: 'operator', foreground: 'D73A49' },
+                    
+                    // Numbers/Constants - #005cc5 (blue)
+                    { token: 'number', foreground: '005CC5' },
+                    { token: 'number.hex', foreground: '005CC5' },
+                    { token: 'number.float', foreground: '005CC5' },
+                    { token: 'number.binary', foreground: '005CC5' },
+                    { token: 'constant', foreground: '005CC5' },
+                    { token: 'constant.language', foreground: '005CC5' },
+                    { token: 'constant.numeric', foreground: '005CC5' },
+                    { token: 'constant.character', foreground: '005CC5' },
+                    { token: 'constant.other', foreground: '005CC5' },
+                    { token: 'variable.language', foreground: '005CC5' },
+                    
+                    // Strings - #032f62 (dark blue)
+                    { token: 'string', foreground: '032F62' },
+                    { token: 'string.quote', foreground: '032F62' },
+                    { token: 'string.template', foreground: '032F62' },
+                    { token: 'string.escape', foreground: '005CC5' },
+                    { token: 'string.regex', foreground: '032F62' },
+                    
+                    // Functions/Classes - #6f42c1 (purple)
+                    { token: 'function', foreground: '6F42C1' },
+                    { token: 'function.name', foreground: '6F42C1' },
+                    { token: 'function.call', foreground: '6F42C1' },
+                    { token: 'method', foreground: '6F42C1' },
+                    { token: 'method.name', foreground: '6F42C1' },
+                    { token: 'method.call', foreground: '6F42C1' },
+                    { token: 'class', foreground: '6F42C1' },
+                    { token: 'class.name', foreground: '6F42C1' },
+                    { token: 'interface', foreground: '6F42C1' },
+                    { token: 'interface.name', foreground: '6F42C1' },
+                    { token: 'type', foreground: '6F42C1' },
+                    { token: 'type.identifier', foreground: '6F42C1' },
+                    { token: 'type.builtin', foreground: '6F42C1' },
+                    { token: 'namespace', foreground: '6F42C1' },
+                    
+                    // Variables - #333 (base text color)
+                    { token: 'identifier', foreground: '333333' },
+                    { token: 'variable', foreground: '333333' },
+                    { token: 'variable.other', foreground: '333333' },
+                    { token: 'variable.parameter', foreground: '333333' },
+                    
+                    // Special/Important - #e36209 (orange)
+                    { token: 'invalid', foreground: 'E36209' },
+                    { token: 'invalid.illegal', foreground: 'E36209' },
+                    
+                    // Meta
+                    { token: 'meta.import', foreground: 'D73A49' },
+                    { token: 'meta.export', foreground: 'D73A49' },
+                ],
+                colors: {
+                    'editor.background': '#FFFFFF',
+                    'editor.foreground': '#333333',
+                    'editor.lineHighlightBackground': '#F6F8FA',
+                    'editor.selectionBackground': '#B3D7FF',
+                    'editor.inactiveSelectionBackground': '#E5EBF2',
+                    'editorCursor.foreground': '#333333',
+                    'editorWhitespace.foreground': '#D1D5DA',
+                    'editorIndentGuide.background': '#E1E4E8',
+                    'editorLineNumber.foreground': '#6A737D',
+                    'editorLineNumber.activeForeground': '#333333',
+                }
+            });
+            
+            // Define Material Theme (based on VS Code Material Theme)
+            monaco.editor.defineTheme('material-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [
+                    { token: '', foreground: 'EEFFFF', background: '263238' },
+                    { token: 'comment', foreground: '546E7A', fontStyle: 'italic' },
+                    { token: 'keyword', foreground: 'C792EA' },
+                    { token: 'storage.type', foreground: 'C792EA' },
+                    { token: 'storage.modifier', foreground: 'C792EA' },
+                    { token: 'string', foreground: 'C3E88D' },
+                    { token: 'string.quote', foreground: 'C3E88D' },
+                    { token: 'string.template', foreground: 'C3E88D' },
+                    { token: 'number', foreground: 'F78C6C' },
+                    { token: 'constant.numeric', foreground: 'F78C6C' },
+                    { token: 'constant.language', foreground: 'F78C6C' },
+                    { token: 'entity.name.function', foreground: '82AAFF' },
+                    { token: 'meta.function-call', foreground: '82AAFF' },
+                    { token: 'support.function', foreground: '82AAFF' },
+                    { token: 'entity.name.type', foreground: 'FFCB6B' },
+                    { token: 'entity.name.class', foreground: 'FFCB6B' },
+                    { token: 'support.type', foreground: 'FFCB6B' },
+                    { token: 'support.class', foreground: 'FFCB6B' },
+                    { token: 'variable', foreground: 'EEFFFF' },
+                    { token: 'identifier', foreground: 'EEFFFF' },
+                    { token: 'operator', foreground: '89DDFF' },
+                    { token: 'keyword.operator', foreground: '89DDFF' },
+                    { token: 'punctuation', foreground: '89DDFF' },
+                    { token: 'delimiter', foreground: '89DDFF' },
+                    { token: 'tag', foreground: 'F07178' },
+                    { token: 'entity.name.tag', foreground: 'F07178' },
+                    { token: 'attribute.name', foreground: 'FFCB6B' },
+                    { token: 'regexp', foreground: 'C3E88D' },
+                    { token: 'constant.character.escape', foreground: '89DDFF' },
+                ],
+                colors: {
+                    'editor.foreground': '#EEFFFF',
+                    'editor.background': '#263238',
+                    'editor.selectionBackground': '#4F5B66',
+                    'editor.lineHighlightBackground': '#3C4852',
+                    'editorCursor.foreground': '#FFCC00',
+                    'editorWhitespace.foreground': '#546E7A',
+                    'editorIndentGuide.background': '#37474F',
+                    'editorIndentGuide.activeBackground': '#80CBC4'
+                }
+            });
+            
+            const editorTheme = isDarkMode ? 'hc-black' : 'vs';
+            
             const editor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
                 value: initialCode,
                 language: languageMap[languageSelect.value] || 'plaintext',
@@ -194,7 +340,7 @@
                 mutations.forEach(function (mutation) {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
                         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-                        const newTheme = isDark ? 'vs-dark' : 'vs';
+                        const newTheme = isDark ? 'hc-black' : 'vs';
                         monaco.editor.setTheme(newTheme);
                     }
                 });
@@ -210,6 +356,15 @@
                 const newLang = languageMap[this.value] || 'plaintext';
                 monaco.editor.setModelLanguage(editor.getModel(), newLang);
             });
+            
+            // Handle Monaco theme switching
+            const themeSelect = document.getElementById('monaco-theme-select');
+            if (themeSelect) {
+                themeSelect.addEventListener('change', function() {
+                    const selectedTheme = this.value;
+                    monaco.editor.setTheme(selectedTheme);
+                });
+            }
             
             // Sync content to hidden input on change
             editor.onDidChangeModelContent(function(e) {
@@ -282,8 +437,8 @@
                     // Fill in the form fields
                     document.getElementById('Title').value = item.name || '';
                     // Use description as code if available
-                    if (item.description && window.editor) {
-                        window.editor.setValue(item.description);
+                    if (item.description && window.monacoEditor) {
+                        window.monacoEditor.setValue(item.description);
                     }
                     // Optional: add tags to category if available
                     if (item.tags) {
@@ -318,3 +473,61 @@
             }, 3000);
         }
     </script>
+
+<style>
+    :root {
+        --theme-snippets: #b74c4c;
+    }
+    
+    .snippet-enhanced-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        border-top: 4px solid var(--theme-snippets) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 0.5rem;
+    }
+    
+    .snippet-enhanced-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .snippet-header-background {
+        background: linear-gradient(135deg, rgba(183, 76, 76, 0.1) 0%, rgba(183, 76, 76, 0.05) 100%);
+        border-bottom: 1px solid rgba(183, 76, 76, 0.2);
+    }
+    
+    .snippet-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(183, 76, 76, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-theme-snippets {
+        background-color: var(--theme-snippets);
+        border-color: var(--theme-snippets);
+        color: #fff;
+    }
+    
+    .btn-theme-snippets:hover {
+        background-color: var(--theme-snippets);
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .btn-outline-theme-snippets {
+        color: var(--theme-snippets);
+        border-color: var(--theme-snippets);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-snippets:hover {
+        background-color: var(--theme-snippets);
+        color: #fff;
+    }
+</style>
