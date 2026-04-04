@@ -1,4 +1,5 @@
 @model Compost.Core.Models.StructureNode
+@using Compost.Core.Models
 @{
     ViewData["Title"] = Model.Title;
 }
@@ -225,7 +226,7 @@
 </div>
 
 @functions {
-    private string GetStructureTypeColor(StructureType type)
+    private string GetStructureTypeColor(Compost.Core.Models.StructureType type)
     {
         return type switch
         {

@@ -68,7 +68,7 @@ public class StructureNode
     /// <summary>
     /// Key performance indicators for this structure
     /// </summary>
-    public List<string> KpIs { get; set; } = [];
+    public List<string> KPIs { get; set; } = [];
 
     /// <summary>
     /// Whether this structure has been promoted to kanban cards

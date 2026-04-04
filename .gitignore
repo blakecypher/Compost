@@ -1,35 +1,6 @@
-/src/Compost.Web/bin/Debug/net8.0/AngleSharp.dll
+# Build outputs
+**/bin/
+**/obj/
 
-src/Compost.Core/bin/
-
-src/Compost.Core/obj/
-
-src/Compost.Web/bin/
-
-src/Compost.Web/obj/
-
-src/Modules/Compost.Contexts/bin/
-
-src/Modules/Compost.Contexts/obj/
-
-src/Modules/Compost.Kanban/bin/
-
-src/Modules/Compost.Kanban/obj/
-
-src/Modules/Compost.MindMap/bin/
-
-src/Modules/Compost.MindMap/obj/
-
-src/Modules/Compost.Patterns/bin/
-
-src/Modules/Compost.Patterns/obj/
-
-src/Modules/Compost.Snippets/bin/
-
-src/Modules/Compost.Snippets/obj/
-
-src/Modules/Compost.Transcription/bin/
-
-src/Modules/Compost.Transcription/obj/
-
+# IDE
 .idea/

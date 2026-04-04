@@ -368,14 +368,14 @@ public class WorkProjectPartIndexProvider : IndexProvider<ContentItem>
             .Map(contentItem =>
             {
                 var part = contentItem.As<ProjectPart>();
-                if (part == null) return null;
+                if (part == null) return [];
 
                 var index = new WorkProjectPartIndex
                 {
                     IsActive = part.IsActive,
                     TotalTimeSpentSeconds = part.TotalTimeSpentSeconds
                 };
-                return index;
+                return [index];
             });
     }
 }

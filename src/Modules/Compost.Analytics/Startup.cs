@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,14 +39,9 @@ public class Startup : StartupBase
     }
 }
 
-public class AnalyticsMenu : INavigationProvider
+public class AnalyticsMenu(IStringLocalizer<AnalyticsMenu> localizer) : INavigationProvider
 {
-    private readonly IStringLocalizer S;
-
-    public AnalyticsMenu(IStringLocalizer<AnalyticsMenu> localizer)
-    {
-        S = localizer;
-    }
+    private readonly IStringLocalizer _s = localizer;
 
     public Task BuildNavigationAsync(string name, NavigationBuilder builder)
     {
@@ -54,16 +51,16 @@ public class AnalyticsMenu : INavigationProvider
         }
 
         builder
-            .Add(S["Analytics"], "after:Kanban", analytics => analytics
-                .Add(S["Dashboard"], "1", dashboard => dashboard
+            .Add(_s["Analytics"], "after:Kanban", analytics => analytics
+                .Add(_s["Dashboard"], "1", dashboard => dashboard
                     .Action("Index", "Analytics", new { area = "Compost.Analytics" })
                     .LocalNav()
                 )
-                .Add(S["Velocity"], "2", velocity => velocity
+                .Add(_s["Velocity"], "2", velocity => velocity
                     .Action("Velocity", "Analytics", new { area = "Compost.Analytics" })
                     .LocalNav()
                 )
-                .Add(S["Patterns"], "3", patterns => patterns
+                .Add(_s["Patterns"], "3", patterns => patterns
                     .Action("PatternUsage", "Analytics", new { area = "Compost.Analytics" })
                     .LocalNav()
                 )
@@ -76,9 +73,4 @@ public class AnalyticsMenu : INavigationProvider
 // Empty migrations class for now
 public class Migrations : OrchardCore.Data.Migration.DataMigration
 {
-    public async Task<int> CreateAsync()
-    {
-        // Analytics doesn't need its own tables - it queries existing content
-        return 1;
-    }
 }

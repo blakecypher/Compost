@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>compost-web-secrets</UserSecretsId>
+    <AllowRidSpecificRuntimeAssets>true</AllowRidSpecificRuntimeAssets>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +21,9 @@
     
     <!-- Application Insights -->
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.21.0" />
+    
+    <!-- Security patch for transitive dependency -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>

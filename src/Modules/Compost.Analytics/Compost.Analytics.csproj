@@ -4,8 +4,16 @@
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
   </PropertyGroup>
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="OrchardCore.Module.Targets" Version="1.8.2" />
     <PackageReference Include="OrchardCore.ContentManagement" Version="1.8.2" />
     <PackageReference Include="OrchardCore.ContentManagement.Display" Version="1.8.2" />
+    <PackageReference Include="YesSql.Core" Version="4.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Compost.Kanban\Compost.Kanban.csproj" />
   </ItemGroup>
 </Project>

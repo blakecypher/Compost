@@ -8,6 +8,11 @@ namespace Compost.Core.Models;
 public class ArchitecturalPatternPart : ContentPart
 {
     /// <summary>
+    /// Category for grouping patterns
+    /// </summary>
+    public string? Category { get; set; }
+
+    /// <summary>
     /// When to use this pattern
     /// </summary>
     public string? WhenToUse { get; set; }
