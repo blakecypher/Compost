@@ -6,6 +6,14 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Prevent FOUC - set background color before CSS loads -->
+    <style>
+        html { background-color: #f9f5d7; }
+        body { background-color: #f9f5d7 !important; visibility: hidden; }
+        body.css-loaded { visibility: visible; }
+    </style>
+    
     <title>@title - Compost</title>
     
     <!-- Bootstrap CSS -->
@@ -194,7 +202,7 @@
         /* Fix Monaco Editor Border in Dark Mode */
         [data-bs-theme="dark"] .monaco-editor { border-color: #504945 !important; }
 
-        /* Module Theme Utilities */
+        /* Module Theme Utilities - ENHANCED SPECIFICITY */
         .bg-theme-contexts  { background-color: var(--theme-contexts) !important; }
         .bg-theme-patterns  { background-color: var(--theme-patterns) !important; }
         .bg-theme-snippets  { background-color: var(--theme-snippets) !important; }
@@ -202,22 +210,69 @@
         .text-theme-patterns  { color: var(--theme-patterns) !important; }
         .text-theme-snippets  { color: var(--theme-snippets) !important; }
         .text-on-theme-contexts, .text-on-theme-patterns, .text-on-theme-snippets { color: #fff !important; }
-        .btn-theme-contexts { background-color: var(--theme-contexts); border-color: var(--theme-contexts); color: #fff; }
-        .btn-theme-contexts:hover { filter: brightness(1.12); color: #fff; }
-        .btn-theme-snippets { background-color: var(--theme-snippets); border-color: var(--theme-snippets); color: #fff; }
-        .btn-theme-snippets:hover { filter: brightness(1.12); color: #fff; }
-        .btn-outline-theme-patterns { background-color: transparent; border-color: var(--theme-patterns); color: var(--theme-patterns); }
-        .btn-outline-theme-patterns:hover { background-color: var(--theme-patterns); color: #fff; }
-        .btn-theme-patterns { background-color: var(--theme-patterns); border-color: var(--theme-patterns); color: #fff; }
-        .btn-theme-patterns:hover { filter: brightness(1.12); color: #fff; }
+        
+        /* Button styles with ULTRA high specificity to override Bootstrap */
+        body .btn.btn-theme-contexts { 
+            background-color: var(--theme-contexts) !important; 
+            border-color: var(--theme-contexts) !important; 
+            color: #fff !important; 
+        }
+        body .btn.btn-theme-contexts:hover { 
+            filter: brightness(1.12); 
+            color: #fff !important; 
+        }
+        
+        body .btn.btn-outline-theme-contexts { 
+            background-color: transparent !important; 
+            border-color: var(--theme-contexts) !important; 
+            color: var(--theme-contexts) !important; 
+        }
+        body .btn.btn-outline-theme-contexts:hover { 
+            background-color: var(--theme-contexts) !important; 
+            color: #fff !important; 
+        }
+        
+        .btn.btn-theme-snippets { 
+            background-color: var(--theme-snippets) !important; 
+            border-color: var(--theme-snippets) !important; 
+            color: #fff !important; 
+        }
+        .btn.btn-theme-snippets:hover { 
+            filter: brightness(1.12); 
+            color: #fff !important; 
+        }
+        
+        .btn.btn-outline-theme-patterns { 
+            background-color: transparent !important; 
+            border-color: var(--theme-patterns) !important; 
+            color: var(--theme-patterns) !important; 
+        }
+        .btn.btn-outline-theme-patterns:hover { 
+            background-color: var(--theme-patterns) !important; 
+            color: #fff !important; 
+        }
+        
+        .btn.btn-theme-patterns { 
+            background-color: var(--theme-patterns) !important; 
+            border-color: var(--theme-patterns) !important; 
+            color: #fff !important; 
+        }
+        .btn.btn-theme-patterns:hover { 
+            filter: brightness(1.12); 
+            color: #fff !important; 
+        }
+        
+        .border-theme-contexts { border-color: var(--theme-contexts) !important; }
         .border-theme-patterns { border-color: var(--theme-patterns) !important; }
         .border-theme-snippets { border-color: var(--theme-snippets) !important; }
+        .badge.bg-theme-contexts { background-color: var(--theme-contexts) !important; }
         .badge.bg-theme-patterns { background-color: var(--theme-patterns) !important; }
         .badge.bg-theme-snippets { background-color: var(--theme-snippets) !important; }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="bg-body-tertiary">
+    <script>document.body.classList.add('css-loaded');</script>
     <!-- Top Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
         <div class="container-fluid">

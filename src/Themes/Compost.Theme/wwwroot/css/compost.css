@@ -751,6 +751,57 @@ a:hover {
 .text-theme-snippets { color: var(--theme-snippets) !important; }
 .text-theme-patterns { color: var(--theme-patterns) !important; }
 
+/* Theme-specific button utility classes with high specificity */
+.btn.btn-theme-contexts {
+    background-color: var(--theme-contexts) !important;
+    border-color: var(--theme-contexts) !important;
+    color: #fff !important;
+}
+.btn.btn-theme-contexts:hover {
+    filter: brightness(1.12);
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-contexts {
+    background-color: transparent !important;
+    border-color: var(--theme-contexts) !important;
+    color: var(--theme-contexts) !important;
+}
+.btn.btn-outline-theme-contexts:hover {
+    background-color: var(--theme-contexts) !important;
+    color: #fff !important;
+}
+
+.btn.btn-theme-patterns {
+    background-color: var(--theme-patterns) !important;
+    border-color: var(--theme-patterns) !important;
+    color: #fff !important;
+}
+.btn.btn-theme-patterns:hover {
+    filter: brightness(1.12);
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-patterns {
+    background-color: transparent !important;
+    border-color: var(--theme-patterns) !important;
+    color: var(--theme-patterns) !important;
+}
+.btn.btn-outline-theme-patterns:hover {
+    background-color: var(--theme-patterns) !important;
+    color: #fff !important;
+}
+
+.btn.btn-theme-snippets {
+    background-color: var(--theme-snippets) !important;
+    border-color: var(--theme-snippets) !important;
+    color: #fff !important;
+}
+.btn.btn-theme-snippets:hover {
+    filter: brightness(1.12);
+    color: #fff !important;
+}
+
 .rounded { border-radius: 8px; }
 .rounded-lg { border-radius: 12px; }
 .rounded-xl { border-radius: 16px; }

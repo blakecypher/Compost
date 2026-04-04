@@ -7,14 +7,44 @@
     ViewData["Title"] = "Dashboard - Compost";
 }
 
+@section Styles {
+    <style>
+        /* Dashboard theme button overrides - highest priority */
+        body .btn.btn-theme-contexts,
+        .btn.btn-theme-contexts {
+            background-color: #7c3aed !important;
+            border-color: #7c3aed !important;
+            color: #fff !important;
+        }
+        body .btn.btn-theme-contexts:hover,
+        .btn.btn-theme-contexts:hover {
+            background-color: #8b5cf6 !important;
+            border-color: #8b5cf6 !important;
+            color: #fff !important;
+        }
+        body .btn.btn-outline-theme-contexts,
+        .btn.btn-outline-theme-contexts {
+            background-color: transparent !important;
+            border-color: #7c3aed !important;
+            color: #7c3aed !important;
+        }
+        body .btn.btn-outline-theme-contexts:hover,
+        .btn.btn-outline-theme-contexts:hover {
+            background-color: #7c3aed !important;
+            border-color: #7c3aed !important;
+            color: #fff !important;
+        }
+    </style>
+}
+
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Dashboard</h1>
         <div class="d-flex gap-2">
-            <a href="/Projects/Create" class="btn btn-success">
+            <a href="/Projects/Create" class="btn btn-theme-contexts">
                 <i class="fas fa-plus"></i> Create Project
             </a>
-            <a href="/Projects/TreeView" class="btn btn-primary">
+            <a href="/Projects/TreeView" class="btn btn-theme-contexts">
                 <i class="fas fa-list"></i> View Projects
             </a>
         </div>
@@ -23,7 +53,7 @@
     <!-- Quick Stats -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
+            <div class="card bg-theme-contexts text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -94,8 +124,8 @@
                         <h5 class="card-title">No Active Project</h5>
                         <p class="card-text">Create a new project or activate an existing one to start tracking your work.</p>
                         <div class="d-flex gap-2 justify-content-center">
-                            <a href="/Projects/Create" class="btn btn-primary">Create Project</a>
-                            <a href="/Projects/TreeView" class="btn btn-secondary">View Projects</a>
+                            <a href="/Projects/Create" class="btn btn-theme-contexts">Create Project</a>
+                            <a href="/Projects/TreeView" class="btn btn-outline-theme-contexts">View Projects</a>
                         </div>
                     </div>
                 </div>
@@ -112,7 +142,7 @@
                         <i class="fas fa-sitemap me-2"></i> Tree View
                     </h5>
                     <p class="card-text">Hierarchical Project View</p>
-                    <a href="/Projects/TreeView" class="btn btn-outline-primary">Preview</a>
+                    <a href="/Projects/TreeView" class="btn btn-outline-theme-contexts">Preview</a>
                 </div>
             </div>
         </div>
@@ -169,7 +199,7 @@
                                                             <button type="submit" class="btn btn-outline-success btn-sm">Activate</button>
                                                         </form>
                                                     }
-                                                    <a href="/Projects/Edit/@project.Id" class="btn btn-outline-primary btn-sm">Edit</a>
+                                                    <a href="/Projects/Edit/@project.Id" class="btn btn-outline-theme-contexts btn-sm">Edit</a>
                                                 </div>
                                             </td>
                                         </tr>

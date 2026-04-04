@@ -14,6 +14,18 @@
     <meta name="author" content="Compost Team" />
     <meta name="theme-color" content="#2563eb" />
     
+    <!-- Prevent FOUC - hide content until CSS loads -->
+    <style>
+        html { background-color: #1a1a1a; }
+        body { 
+            background-color: #1a1a1a !important; 
+            opacity: 0;
+            transition: opacity 0.1s ease-out;
+        }
+        body.css-loaded { opacity: 1; }
+    </style>
+    <script>(function(){document.documentElement.style.backgroundColor='#1a1a1a';})();</script>
+    
     <!-- Open Graph -->
     <meta property="og:title" content="@siteName" />
     <meta property="og:description" content="Modern development workflow management system" />
@@ -40,6 +52,7 @@
     @await RenderSectionAsync("Head", required: false)
 </head>
 <body data-bs-theme="auto">
+    <script>document.body.classList.add('css-loaded');</script>
     <!-- Accessibility Skip Links -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white p-2 rounded">Skip to main content</a>
     
