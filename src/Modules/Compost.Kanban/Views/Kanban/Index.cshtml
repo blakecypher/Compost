@@ -22,8 +22,8 @@
         border: 1px solid var(--bs-border-color) !important;
     }
     [data-bs-theme="dark"] .kanban-column {
-        background: #1a1a1a !important;
-        border: 1px solid #333333 !important;
+        background: #252525 !important;
+        border: 1px solid #3d3d3d !important;
     }
 
     .kanban-column.sortable-ghost {
@@ -81,8 +81,8 @@
         border: 1px solid var(--bs-border-color) !important;
     }
     [data-bs-theme="dark"] .kanban-board {
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%) !important;
-        border: 1px solid #333333 !important;
+        background: linear-gradient(135deg, #1f1f1f 0%, #252525 50%, #202020 100%) !important;
+        border: 1px solid #3d3d3d !important;
     }
     
     /* Light mode enhancements for Kanban board */
@@ -218,7 +218,7 @@
                 <option value="@context.Id" selected="@(context.Id == Model.SelectedContextId)">@context.Name</option>
             }
         </select>
-        <a href="/Admin/Contents/ContentTypes/KanbanCard/Create" class="btn btn-success whitespace-nowrap flex-shrink-0">
+        <a href="/Admin/Contents/ContentTypes/KanbanCard/Create" class="btn btn-outline-success whitespace-nowrap flex-shrink-0">
             <i class="fas fa-plus me-1"></i> Add Card
         </a>
         <button class="btn btn-warning btn-sm" onclick="listAllCards()" title="Debug: List all cards">

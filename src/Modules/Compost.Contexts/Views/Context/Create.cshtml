@@ -6,36 +6,85 @@
 }
 
 <div class="container-fluid">
-    <h1>Create New Project</h1>
-    <p class="lead">Set up a new project context to track time and manage your workspace.</p>
+    <!-- Header with purple title and back button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-theme-contexts">
+                <i class="fas fa-plus-circle me-2"></i>Create Project
+            </h1>
+            <p class="lead mb-0">Set up a new project context to track time and manage your workspace.</p>
+        </div>
+        <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-theme-contexts">
+            <i class="fas fa-arrow-left me-2"></i>Back to Projects
+        </a>
+    </div>
 
     <div class="row">
+        <!-- Main Form -->
         <div class="col-md-8">
-            <form asp-action="Create" asp-controller="Project" method="post">
+            <form id="createProjectForm" asp-action="Create" asp-controller="Project" method="post">
                 @Html.AntiForgeryToken()
                 
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                <div class="mb-3">
-                    <label asp-for="Name" class="form-label"></label>
-                    <input asp-for="Name" class="form-control" placeholder="e.g., Project Alpha Bug Fix" />
-                    <span asp-validation-for="Name" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="Description" class="form-label"></label>
-                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief description of what you're working on..."></textarea>
-                    <span asp-validation-for="Description" class="text-danger"></span>
-                </div>
-
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <i class="fa fa-github"></i> Repository Information (Optional)
+                <!-- Basic Information Card -->
+                <div class="card project-enhanced-card mb-4">
+                    <div class="card-header d-flex align-items-center project-header-background">
+                        <div class="project-icon me-2">
+                            <i class="fas fa-info text-theme-contexts"></i>
+                        </div>
+                        <span class="fw-bold">Basic Information</span>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label asp-for="RepositoryName" class="form-label"></label>
-                            <input asp-for="RepositoryName" class="form-control" placeholder="e.g., my-project" />
+                            <label asp-for="Name" class="form-label fw-bold"></label>
+                            <input asp-for="Name" class="form-control" placeholder="e.g., Project Alpha Bug Fix" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief description of what you're working on..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Status" class="form-label fw-bold"></label>
+                                <select asp-for="Status" class="form-select">
+                                    <option value="To Do">To Do</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Done">Done</option>
+                                    <option value="Blocked">Blocked</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Tags" class="form-label fw-bold"></label>
+                                <input asp-for="Tags" class="form-control" placeholder="e.g., bugfix, urgent" />
+                                <div class="form-text">Separate tags with commas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Repository Information Card -->
+                <div class="card project-enhanced-card mb-4">
+                    <div class="card-header d-flex align-items-center project-header-background">
+                        <div class="project-icon me-2">
+                            <i class="fab fa-github text-theme-contexts"></i>
+                        </div>
+                        <span class="fw-bold">Repository Information (Optional)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="RepositoryName" class="form-label"></label>
+                                <input asp-for="RepositoryName" class="form-control" placeholder="e.g., my-project" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CurrentBranch" class="form-label"></label>
+                                <input asp-for="CurrentBranch" class="form-control" placeholder="e.g., feature/new-feature" />
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -43,59 +92,79 @@
                             <input asp-for="RepositoryUrl" class="form-control" placeholder="https://github.com/user/repo" />
                             <span asp-validation-for="RepositoryUrl" class="text-danger"></span>
                         </div>
-
-                        <div class="mb-3">
-                            <label asp-for="CurrentBranch" class="form-label"></label>
-                            <input asp-for="CurrentBranch" class="form-control" placeholder="e.g., feature/new-feature" />
-                        </div>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label asp-for="Tags" class="form-label"></label>
-                    <input asp-for="Tags" class="form-control" placeholder="e.g., bugfix, urgent, frontend (comma-separated)" />
-                    <div class="form-text">Separate tags with commas</div>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="Status" class="form-label"></label>
-                    <select asp-for="Status" class="form-select">
-                        <option value="To Do">To Do</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Done">Done</option>
-                        <option value="Blocked">Blocked</option>
-                    </select>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label asp-for="ParentContextId" class="form-label"></label>
-                            <select asp-for="ParentContextId" class="form-select">
-                                <option value="">(None - Root Project)</option>
-                                @foreach (var context in ViewBag.AllContexts as List<Project> ?? [])
-                                {
-                                    <option value="@context.Id">@context.Name</option>
-                                }
-                            </select>
+                <!-- Hierarchy Card -->
+                <div class="card project-enhanced-card mb-4">
+                    <div class="card-header d-flex align-items-center project-header-background">
+                        <div class="project-icon me-2">
+                            <i class="fas fa-sitemap text-theme-contexts"></i>
+                        </div>
+                        <span class="fw-bold">Hierarchy</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ParentContextId" class="form-label"></label>
+                                <select asp-for="ParentContextId" class="form-select">
+                                    <option value="">(None - Root Project)</option>
+                                    @foreach (var context in ViewBag.AllContexts as List<Project> ?? [])
+                                    {
+                                        <option value="@context.Id">@context.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DisplayOrder" class="form-label"></label>
+                                <input asp-for="DisplayOrder" type="number" class="form-control" value="0" />
+                                <div class="form-text">Lower numbers appear first</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label asp-for="DisplayOrder" class="form-label"></label>
-                            <input asp-for="DisplayOrder" type="number" class="form-control" value="0" />
-                            <div class="form-text">Lower numbers appear first in lists</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-save"></i> Create Project
-                    </button>
-                    <a asp-action="TreeView" asp-controller="Project" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
+        </div>
+
+        <!-- Actions Sidebar -->
+        <div class="col-md-4">
+            <!-- Actions Card -->
+            <div class="card project-enhanced-card mb-4">
+                <div class="card-header d-flex align-items-center project-header-background">
+                    <div class="project-icon me-2">
+                        <i class="fas fa-cog text-theme-contexts"></i>
+                    </div>
+                    <span class="fw-bold">Actions</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" form="createProjectForm" class="btn btn-theme-contexts">
+                            <i class="fas fa-save me-2"></i>Create Project
+                        </button>
+                        <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-theme-contexts">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="card project-enhanced-card">
+                <div class="card-header d-flex align-items-center project-header-background">
+                    <div class="project-icon me-2">
+                        <i class="fas fa-lightbulb text-theme-contexts"></i>
+                    </div>
+                    <span class="fw-bold">Tips</span>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><i class="fas fa-check text-theme-contexts me-2"></i>Use descriptive names</li>
+                        <li class="mb-2"><i class="fas fa-check text-theme-contexts me-2"></i>Add relevant tags</li>
+                        <li class="mb-2"><i class="fas fa-check text-theme-contexts me-2"></i>Link to repository</li>
+                        <li><i class="fas fa-check text-theme-contexts me-2"></i>Set parent for sub-projects</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -103,3 +172,69 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
+<style>
+    .project-enhanced-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        border-top: 4px solid var(--theme-contexts) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 0.5rem;
+    }
+    
+    .project-enhanced-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    [data-bs-theme="light"] .project-enhanced-card:hover {
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    [data-bs-theme="dark"] .project-enhanced-card:hover {
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .project-header-background {
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);
+        border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+    }
+    
+    .project-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(124, 58, 237, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-theme-contexts {
+        background-color: var(--theme-contexts);
+        border-color: var(--theme-contexts);
+        color: #fff;
+    }
+    
+    .btn-theme-contexts:hover {
+        background-color: var(--theme-contexts);
+        filter: brightness(1.12);
+        color: #fff;
+    }
+    
+    .btn-outline-theme-contexts {
+        color: var(--theme-contexts);
+        border-color: var(--theme-contexts);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-contexts:hover {
+        background-color: var(--theme-contexts);
+        color: #fff;
+    }
+    
+    .text-theme-contexts {
+        color: var(--theme-contexts) !important;
+    }
+</style>

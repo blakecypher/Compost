@@ -8,36 +8,39 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="text-primary">
-            <i class="fas fa-plus-circle"></i> Create Mind Map
-        </h2>
-        <p class="text-muted">Generate a procedural flow visualization from text, transcripts, or requirements.</p>
+        <h1 class="text-theme-mindmaps">
+            <i class="fas fa-plus-circle me-2"></i>Create Mind Map
+        </h1>
+        <p class="text-muted mb-0">Generate a procedural flow visualization from text, transcripts, or requirements.</p>
     </div>
-    <a asp-action="Index" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left"></i> Back
+    <a asp-action="Index" class="btn btn-outline-theme-mindmaps">
+        <i class="fas fa-arrow-left me-2"></i>Back
     </a>
 </div>
 
-<form asp-action="Create" method="post">
+<form asp-action="Create" method="post" id="mindmapForm">
     @Html.AntiForgeryToken()
     
     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <i class="fas fa-info-circle"></i> Mind Map Details
+            <div class="card mindmap-enhanced-card mb-4">
+                <div class="card-header d-flex align-items-center mindmap-header-background">
+                    <div class="mindmap-icon me-2">
+                        <i class="fas fa-info-circle text-theme-mindmaps"></i>
+                    </div>
+                    <span class="fw-bold">Mind Map Details</span>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label asp-for="Name" class="form-label">Mind Map Name</label>
+                        <label asp-for="Name" class="form-label fw-bold">Mind Map Name</label>
                         <input asp-for="Name" class="form-control" placeholder="e.g., Project Planning Session" required />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="WorkContextId" class="form-label">Associated Work Project (Optional)</label>
+                        <label asp-for="WorkContextId" class="form-label fw-bold">Associated Work Project (Optional)</label>
                         <select asp-for="WorkContextId" class="form-select">
                             <option value="">-- Select a context --</option>
                             @foreach (var context in projects)
@@ -49,13 +52,16 @@
                 </div>
             </div>
 
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <i class="fas fa-database"></i> Source Data
+            <div class="card mindmap-enhanced-card mb-4">
+                <div class="card-header d-flex align-items-center mindmap-header-background">
+                    <div class="mindmap-icon me-2">
+                        <i class="fas fa-database text-theme-mindmaps"></i>
+                    </div>
+                    <span class="fw-bold">Source Data</span>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label asp-for="SourceType" class="form-label">Source Type</label>
+                        <label asp-for="SourceType" class="form-label fw-bold">Source Type</label>
                         <select asp-for="SourceType" class="form-select" id="sourceType">
                             <option value="Text">Raw Text / Ideas</option>
                             <option value="Transcript">Meeting Transcript</option>
@@ -64,86 +70,161 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="SourceText" class="form-label">Paste Your Text</label>
+                        <label asp-for="SourceText" class="form-label fw-bold">Paste Your Text</label>
                         <textarea asp-for="SourceText" class="form-control" rows="15" placeholder="Paste your text here... The system will automatically parse and structure it into a mind map.&#10;&#10;For best results:&#10;- Use clear headings and bullet points&#10;- Separate different topics with blank lines&#10;- Include keywords like 'Requirement', 'Question', 'Action' for auto-categorization" required></textarea>
                         <span asp-validation-for="SourceText" class="text-danger"></span>
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Actions Card -->
+            <div class="card mindmap-enhanced-card mb-4">
+                <div class="card-header d-flex align-items-center mindmap-header-background">
+                    <div class="mindmap-icon me-2">
+                        <i class="fas fa-cog text-theme-mindmaps"></i>
+                    </div>
+                    <span class="fw-bold">Actions</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-theme-mindmaps">
+                            <i class="fas fa-magic me-2"></i>Generate Mind Map
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-theme-mindmaps">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-magic"></i> Generate Mind Map
-                </button>
-                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            <!-- Templates Card -->
+            <div class="card mindmap-enhanced-card mb-4">
+                <div class="card-header d-flex align-items-center mindmap-header-background">
+                    <div class="mindmap-icon me-2">
+                        <i class="fas fa-file-alt text-theme-mindmaps"></i>
+                    </div>
+                    <span class="fw-bold">Quick Start Templates</span>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Create a mind map instantly from a template:</p>
+                    
+                    <form asp-action="CreateFromTemplate" method="post" class="mb-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="workContextId" value="@ViewBag.SelectedContextId" />
+                        <div class="mb-2">
+                            <input type="text" name="name" class="form-control form-control-sm" placeholder="Mind map name..." required />
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="templateName" value="project" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-project-diagram"></i> Project Planning
+                            </button>
+                            <button type="submit" name="templateName" value="brainstorming" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-lightbulb"></i> Brainstorming
+                            </button>
+                            <button type="submit" name="templateName" value="decision" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-balance-scale"></i> Decision Tree
+                            </button>
+                            <button type="submit" name="templateName" value="meeting" class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-users"></i> Meeting Notes
+                            </button>
+                            <button type="submit" name="templateName" value="research" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-flask"></i> Research
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="card mindmap-enhanced-card">
+                <div class="card-header d-flex align-items-center mindmap-header-background">
+                    <div class="mindmap-icon me-2">
+                        <i class="fas fa-lightbulb text-theme-mindmaps"></i>
+                    </div>
+                    <span class="fw-bold">Tips & Examples</span>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted">For Meeting Transcripts:</h6>
+                    <p class="small text-muted">Paste transcript text. The system will extract key points, questions, and action items.</p>
+
+                    <h6 class="text-muted mt-3">For Requirements:</h6>
+                    <p class="small text-muted">Numbered or bulleted lists work best. Use phrases like "The system must..." or "Users should be able to..."</p>
+
+                    <h6 class="text-muted mt-3">For Raw Ideas:</h6>
+                    <p class="small text-muted">Just brainstorm! The system will organize your thoughts hierarchically.</p>
+
+                    <hr />
+                    
+                    <h6 class="text-muted">Auto-Detected Keywords:</h6>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge bg-primary">Requirement</span>
+                        <span class="badge bg-warning text-dark">Question</span>
+                        <span class="badge bg-info">Action</span>
+                        <span class="badge bg-success">Decision</span>
+                        <span class="badge bg-danger">Risk</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </form>
 
-<div class="col-md-4">
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <i class="fas fa-file-alt"></i> Quick Start Templates
-        </div>
-        <div class="card-body">
-            <p class="small text-muted">Create a mind map instantly from a template:</p>
-            
-            <form asp-action="CreateFromTemplate" method="post" class="mb-2">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="workContextId" value="@ViewBag.SelectedContextId" />
-                <div class="mb-2">
-                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Mind map name..." required />
-                </div>
-                <div class="d-grid gap-2">
-                    <button type="submit" name="templateName" value="project" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-project-diagram"></i> Project Planning
-                    </button>
-                    <button type="submit" name="templateName" value="brainstorming" class="btn btn-sm btn-outline-success">
-                        <i class="fas fa-lightbulb"></i> Brainstorming
-                    </button>
-                    <button type="submit" name="templateName" value="decision" class="btn btn-sm btn-outline-info">
-                        <i class="fas fa-balance-scale"></i> Decision Tree
-                    </button>
-                    <button type="submit" name="templateName" value="meeting" class="btn btn-sm btn-outline-warning">
-                        <i class="fas fa-users"></i> Meeting Notes
-                    </button>
-                    <button type="submit" name="templateName" value="research" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-flask"></i> Research
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header bg-light">
-            <i class="fas fa-lightbulb"></i> Tips & Examples
-        </div>
-        <div class="card-body">
-            <h6 class="text-muted">For Meeting Transcripts:</h6>
-            <p class="small text-muted">Paste transcript text. The system will extract key points, questions, and action items.</p>
-
-            <h6 class="text-muted mt-3">For Requirements:</h6>
-            <p class="small text-muted">Numbered or bulleted lists work best. Use phrases like "The system must..." or "Users should be able to..."</p>
-
-            <h6 class="text-muted mt-3">For Raw Ideas:</h6>
-            <p class="small text-muted">Just brainstorm! The system will organize your thoughts hierarchically.</p>
-
-            <hr />
-            
-            <h6 class="text-muted">Auto-Detected Keywords:</h6>
-            <div class="d-flex flex-wrap gap-1">
-                <span class="badge bg-primary">Requirement</span>
-                <span class="badge bg-warning text-dark">Question</span>
-                <span class="badge bg-info">Action</span>
-                <span class="badge bg-success">Decision</span>
-                <span class="badge bg-danger">Risk</span>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
 <partial name="_ValidationScriptsPartial" />
 }
+
+<style>
+    .mindmap-enhanced-card {
+        transition: transform 0.1s, box-shadow 0.2s;
+        border-left: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        border-top: 4px solid var(--theme-mindmaps) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 0.5rem;
+    }
+    
+    .mindmap-enhanced-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .mindmap-header-background {
+        background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 107, 53, 0.05) 100%);
+        border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+    }
+    
+    .mindmap-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(255, 107, 53, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-theme-mindmaps {
+        background-color: var(--theme-mindmaps);
+        border-color: var(--theme-mindmaps);
+        color: #212529;
+    }
+    
+    .btn-theme-mindmaps:hover {
+        background-color: var(--theme-mindmaps);
+        filter: brightness(1.12);
+        color: #212529;
+    }
+    
+    .btn-outline-theme-mindmaps {
+        color: var(--theme-mindmaps);
+        border-color: var(--theme-mindmaps);
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-mindmaps:hover {
+        background-color: var(--theme-mindmaps);
+        color: #212529;
+    }
+</style>

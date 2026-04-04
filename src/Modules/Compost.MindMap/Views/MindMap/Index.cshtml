@@ -71,8 +71,8 @@
         <a asp-action="Import" class="btn btn-outline-secondary">
             <i class="fas fa-file-import"></i> Import
         </a>
-        <a asp-action="Create" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Create Mind Map
+        <a asp-action="Create" class="btn btn-outline-primary">
+            <i class="fas fa-plus me-2"></i>Create Mind Map
         </a>
     </div>
 </div>
@@ -121,11 +121,24 @@
 
 @if (Model.Count == 0)
 {
-    <div class="alert alert-info text-center py-5">
-        <i class="fas fa-project-diagram fa-3x mb-3 text-info"></i>
-        <h4>No Mind Maps Yet</h4>
-        <p>Create your first mind map from text, meeting transcripts, or requirements.</p>
-        <a asp-action="Create" class="btn btn-primary">Get Started</a>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-project-diagram fa-3x mb-3"></i>
+                    <h4>No Mind Maps Yet</h4>
+                    <p class="mb-3">Create your first mind map from text, meeting transcripts, or requirements.</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a asp-action="Create" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Get Started
+                        </a>
+                        <a asp-action="Import" class="btn btn-outline-secondary">
+                            <i class="fas fa-file-import me-1"></i> Import
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 }
 else

@@ -8,8 +8,8 @@
         </h2>
         <p class="text-muted">Record meetings and manage your transcripts.</p>
     </div>
-    <a asp-action="Record" class="btn btn-theme-transcription">
-        <i class="fas fa-plus-circle"></i> New Recording
+    <a asp-action="Record" class="btn btn-outline-theme-transcription">
+        <i class="fas fa-plus-circle me-2"></i>New Recording
     </a>
 </div>
 
@@ -179,30 +179,32 @@ else
 {
     <div class="row">
         <div class="col-12">
-            <div class="alert alert-secondary text-center py-5">
-                <i class="fas fa-microphone-slash fa-3x mb-3"></i>
-                
-                @if (ViewBag.ShowMigrationNote == true)
-                {
-                    <h4>Active Transcriptions</h4>
-                    <div class="alert alert-info d-inline-block">
-                        <i class="fas fa-info-circle me-2"></i>
-                        @ViewBag.Message
-                    </div>
-                    <p class="text-muted mt-3">
-                        <a asp-action="Record" class="btn btn-outline-success">Start New Recording</a>
-                        <span class="mx-2">or</span>
-                        <a href="/Admin" class="btn btn-outline-primary">Run Database Migrations</a>
-                    </p>
-                }
-                else
-                {
-                    <h4>No recordings yet</h4>
-                    <p class="mb-3">Start a new recording to capture your first meeting transcript.</p>
-                    <a asp-action="Record" class="btn btn-theme-transcription">
-                        <i class="fas fa-plus-circle me-1"></i> Start Recording
-                    </a>
-                }
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-microphone-slash fa-3x mb-3"></i>
+                    
+                    @if (ViewBag.ShowMigrationNote == true)
+                    {
+                        <h4>Active Transcriptions</h4>
+                        <div class="alert alert-info d-inline-block">
+                            <i class="fas fa-info-circle me-2"></i>
+                            @ViewBag.Message
+                        </div>
+                        <p class="text-muted mt-3">
+                            <a asp-action="Record" class="btn btn-outline-success">Start New Recording</a>
+                            <span class="mx-2">or</span>
+                            <a href="/Admin" class="btn btn-outline-primary">Run Database Migrations</a>
+                        </p>
+                    }
+                    else
+                    {
+                        <h4>No recordings yet</h4>
+                        <p class="mb-3">Start a new recording to capture your first meeting transcript.</p>
+                        <a asp-action="Record" class="btn btn-theme-transcription">
+                            <i class="fas fa-plus-circle me-1"></i> Start Recording
+                        </a>
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -247,6 +249,8 @@ else
     }
     
     .btn-theme-transcription:hover {
+        background-color: #a04040 !important;
+        border-color: #a04040 !important;
         filter: brightness(1.12);
         color: #fff;
     }

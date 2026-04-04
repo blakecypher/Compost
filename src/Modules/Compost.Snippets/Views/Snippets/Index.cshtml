@@ -13,12 +13,12 @@
         </h2>
         <p class="text-muted">Repository for your reusable code components.</p>
     </div>
-    <a asp-action="Create" class="btn btn-theme-snippets">
-        <i class="fas fa-plus"></i> Add Snippet
+    <a asp-action="Create" class="btn btn-outline-theme-snippets">
+        <i class="fas fa-plus me-2"></i>Add Snippet
     </a>
 </div>
 
-<div class="card bg-light mb-4">
+<div class="card mb-4">
     <div class="card-body">
         <form asp-action="Index" method="get">
             <div class="input-group">
@@ -161,11 +161,21 @@
 }
 else
 {
-    <div class="alert alert-secondary text-center py-5">
-        <i class="fas fa-code fa-3x mb-3"></i>
-        <h4>No Snippets Yet</h4>
-        <p class="mb-3">Start building your library by adding your first code snippet.</p>
-        <a asp-action="Create" class="btn btn-theme-snippets">Create Snippet</a>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-code fa-3x mb-3"></i>
+                    <h4>No Snippets Yet</h4>
+                    <p class="mb-3">Start building your library by adding your first code snippet.</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a asp-action="Create" class="btn btn-theme-snippets">
+                            <i class="fas fa-plus me-1"></i> Create Snippet
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
@@ -238,6 +248,8 @@ else
     }
     
     .btn-theme-snippets:hover {
+        background-color: #c45c5c !important;
+        border-color: #c45c5c !important;
         filter: brightness(1.12);
         color: #fff;
     }

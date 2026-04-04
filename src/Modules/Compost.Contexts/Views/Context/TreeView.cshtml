@@ -18,8 +18,8 @@
         </h1>
         <p class="text-muted">Organize your projects hierarchically. Drag and drop to structure your work.</p>
     </div>
-    <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-theme-contexts">
-        <i class="fas fa-plus"></i> Create Project
+    <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-outline-theme-contexts">
+        <i class="fas fa-plus me-2"></i>Create Project
     </a>
 </div>
 
@@ -74,14 +74,19 @@
 }
 else
 {
-    <div class="alert alert-secondary d-flex align-items-center mb-4">
-        <div class="flex-grow-1">
-            <h5 class="mb-1"><i class="fas fa-pause-circle me-2"></i>No Active Project</h5>
-            <p class="mb-0 small text-muted">Select a project and click "Activate" to set it as your active context.</p>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-pause-circle fa-3x mb-3"></i>
+                    <h4>No Active Project</h4>
+                    <p class="mb-3">Select a project and click "Activate" to set it as your active context.</p>
+                    <a href="#" onclick="document.getElementById('projectsBoard').scrollIntoView({behavior: 'smooth'}); return false;" class="btn btn-outline-theme-contexts">
+                        <i class="fas fa-list me-1"></i> View Projects
+                    </a>
+                </div>
+            </div>
         </div>
-        <a href="#" onclick="document.getElementById('projectsBoard').scrollIntoView({behavior: 'smooth'}); return false;" class="btn btn-sm btn-outline-primary">
-            <i class="fas fa-list"></i> View Projects
-        </a>
     </div>
 }
 
@@ -373,17 +378,19 @@ else
     else
     {
         <div class="col-12">
-            <div class="alert alert-secondary text-center py-5">
-                <i class="fas fa-folder-open fa-3x mb-3"></i>
-                <h4>No Projects Yet</h4>
-                <p class="mb-3">Create your first project to start organizing your work.</p>
-                <div class="d-flex justify-content-center gap-2">
-                    <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-theme-contexts">
-                        <i class="fas fa-plus me-1"></i> Create Project
-                    </a>
-                    <button class="btn btn-outline-secondary" onclick="importSampleProjects()">
-                        <i class="fas fa-download me-1"></i> Import Sample Projects
-                    </button>
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                    <h4>No Projects Yet</h4>
+                    <p class="mb-3">Create your first project to start organizing your work.</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-theme-contexts">
+                            <i class="fas fa-plus me-1"></i> Create Project
+                        </a>
+                        <button class="btn btn-outline-secondary" onclick="importSampleProjects()">
+                            <i class="fas fa-download me-1"></i> Import Sample Projects
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -728,6 +735,8 @@ else
     }
     
     .btn-theme-contexts:hover {
+        background-color: #8b5cf6 !important;
+        border-color: #8b5cf6 !important;
         filter: brightness(1.12);
         color: #fff;
     }
