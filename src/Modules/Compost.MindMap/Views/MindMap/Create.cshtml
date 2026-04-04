@@ -117,19 +117,19 @@
                             <input type="text" name="name" class="form-control form-control-sm" placeholder="Mind map name..." required />
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="submit" name="templateName" value="project" class="btn btn-sm btn-outline-primary">
+                            <button type="submit" name="templateName" value="project" class="btn btn-sm btn-outline-theme-mindmaps">
                                 <i class="fas fa-project-diagram"></i> Project Planning
                             </button>
-                            <button type="submit" name="templateName" value="brainstorming" class="btn btn-sm btn-outline-success">
+                            <button type="submit" name="templateName" value="brainstorming" class="btn btn-sm btn-outline-theme-mindmaps">
                                 <i class="fas fa-lightbulb"></i> Brainstorming
                             </button>
-                            <button type="submit" name="templateName" value="decision" class="btn btn-sm btn-outline-info">
+                            <button type="submit" name="templateName" value="decision" class="btn btn-sm btn-outline-theme-mindmaps">
                                 <i class="fas fa-balance-scale"></i> Decision Tree
                             </button>
-                            <button type="submit" name="templateName" value="meeting" class="btn btn-sm btn-outline-warning">
+                            <button type="submit" name="templateName" value="meeting" class="btn btn-sm btn-outline-theme-mindmaps">
                                 <i class="fas fa-users"></i> Meeting Notes
                             </button>
-                            <button type="submit" name="templateName" value="research" class="btn btn-sm btn-outline-secondary">
+                            <button type="submit" name="templateName" value="research" class="btn btn-sm btn-outline-theme-mindmaps">
                                 <i class="fas fa-flask"></i> Research
                             </button>
                         </div>
@@ -159,11 +159,11 @@
                     
                     <h6 class="text-muted">Auto-Detected Keywords:</h6>
                     <div class="d-flex flex-wrap gap-1">
-                        <span class="badge bg-primary">Requirement</span>
-                        <span class="badge bg-warning text-dark">Question</span>
-                        <span class="badge bg-info">Action</span>
-                        <span class="badge bg-success">Decision</span>
-                        <span class="badge bg-danger">Risk</span>
+                        <span class="badge bg-theme-mindmaps">Requirement</span>
+                        <span class="badge bg-theme-mindmaps">Question</span>
+                        <span class="badge bg-theme-mindmaps">Action</span>
+                        <span class="badge bg-theme-mindmaps">Decision</span>
+                        <span class="badge bg-theme-mindmaps">Risk</span>
                     </div>
                 </div>
             </div>
@@ -226,5 +226,14 @@
     .btn-outline-theme-mindmaps:hover {
         background-color: var(--theme-mindmaps);
         color: #212529;
+    }
+    
+    .text-theme-mindmaps {
+        color: var(--theme-mindmaps) !important;
+    }
+    
+    .bg-theme-mindmaps {
+        background-color: var(--theme-mindmaps) !important;
+        color: #212529 !important;
     }
 </style>

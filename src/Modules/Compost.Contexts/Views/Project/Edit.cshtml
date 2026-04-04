@@ -102,25 +102,25 @@
                 <div class="mb-3">
                     <label class="form-label">Total Time Spent</label>
                     <div class="form-control-plaintext">
-                        <span class="badge bg-info fs-6">@totalTime.ToString("hh\\:mm\\:ss")</span>
+                        <span class="badge bg-theme-contexts fs-6">@totalTime.ToString("hh\\:mm\\:ss")</span>
                         @if (Model.IsActive)
                         {
-                            <span class="badge bg-success ms-2">Currently Active</span>
+                            <span class="badge bg-theme-contexts ms-2">Currently Active</span>
                         }
                     </div>
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-theme-contexts">
                         <i class="fas fa-save"></i> Save Changes
                     </button>
-                    <a asp-action="TreeView" asp-controller="Project" class="btn btn-secondary">Back to Projects</a>
+                    <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-theme-contexts">Back to Projects</a>
                 </div>
             </form>
 
             <form asp-action="Delete" asp-controller="Project" asp-route-id="@Model.Id" method="post" class="mt-2" onsubmit="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-outline-danger">
+                <button type="submit" class="btn btn-outline-theme-contexts">
                     <i class="fas fa-trash"></i> Delete Project
                 </button>
             </form>
@@ -143,7 +143,7 @@
                         <input type="hidden" name="id" value="@Model.Id" />
                         <div class="input-group">
                             <input type="text" name="step" class="form-control" placeholder="Add testing step..." required />
-                            <button type="submit" class="btn btn-outline-primary">Add</button>
+                            <button type="submit" class="btn btn-outline-theme-contexts">Add</button>
                         </div>
                     </form>
                 </div>
@@ -165,7 +165,7 @@
                                     <input type="hidden" name="questionId" value="@question.Id" />
                                     <div class="input-group input-group-sm">
                                         <input type="text" name="answer" class="form-control" placeholder="Answer..." required />
-                                        <button type="submit" class="btn btn-outline-success">Resolve</button>
+                                        <button type="submit" class="btn btn-outline-theme-contexts">Resolve</button>
                                     </div>
                                 </form>
                             </div>
@@ -176,7 +176,7 @@
                         <input type="hidden" name="id" value="@Model.Id" />
                         <div class="input-group">
                             <input type="text" name="question" class="form-control" placeholder="Add question..." required />
-                            <button type="submit" class="btn btn-outline-primary">Add</button>
+                            <button type="submit" class="btn btn-outline-theme-contexts">Add</button>
                         </div>
                     </form>
                 </div>

@@ -164,10 +164,10 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-success">
+                        <button type="submit" class="btn btn-theme-contexts">
                             <i class="fas fa-save me-2"></i> Save Changes
                         </button>
-                        <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-secondary">
+                        <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-theme-contexts">
                             <i class="fas fa-times me-2"></i> Cancel
                         </a>
                         <hr class="my-2">
@@ -266,7 +266,7 @@
                         <input type="hidden" name="id" value="@Model.Id" />
                         <div class="input-group">
                             <input type="text" name="step" class="form-control" placeholder="Add testing step..." required />
-                            <button type="submit" class="btn btn-outline-primary">Add</button>
+                            <button type="submit" class="btn btn-outline-theme-contexts">Add</button>
                         </div>
                     </form>
                 </div>
@@ -291,7 +291,7 @@
                                     <input type="hidden" name="questionId" value="@question.Id" />
                                     <div class="input-group input-group-sm">
                                         <input type="text" name="answer" class="form-control" placeholder="Answer..." required />
-                                        <button type="submit" class="btn btn-outline-success">Resolve</button>
+                                        <button type="submit" class="btn btn-outline-theme-contexts">Resolve</button>
                                     </div>
                                 </form>
                             </div>
@@ -302,7 +302,7 @@
                         <input type="hidden" name="id" value="@Model.Id" />
                         <div class="input-group">
                             <input type="text" name="question" class="form-control" placeholder="Add question..." required />
-                            <button type="submit" class="btn btn-outline-primary">Add</button>
+                            <button type="submit" class="btn btn-outline-theme-contexts">Add</button>
                         </div>
                     </form>
                 </div>

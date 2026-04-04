@@ -28,6 +28,29 @@
         color: #ffffff !important;
     }
     
+    .btn-outline-theme-mindmaps {
+        color: #ff6b35 !important;
+        border-color: #ff6b35 !important;
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-mindmaps:hover {
+        background: #ff6b35 !important;
+        color: #ffffff !important;
+    }
+    
+    .btn-theme-mindmaps {
+        background: #ff6b35 !important;
+        border-color: #ff6b35 !important;
+        color: #ffffff !important;
+    }
+    
+    .btn-theme-mindmaps:hover {
+        background: #ff8555 !important;
+        border-color: #ff8555 !important;
+        color: #ffffff !important;
+    }
+    
     /* Style cards similar to Kanban cards */
     .mindmap-card {
         border-top: 4px solid #ffc107 !important;
@@ -68,7 +91,7 @@
         <p class="text-muted">Procedural flow visualization from text, transcripts, and requirements.</p>
     </div>
     <div class="d-flex gap-2">
-        <a asp-action="Import" class="btn btn-outline-secondary">
+        <a asp-action="Import" class="btn btn-outline-theme-mindmaps">
             <i class="fas fa-file-import"></i> Import
         </a>
         <a asp-action="Create" class="btn btn-outline-primary">
@@ -102,12 +125,12 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">
+                <button type="submit" class="btn btn-theme-mindmaps w-100">
                     <i class="fas fa-search me-1"></i>Search
                 </button>
             </div>
             <div class="col-md-2">
-                <a asp-action="Index" class="btn btn-outline-secondary w-100">Clear</a>
+                <a asp-action="Index" class="btn btn-outline-theme-mindmaps w-100">Clear</a>
             </div>
         </form>
         @if (ViewBag.TotalResults != null)
@@ -132,7 +155,7 @@
                         <a asp-action="Create" class="btn btn-primary">
                             <i class="fas fa-plus me-1"></i> Get Started
                         </a>
-                        <a asp-action="Import" class="btn btn-outline-secondary">
+                        <a asp-action="Import" class="btn btn-outline-theme-mindmaps">
                             <i class="fas fa-file-import me-1"></i> Import
                         </a>
                     </div>

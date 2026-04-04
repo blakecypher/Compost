@@ -109,12 +109,12 @@ else
                 </div>
                 <div class="col-md-3">
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary flex-fill" type="submit">
+                        <button class="btn btn-outline-theme-contexts flex-fill" type="submit">
                             <i class="fas fa-search"></i> Search
                         </button>
                         @if (ViewBag.SearchQuery != null)
                         {
-                            <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-danger">
+                            <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-theme-contexts">
                                 <i class="fas fa-times"></i> Clear
                             </a>
                         }
@@ -127,10 +127,10 @@ else
 
 <div class="d-flex gap-2 align-items-center mb-4">
     <div class="btn-group">
-        <button class="btn btn-outline-secondary btn-sm active" onclick="changeView('board')" title="Board View">
+        <button class="btn btn-outline-theme-contexts btn-sm active" onclick="changeView('board')" title="Board View">
             <i class="fas fa-th"></i>
         </button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="changeView('tree')" title="Tree View">
+        <button class="btn btn-outline-theme-contexts btn-sm" onclick="changeView('tree')" title="Tree View">
             <i class="fas fa-sitemap"></i>
         </button>
     </div>
@@ -361,11 +361,11 @@ else
                                 </button>
                                 @if (hasChildren)
                                 {
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleChildren('@project.Id')">
+                                    <button class="btn btn-sm btn-outline-theme-contexts" onclick="toggleChildren('@project.Id')">
                                         <i class="fas fa-sitemap me-1"></i>Children
                                     </button>
                                 }
-                                <button class="btn btn-sm btn-outline-secondary" onclick="copyProjectLink('@project.Id')">
+                                <button class="btn btn-sm btn-outline-theme-contexts" onclick="copyProjectLink('@project.Id')">
                                     <i class="fas fa-share"></i>
                                 </button>
                             </div>
@@ -387,7 +387,7 @@ else
                         <a asp-action="Create" asp-controller="Project" asp-area="Compost.Contexts" class="btn btn-theme-contexts">
                             <i class="fas fa-plus me-1"></i> Create Project
                         </a>
-                        <button class="btn btn-outline-secondary" onclick="importSampleProjects()">
+                        <button class="btn btn-outline-theme-contexts" onclick="importSampleProjects()">
                             <i class="fas fa-download me-1"></i> Import Sample Projects
                         </button>
                     </div>
@@ -793,12 +793,12 @@ else
             const originalHtml = button.innerHTML;
             button.innerHTML = '<i class="fas fa-check"></i>';
             button.classList.add('btn-success');
-            button.classList.remove('btn-outline-secondary');
+            button.classList.remove('btn-outline-theme-contexts');
             
             setTimeout(() => {
                 button.innerHTML = originalHtml;
                 button.classList.remove('btn-success');
-                button.classList.add('btn-outline-secondary');
+                button.classList.add('btn-outline-theme-contexts');
             }, 2000);
         });
     }

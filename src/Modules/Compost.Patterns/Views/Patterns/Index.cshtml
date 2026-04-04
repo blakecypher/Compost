@@ -27,12 +27,12 @@
                 </div>
                 <div class="col-md-4">
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary flex-fill" type="submit">
+                        <button class="btn btn-outline-theme-patterns flex-fill" type="submit">
                             <i class="fas fa-search"></i> Search
                         </button>
                         @if (ViewBag.SearchQuery != null)
                         {
-                            <a asp-action="Index" class="btn btn-outline-danger">
+                            <a asp-action="Index" class="btn btn-outline-theme-patterns">
                                 <i class="fas fa-times"></i> Clear
                             </a>
                         }
@@ -155,7 +155,7 @@
                             <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="btn btn-sm flex-fill btn-outline-theme-patterns">
                                 <i class="fas fa-book-open me-1"></i> View Details
                             </a>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="copyPatternLink('@item.ContentItemId')">
+                            <button class="btn btn-sm btn-outline-theme-patterns" onclick="copyPatternLink('@item.ContentItemId')">
                                 <i class="fas fa-share"></i>
                             </button>
                         </div>
@@ -176,7 +176,7 @@
                         <a asp-action="Create" class="btn btn-theme-patterns">
                             <i class="fas fa-plus me-1"></i> Create Pattern
                         </a>
-                        <button class="btn btn-outline-secondary" onclick="importSamplePatterns()">
+                        <button class="btn btn-outline-theme-patterns" onclick="importSamplePatterns()">
                             <i class="fas fa-download me-1"></i> Import Sample Patterns
                         </button>
                     </div>
@@ -271,12 +271,12 @@
             const originalHtml = button.innerHTML;
             button.innerHTML = '<i class="fas fa-check"></i>';
             button.classList.add('btn-success');
-            button.classList.remove('btn-outline-secondary');
+            button.classList.remove('btn-outline-theme-patterns');
             
             setTimeout(() => {
                 button.innerHTML = originalHtml;
                 button.classList.remove('btn-success');
-                button.classList.add('btn-outline-secondary');
+                button.classList.add('btn-outline-theme-patterns');
             }, 2000);
         });
     }

@@ -42,12 +42,12 @@
                 </div>
                 <div class="col-md-3">
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary flex-fill" type="submit">
+                        <button id="search-btn" class="btn flex-fill" type="submit" style="color: #8b5cf6 !important; border: 1px solid #8b5cf6 !important; background-color: transparent !important;">
                             <i class="fas fa-search"></i> Search
                         </button>
                         @if (ViewBag.SearchQuery != null)
                         {
-                            <a asp-action="TreeView" class="btn btn-outline-danger">
+                            <a asp-action="TreeView" class="btn btn-outline-theme-contexts" style="color: #8b5cf6 !important; border-color: #8b5cf6 !important; background-color: transparent !important;">
                                 <i class="fas fa-times"></i> Clear
                             </a>
                         }
@@ -60,18 +60,18 @@
 
 <div class="d-flex gap-2 align-items-center mb-4">
     <div class="btn-group">
-        <button class="btn btn-outline-secondary btn-sm" onclick="sortProjects('name')" title="Sort by Name">
+        <button class="btn btn-outline-theme-contexts btn-sm" onclick="sortProjects('name')" title="Sort by Name">
             <i class="fas fa-sort-alpha-down"></i>
         </button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="sortProjects('date')" title="Sort by Date">
+        <button class="btn btn-outline-theme-contexts btn-sm" onclick="sortProjects('date')" title="Sort by Date">
             <i class="fas fa-sort-numeric-down"></i>
         </button>
     </div>
     <div class="btn-group">
-        <button class="btn btn-outline-secondary btn-sm active" onclick="changeView('board')" title="Board View">
+        <button class="btn btn-outline-theme-contexts btn-sm active" onclick="changeView('board')" title="Board View">
             <i class="fas fa-th"></i>
         </button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="changeView('tree')" title="Tree View">
+        <button class="btn btn-outline-theme-contexts btn-sm" onclick="changeView('tree')" title="Tree View">
             <i class="fas fa-sitemap"></i>
         </button>
     </div>
@@ -308,11 +308,11 @@
                                 </button>
                                 @if (hasChildren)
                                 {
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleChildren('@project.Id')">
+                                    <button class="btn btn-sm btn-outline-theme-contexts" onclick="toggleChildren('@project.Id')">
                                         <i class="fas fa-sitemap me-1"></i>Children
                                     </button>
                                 }
-                                <button class="btn btn-sm btn-outline-secondary" onclick="copyProjectLink('@project.Id')">
+                                <button class="btn btn-sm btn-outline-theme-contexts" onclick="copyProjectLink('@project.Id')">
                                     <i class="fas fa-share"></i>
                                 </button>
                             </div>
@@ -333,7 +333,7 @@
                     <a asp-action="Create" asp-controller="Project" class="btn btn-theme-contexts">
                         <i class="fas fa-plus me-1"></i> Create Project
                     </a>
-                    <button class="btn btn-outline-secondary" onclick="importSampleProjects()">
+                    <button class="btn btn-outline-theme-contexts" onclick="importSampleProjects()" style="color: #8b5cf6 !important; border-color: #8b5cf6 !important; background-color: transparent !important;">
                         <i class="fas fa-download me-1"></i> Import Sample Projects
                     </button>
                 </div>
@@ -460,6 +460,26 @@
 
 @section Scripts {
     <script>
+        // IMMEDIATE execution - fix buttons right now
+        (function fixButtons() {
+            const allButtons = document.querySelectorAll('button, a.btn');
+            allButtons.forEach(btn => {
+                const text = btn.textContent || '';
+                const hasSearch = text.includes('Search');
+                const hasImport = text.includes('Import');
+                const hasClear = text.includes('Clear');
+                const hasBoard = btn.getAttribute('onclick')?.includes('changeView');
+                
+                if (hasSearch || hasImport || hasClear || hasBoard) {
+                    btn.classList.remove('btn-outline-secondary', 'btn-outline-primary', 'btn-outline-danger');
+                    btn.classList.add('btn-outline-theme-contexts');
+                    btn.style.cssText = 'color: #8b5cf6 !important; border: 1px solid #8b5cf6 !important; background-color: transparent !important;';
+                }
+            });
+            // Run again after a short delay to catch any dynamically added buttons
+            setTimeout(fixButtons, 100);
+            setTimeout(fixButtons, 500);
+        })();
         // Tree View Functions
         let draggedId = null;
         
@@ -583,6 +603,36 @@
                 }
             });
         }
+        
+        // Force button styling on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.btn-outline-theme-contexts');
+            buttons.forEach(btn => {
+                btn.style.color = '#8b5cf6';
+                btn.style.borderColor = '#8b5cf6';
+                btn.style.backgroundColor = 'transparent';
+            });
+        });
+    </script>
+    <script>
+    // EMERGENCY FIX: Run immediately to fix cached grey buttons
+    (function(){
+        function fix() {
+            document.querySelectorAll('button, a.btn').forEach(b => {
+                var txt = b.textContent || '';
+                if (txt.match(/Search|Import|Clear/) || b.getAttribute('onclick')?.match(/changeView|sortProjects/)) {
+                    b.className = b.className.replace(/btn-outline-(secondary|primary|danger)/g, 'btn-outline-theme-contexts');
+                    b.style.cssText = 'color:#8b5cf6!important;border:1px solid #8b5cf6!important;background:transparent!important';
+                }
+            });
+        }
+        fix();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fix);
+        }
+        setTimeout(fix, 50);
+        setTimeout(fix, 200);
+    })();
     </script>
 }
 
@@ -590,6 +640,24 @@
     /* Board View Styles */
     .projects-board {
         margin-top: 1rem;
+    }
+    
+    /* ULTRA SPECIFIC override for Bootstrap btn-outline-secondary */
+    html body .container-fluid .btn.btn-outline-secondary[class*="flex-fill"],
+    html body .container-fluid .btn.btn-outline-secondary[onclick*="changeView"],
+    html body .container-fluid .btn.btn-outline-secondary[onclick*="sortProjects"],
+    html body .container-fluid .btn.btn-outline-secondary[onclick*="importSampleProjects"] {
+        color: #8b5cf6 !important;
+        border-color: #8b5cf6 !important;
+        background-color: transparent !important;
+    }
+    
+    html body .container-fluid .btn.btn-outline-secondary[class*="flex-fill"]:hover,
+    html body .container-fluid .btn.btn-outline-secondary[onclick*="changeView"]:hover,
+    html body .container-fluid .btn.btn-outline-secondary[onclick*="sortProjects"]:hover,
+    html body .container-fluid .btn.btn-outline-secondary[onclick*="importSampleProjects"]:hover {
+        background-color: #8b5cf6 !important;
+        color: #fff !important;
     }
     
     .project-card {
@@ -732,28 +800,33 @@
         margin-top: 0.5rem;
     }
     
-    .btn-theme-contexts {
-        background-color: var(--theme-contexts);
-        border-color: var(--theme-contexts);
-        color: #fff;
+    /* Highest specificity with hardcoded purple colors */
+    html body .btn.btn-outline-theme-contexts,
+    html body div .btn.btn-outline-theme-contexts,
+    html body form .btn.btn-outline-theme-contexts {
+        color: #8b5cf6 !important;
+        border-color: #8b5cf6 !important;
+        background-color: transparent !important;
     }
     
-    .btn-theme-contexts:hover {
+    html body .btn.btn-outline-theme-contexts:hover,
+    html body div .btn.btn-outline-theme-contexts:hover,
+    html body form .btn.btn-outline-theme-contexts:hover {
+        background-color: #8b5cf6 !important;
+        color: #fff !important;
+    }
+    
+    html body .btn.btn-theme-contexts,
+    html body div .btn.btn-theme-contexts {
+        background-color: #7c3aed !important;
+        border-color: #7c3aed !important;
+        color: #fff !important;
+    }
+    
+    html body .btn.btn-theme-contexts:hover {
         background-color: #8b5cf6 !important;
         border-color: #8b5cf6 !important;
-        filter: brightness(1.12);
-        color: #fff;
-    }
-    
-    .btn-outline-theme-contexts {
-        color: var(--theme-contexts);
-        border-color: var(--theme-contexts);
-        background-color: transparent;
-    }
-    
-    .btn-outline-theme-contexts:hover {
-        background-color: var(--theme-contexts);
-        color: #fff;
+        color: #fff !important;
     }
     
     .text-theme-contexts {
@@ -806,12 +879,12 @@
             const originalHtml = button.innerHTML;
             button.innerHTML = '<i class="fas fa-check"></i>';
             button.classList.add('btn-success');
-            button.classList.remove('btn-outline-secondary');
+            button.classList.remove('btn-outline-theme-contexts');
             
             setTimeout(() => {
                 button.innerHTML = originalHtml;
                 button.classList.remove('btn-success');
-                button.classList.add('btn-outline-secondary');
+                button.classList.add('btn-outline-theme-contexts');
             }, 2000);
         });
     }

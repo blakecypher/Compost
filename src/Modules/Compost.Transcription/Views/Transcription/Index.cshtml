@@ -34,7 +34,7 @@
                                     <div class="meeting-icon me-2" style="background-color: rgba(183, 76, 76, 0.1);">
                                         <i class="fas fa-microphone" style="color: var(--theme-transcription);"></i>
                                     </div>
-                                    <span class="badge @(isCompleted ? "bg-success" : "bg-info")">
+                                    <span class="badge @(isCompleted ? "bg-theme-transcription" : "bg-theme-transcription")">
                                         @meeting.Status
                                     </span>
                                 </div>
@@ -106,7 +106,7 @@
                                     <div class="mb-3">
                                         <small class="text-muted text-uppercase" style="font-size: 0.7rem;">Description</small>
                                         <p class="card-text small text-muted mt-1">
-                                            @(meeting.Description.Length > 120 ? meeting.Description[..120] + "..." : meeting.Description)
+                                            @(meeting.Description.Length > 120 ? meeting.Description.Substring(0, 120) + "..." : meeting.Description)
                                         </p>
                                     </div>
                                 }
@@ -149,13 +149,13 @@
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
-                            <i class="fas fa-check text-success me-2"></i> Use a high-quality microphone for better accuracy.
+                            <i class="fas fa-check text-theme-transcription me-2"></i> Use a high-quality microphone for better accuracy.
                         </li>
                         <li class="list-group-item">
-                            <i class="fas fa-check text-success me-2"></i> Speak clearly and avoid talking over each other.
+                            <i class="fas fa-check text-theme-transcription me-2"></i> Speak clearly and avoid talking over each other.
                         </li>
                         <li class="list-group-item">
-                            <i class="fas fa-check text-success me-2"></i> Use the "Project" setting to help the AI identify relevant keywords.
+                            <i class="fas fa-check text-theme-transcription me-2"></i> Use the "Project" setting to help the AI identify relevant keywords.
                         </li>
                     </ul>
                 </div>
@@ -167,7 +167,7 @@
                 </div>
                 <div class="card-body">
                     <p class="small">The system currently uses browser-based speech recognition for stubs, with full <strong>Azure Speech Services</strong> integration planned for production.</p>
-                    <div class="alert alert-info py-2 small">
+                    <div class="alert alert-theme-transcription py-2 small">
                         <i class="fas fa-info-circle me-2"></i> Supports 80+ languages and custom acoustic models.
                     </div>
                 </div>
@@ -191,9 +191,9 @@ else
                             @ViewBag.Message
                         </div>
                         <p class="text-muted mt-3">
-                            <a asp-action="Record" class="btn btn-outline-success">Start New Recording</a>
+                            <a asp-action="Record" class="btn btn-outline-theme-transcription">Start New Recording</a>
                             <span class="mx-2">or</span>
-                            <a href="/Admin" class="btn btn-outline-primary">Run Database Migrations</a>
+                            <a href="/Admin" class="btn btn-outline-theme-transcription">Run Database Migrations</a>
                         </p>
                     }
                     else
@@ -268,5 +268,16 @@ else
     
     .text-theme-transcription {
         color: var(--theme-transcription) !important;
+    }
+    
+    .alert-theme-transcription {
+        background-color: rgba(183, 76, 76, 0.1);
+        border-color: rgba(183, 76, 76, 0.2);
+        color: var(--theme-transcription);
+    }
+    
+    .bg-theme-transcription {
+        background-color: var(--theme-transcription) !important;
+        color: #fff !important;
     }
 </style>

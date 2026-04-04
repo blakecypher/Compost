@@ -19,17 +19,17 @@
                 }
             </div>
             <div>
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary me-2">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-theme-patterns me-2">
                     <i class="fas fa-edit"></i> Edit
                 </a>
-                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                <a asp-action="Index" class="btn btn-theme-patterns">Back to List</a>
             </div>
         </div>
     
         <div class="row">
             <div class="col-md-8">
                 <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-warning text-dark">
+                    <div class="card-header bg-theme-patterns text-white">
                         <i class="fas fa-question-circle me-2"></i> When to Use
                     </div>
                     <div class="card-body">
@@ -38,7 +38,7 @@
                 </div>
     
                 <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-success text-white">
+                    <div class="card-header bg-theme-patterns text-white">
                         <i class="fas fa-cogs me-2"></i> How it Works
                     </div>
                     <div class="card-body">
@@ -51,10 +51,10 @@
                 @if (!string.IsNullOrEmpty(Model.Gotchas))
                 {
                     <div class="card mb-4 shadow-sm border-danger">
-                        <div class="card-header bg-danger text-white">
+                        <div class="card-header bg-theme-patterns text-white">
                             <i class="fas fa-exclamation-triangle me-2"></i> Gotchas
                         </div>
-                        <div class="card-body text-danger">
+                        <div class="card-body text-theme-patterns">
                             @Model.Gotchas
                         </div>
                     </div>
@@ -63,7 +63,7 @@
                 @if (Model.ResourceUrls != null && Model.ResourceUrls.Any())
                 {
                     <div class="card mb-4 shadow-sm">
-                        <div class="card-header bg-info text-white">
+                        <div class="card-header bg-theme-patterns text-white">
                             <i class="fas fa-external-link-alt me-2"></i> Resources
                         </div>
                         <div class="card-body">
@@ -80,7 +80,7 @@
             
             <div class="col-md-4">
                 <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-theme-patterns text-white">
                         <i class="fas fa-code me-2"></i> Linked Code Snippets
                     </div>
                     <div class="list-group list-group-flush">
@@ -94,7 +94,7 @@
                                         <span class="badge bg-secondary">@snippet.Language</span>
                                     </div>
                                     <pre class="bg-light p-2 rounded small mb-2" style="max-height: 100px; overflow: hidden;"><code>@snippet.CodePreview</code></pre>
-                                    <a asp-area="Compost.Snippets" asp-controller="Snippets" asp-action="Edit" asp-route-id="@snippet.ContentItemId" class="btn btn-sm btn-outline-primary">Edit Snippet</a>
+                                    <a asp-area="Compost.Snippets" asp-controller="Snippets" asp-action="Edit" asp-route-id="@snippet.ContentItemId" class="btn btn-sm btn-outline-theme-patterns">Edit Snippet</a>
                                 </div>
                             }
                         }

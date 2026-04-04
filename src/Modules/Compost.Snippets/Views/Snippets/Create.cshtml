@@ -14,7 +14,7 @@
             <p class="text-muted mb-0">Add a new code snippet to your library</p>
         </div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-info" onclick="pasteFromWorkspaces()">
+            <button type="button" class="btn btn-outline-theme-snippets" onclick="pasteFromWorkspaces()">
                 <i class="fas fa-paste me-1"></i>Paste from Workspaces
             </button>
             <a asp-action="Index" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
@@ -86,7 +86,7 @@
                         <button type="button" onclick="document.getElementById('snippetForm').submit();" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
                             <i class="fas fa-save me-2"></i> Create Snippet
                         </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary" style="border-color: #f87171 !important; color: #f87171 !important;">
+                        <a asp-action="Index" class="btn btn-outline-theme-snippets">
                             <i class="fas fa-times me-2"></i> Cancel
                         </a>
                     </div>
@@ -130,7 +130,7 @@
                     
                     <!-- AI Pattern Detection -->
                     <div class="mb-3">
-                        <button type="button" class="btn btn-outline-info w-100" id="detect-patterns-btn" onclick="detectPatterns()">
+                        <button type="button" class="btn btn-outline-theme-snippets w-100" id="detect-patterns-btn" onclick="detectPatterns()">
                             <i class="fas fa-robot me-2"></i>Auto-Detect Patterns
                         </button>
                         <div id="detected-patterns" class="mt-2 small" style="display: none;">
@@ -152,11 +152,6 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
     <script>
-        /** @@type {Function} */
-        let require;
-        /** @@type {Object} */
-        let monaco;
-
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
         
         require(['vs/editor/editor.main'], function() {
@@ -214,6 +209,8 @@
             // Sync content to hidden input on change
             editor.onDidChangeModelContent(function(e) {
                 codeInput.value = editor.getValue();
+                // Auto-detect patterns after user stops typing (debounced)
+                debouncedDetectPatterns();
             });
             
             // Ensure initial value is set correctly if coming from validation error
@@ -227,6 +224,23 @@
             // Make editor globally accessible for pattern detection
             window.monacoEditor = editor;
         });
+        
+        // Debounce timer for auto-detection
+        let patternDetectionTimer = null;
+        
+        // Debounced pattern detection function
+        function debouncedDetectPatterns() {
+            if (patternDetectionTimer) {
+                clearTimeout(patternDetectionTimer);
+            }
+            patternDetectionTimer = setTimeout(() => {
+                const code = window.monacoEditor ? window.monacoEditor.getValue() : document.getElementById('code-hidden-input').value;
+                // Only auto-detect if we have substantial code and category is empty
+                if (code && code.trim().length >= 50 && !document.getElementById('Category').value) {
+                    detectPatterns();
+                }
+            }, 1500); // Wait 1.5 seconds after user stops typing
+        }
         
         // AI Pattern Detection function
         function detectPatterns() {
@@ -293,8 +307,8 @@
                     // Use description as code if available
                     if (item.description) {
                         const codeField = document.getElementById('code-hidden-input');
-                        if (codeField && window.editor) {
-                            window.editor.setValue(item.description);
+                        if (codeField && window.monacoEditor) {
+                            window.monacoEditor.setValue(item.description);
                         }
                     }
                     // Optional: add tags to category if available
