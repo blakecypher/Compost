@@ -8,6 +8,13 @@ namespace Compost.Transcription.Hubs;
 
 public class TranscriptionHub : Hub
 {
+    private readonly ITranscriptionService _transcriptionService;
+
+    public TranscriptionHub(ITranscriptionService transcriptionService)
+    {
+        _transcriptionService = transcriptionService;
+    }
+
     public async Task JoinMeeting(string meetingId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, $"meeting_{meetingId}");
@@ -20,18 +27,10 @@ public class TranscriptionHub : Hub
 
     public async Task SendTranscriptSegment(string meetingId, TranscriptSegment segment)
     {
-        Console.WriteLine($"[HUB] Received segment for meeting {meetingId}: Text='{segment.Text}', IsInterim={segment.IsInterim}");
-        
         // Store the segment in the transcription service
-        var transcriptionService = Context.GetHttpContext()?.RequestServices.GetService(typeof(ITranscriptionService)) as ITranscriptionService;
-        if (transcriptionService != null && !segment.IsInterim)
+        if (_transcriptionService != null && !segment.IsInterim)
         {
-            Console.WriteLine($"[HUB] Storing segment in transcription service");
-            await transcriptionService.AddTranscriptSegmentAsync(meetingId, segment);
-        }
-        else
-        {
-            Console.WriteLine($"[HUB] Skipping storage: Service={transcriptionService != null}, IsInterim={segment.IsInterim}");
+            await _transcriptionService.AddTranscriptSegmentAsync(meetingId, segment);
         }
         
         // Broadcast to all clients (for live view)
@@ -50,10 +49,10 @@ public class TranscriptionHub : Hub
 
     public async Task SendAudioChunk(string meetingId, string base64Audio)
     {
-        if (Context.GetHttpContext()?.RequestServices.GetService(typeof(ITranscriptionService)) is ITranscriptionService transcriptionService)
+        if (_transcriptionService != null)
         {
             var audioData = Convert.FromBase64String(base64Audio);
-            await transcriptionService.ProcessAudioSegmentAsync(meetingId, audioData);
+            await _transcriptionService.ProcessAudioSegmentAsync(meetingId, audioData);
         }
     }
 

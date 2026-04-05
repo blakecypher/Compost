@@ -9,29 +9,12 @@ public class MeetingPartHandler : ContentPartHandler<MeetingPart>
 {
     public override Task UpdatedAsync(UpdateContentContext context, MeetingPart part)
     {
-        // Auto-generate meeting ID if not set
-        if (string.IsNullOrEmpty(part.MeetingId))
-        {
-            part.MeetingId = $"meeting_{context.ContentItem.Id}_{Guid.NewGuid():N}";
-        }
-
-        // Set default status if not set
-        if (string.IsNullOrEmpty(part.Status))
-        {
-            part.Status = "Draft";
-        }
-
-        return base.UpdatedAsync(context, part);
+        // The ID and Status are now managed by TranscriptionService to ensure reliability
+        return Task.CompletedTask;
     }
 
     public override Task PublishedAsync(PublishContentContext context, MeetingPart part)
     {
-        // When published, ensure the meeting has proper status
-        if (string.IsNullOrEmpty(part.Status) || part.Status == "Draft")
-        {
-            part.Status = "Ready";
-        }
-
-        return base.PublishedAsync(context, part);
+        return Task.CompletedTask;
     }
 }

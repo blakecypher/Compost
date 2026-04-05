@@ -10,26 +10,27 @@ namespace Compost.Transcription.Models;
 
 public class MeetingPart : ContentPart
 {
-    [JsonProperty("meetingId")]
     public string MeetingId { get; set; } = string.Empty;
     
     [Required]
-    [JsonProperty("title")]
     public string Title { get; set; } = string.Empty;
     
-    [JsonProperty("workContextId")]
     public string WorkContextId { get; set; } = string.Empty;
     
-    [JsonProperty("status")]
     public string Status { get; set; } = string.Empty;
     
-    [JsonProperty("audioFilePath")]
-    public string AudioFilePath { get; set; }
+    public DateTime? StartedAt { get; set; }
     
-    [JsonProperty("transcriptText")]
+    public DateTime? EndedAt { get; set; }
+    
+    public int DurationSeconds { get; set; }
+    
+    public DateTime? TranscriptionCompletedAt { get; set; }
+    
+    public bool IsProcessed { get; set; }
+
     public string TranscriptText { get; set; }
     
-    [JsonProperty("transcriptJson")]
     public string TranscriptJson { get; set; }
     
     [JsonIgnore]
@@ -37,63 +38,49 @@ public class MeetingPart : ContentPart
     {
         get
         {
-            if (string.IsNullOrEmpty(TranscriptJson)) 
+            // First check the strongly typed property TranscriptJson
+            string rawData = TranscriptJson;
+            
+            // FALLBACK: If TranscriptJson is empty, check the underlying Content JObject directly (handles casing mismatches)
+            if (string.IsNullOrEmpty(rawData) && Content != null)
             {
-                System.Diagnostics.Debug.WriteLine($"[MeetingPart] TranscriptJson is null or empty for meeting {MeetingId}");
+                // Try both standard and lowercase keys
+                rawData = Content["TranscriptJson"]?.ToString() ?? Content["transcriptJson"]?.ToString();
+            }
+
+            if (string.IsNullOrEmpty(rawData)) 
+            {
                 return [];
             }
+
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[MeetingPart] Deserializing TranscriptJson for meeting {MeetingId}, length: {TranscriptJson.Length}");
-                var result = JsonConvert.DeserializeObject<List<TranscriptSegment>>(TranscriptJson) ?? [];
-                System.Diagnostics.Debug.WriteLine($"[MeetingPart] Deserialized {result.Count} segments for meeting {MeetingId}");
-                return result;
+                return JsonConvert.DeserializeObject<List<TranscriptSegment>>(rawData) ?? [];
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"[MeetingPart] Failed to deserialize TranscriptJson for meeting {MeetingId}: {ex.Message}");
                 return [];
             }
         }
         set 
         { 
             TranscriptJson = value?.Count > 0 ? JsonConvert.SerializeObject(value) : null;
-            System.Diagnostics.Debug.WriteLine($"[MeetingPart] Serialized {value?.Count ?? 0} segments to TranscriptJson for meeting {MeetingId}, json length: {TranscriptJson?.Length ?? 0}");
         }
     }
     
-    [JsonProperty("actionItems")]
     public List<ActionItem> ActionItems { get; set; } = [];
     
-    [JsonProperty("extractedNodes")]
     public List<MindMapNode> ExtractedNodes { get; set; } = [];
     
-    [JsonProperty("startedAt")]
-    public DateTime? StartedAt { get; set; }
+    public string AudioFilePath { get; set; }
     
-    [JsonProperty("endedAt")]
-    public DateTime? EndedAt { get; set; }
-    
-    [JsonProperty("durationSeconds")]
-    public int DurationSeconds { get; set; }
-    
-    [JsonProperty("transcriptionCompletedAt")]
-    public DateTime? TranscriptionCompletedAt { get; set; }
-    
-    [JsonProperty("isProcessed")]
-    public bool IsProcessed { get; set; }
-    
-    [JsonProperty("notes")]
     public string Notes { get; set; }
     
-    [JsonProperty("summary")]
     public string Summary { get; set; }
     
-    [JsonProperty("autoExtractMindMapNodes", NullValueHandling = NullValueHandling.Ignore)]
     [DefaultValue(true)]
     public bool AutoExtractMindMapNodes { get; set; } = true;
     
-    [JsonProperty("autoExtractActionItems", NullValueHandling = NullValueHandling.Ignore)]
     [DefaultValue(true)]
     public bool AutoExtractActionItems { get; set; } = true;
 }

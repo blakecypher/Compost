@@ -97,9 +97,17 @@ public class TranscriptionService(
             
             contentItem.Apply(meetingPart);
             await contentManager.CreateAsync(contentItem);
+            
+            // Sync the internal domain ID with the ContentItemId to ensure reliable lookups
+            // This is key to preventing data loss when searching by ID after a restart
+            meeting.Id = contentItem.ContentItemId;
+            meetingPart.MeetingId = meeting.Id;
+            contentItem.Apply(meetingPart);
+            await contentManager.UpdateAsync(contentItem);
+            
             await contentManager.PublishAsync(contentItem);
             
-            logger.LogInformation("Meeting persisted to database with ID: {MeetingId}", meeting.Id);
+            logger.LogInformation("Meeting persisted to database with ContentItemId: {MeetingId}", meeting.Id);
         }
         catch (Exception ex)
         {
@@ -274,21 +282,26 @@ public class TranscriptionService(
     {
         try
         {
-            if (!ActiveMeetingsMemory.TryGetValue(meetingId, out var meeting)) return;
-            
             // Create a new scope to avoid disposed session issues in background tasks
             using var scope = serviceScopeFactory.CreateScope();
             var session = scope.ServiceProvider.GetRequiredService<ISession>();
             var manager = scope.ServiceProvider.GetRequiredService<IContentManager>();
             
-            // Query for existing content item
-            var contentItem = await session.Query<ContentItem, ContentItemIndex>()
-                .Where(ci => ci.ContentType == nameof(Meeting) && ci.DisplayText == meeting.Title)
-                .FirstOrDefaultAsync();
-            
-            if (contentItem == null && !string.IsNullOrEmpty(meeting.Id))
+            if (!ActiveMeetingsMemory.TryGetValue(meetingId, out var meeting)) 
             {
-                contentItem = await manager.GetAsync(meeting.Id, VersionOptions.Latest);
+                logger.LogWarning("Cannot periodically persist meeting {MeetingId} - not found in active memory", meetingId);
+                return;
+            }
+            
+            // Use direct ID lookup which is now reliable since we synced domain ID with ContentItemId
+            var contentItem = await manager.GetAsync(meetingId, VersionOptions.Latest);
+            
+            // Fallback to title query only if ID lookup failed (e.g. for legacy records)
+            if (contentItem == null)
+            {
+                contentItem = await session.Query<ContentItem, ContentItemIndex>()
+                    .Where(ci => ci.ContentType == nameof(Meeting) && ci.DisplayText == meeting.Title)
+                    .FirstOrDefaultAsync();
             }
             
             if (contentItem != null)
@@ -304,16 +317,22 @@ public class TranscriptionService(
                     meetingPart.StartedAt = meeting.StartedAt;
                     meetingPart.EndedAt = meeting.EndedAt;
                     meetingPart.DurationSeconds = meeting.DurationSeconds;
-                    meetingPart.Transcript = meeting.Transcript;
+                    
+                    if (meeting.Transcript.Count > 0)
+                    {
+                        meetingPart.Transcript = meeting.Transcript;
+                        meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
+                    }
+                    
                     meetingPart.ActionItems = meeting.ActionItems;
                     meetingPart.ExtractedNodes = meeting.ExtractedNodes;
                     meetingPart.TranscriptionCompletedAt = meeting.TranscriptionCompletedAt;
                     meetingPart.IsProcessed = meeting.IsProcessed;
-                    meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
 
                     contentItem.Apply(meetingPart);
                     await manager.UpdateAsync(contentItem);
                     await manager.PublishAsync(contentItem);
+                    await session.SaveChangesAsync(); // CRITICAL: Commit the transaction in background task
                     
                     logger.LogInformation("Persisted transcript for meeting {MeetingId} with {Count} segments", meetingId, meeting.Transcript.Count);
                 }
@@ -903,10 +922,13 @@ public class TranscriptionService(
         
         // Update meeting with final transcript
         var meeting = await GetMeetingByIdAsync(meetingId);
-        if (meeting != null)
+        if (meeting != null && finalSegments.Count > 0)
         {
+            logger.LogInformation("Azure Speech processing successful for {MeetingId}. Replacing existing segments with {Count} accurate segments.", 
+                meetingId, finalSegments.Count);
+                
             // Clear existing transcript (which might have real-time fragments) 
-            // to avoid duplication since the full-file processing is more accurate.
+            // but ONLY if we have new, more accurate segments to replace them with.
             meeting.Transcript.Clear();
             meeting.Transcript.AddRange(finalSegments);
             
@@ -919,6 +941,10 @@ public class TranscriptionService(
             }
             
             logger.LogInformation("Updated meeting with {Count} final segments for meeting {MeetingId}", finalSegments.Count, meetingId);
+        }
+        else if (meeting != null && finalSegments.Count == 0)
+        {
+            logger.LogWarning("Azure Speech returned 0 segments for meeting {MeetingId}. Preserving existing real-time transcript.", meetingId);
         }
 
         return finalSegments.Count > 0;
@@ -1073,47 +1099,33 @@ public class TranscriptionService(
         // Create a new scope to avoid disposed session issues
         using var scope = serviceScopeFactory.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<ISession>();
+        var manager = scope.ServiceProvider.GetRequiredService<IContentManager>();
 
-        // Query Orchard Core content items for Meeting content type
+        // Try direct ID lookup first (very efficient)
+        var contentItemById = await manager.GetAsync(meetingId, VersionOptions.Latest);
+        if (contentItemById != null && contentItemById.ContentType == nameof(Meeting))
+        {
+            var part = contentItemById.As<MeetingPart>();
+            if (part != null) 
+            {
+                logger.LogInformation("[GetMeetingById] Found meeting {MeetingId} via direct ID lookup", meetingId);
+                return Map(contentItemById, part);
+            }
+        }
+
+        // Query Orchard Core content items for Meeting content type (fallback for GUIDs)
         var meetingItems = await session.Query<ContentItem, ContentItemIndex>()
-            .Where(ci => ci.ContentType == nameof(Meeting) && ci.Published)
+            .Where(ci => ci.ContentType == nameof(Meeting))
             .ListAsync();
 
         var result = (from contentItem in meetingItems
         let meetingPart = contentItem.As<MeetingPart>()
         where meetingPart?.MeetingId == meetingId || contentItem.ContentItemId == meetingId
-        select new 
-        {
-            ContentItem = contentItem,
-            MeetingPart = meetingPart,
-            Meeting = new Meeting
-            {
-                Id = meetingPart.MeetingId,
-                Title = meetingPart.Title,
-                WorkContextId = meetingPart.WorkContextId,
-                Status = Enum.Parse<MeetingStatus>(meetingPart.Status ?? "Recording"),
-                StartedAt = meetingPart.StartedAt ?? DateTime.UtcNow,
-                EndedAt = meetingPart.EndedAt,
-                DurationSeconds = meetingPart.DurationSeconds,
-                Transcript = meetingPart.Transcript ?? [],
-                ActionItems = meetingPart.ActionItems ?? [],
-                ExtractedNodes = meetingPart.ExtractedNodes ?? [],
-                TranscriptionCompletedAt = meetingPart.TranscriptionCompletedAt,
-                IsProcessed = meetingPart.IsProcessed
-            }
-        }).FirstOrDefault();
+        select Map(contentItem, meetingPart)).FirstOrDefault();
         
         if (result != null)
         {
-            var jsonLength = result.MeetingPart.TranscriptJson?.Length ?? 0;
-            logger.LogInformation("[GetMeetingById] Loaded meeting {MeetingId} from DB with {Count} transcript segments, TranscriptJson length: {JsonLength}", 
-                meetingId, result.Meeting.Transcript.Count, jsonLength);
-            if (jsonLength > 0)
-            {
-                logger.LogDebug("[GetMeetingById] TranscriptJson preview for {MeetingId}: {Preview}", 
-                    meetingId, result.MeetingPart.TranscriptJson?[..Math.Min(100, jsonLength)]);
-            }
-            return result.Meeting;
+            return result;
         }
         else
         {
@@ -1133,12 +1145,17 @@ public class TranscriptionService(
             var session = scope.ServiceProvider.GetRequiredService<ISession>();
             var manager = scope.ServiceProvider.GetRequiredService<IContentManager>();
             
-            // Query Orchard Core content items for Meeting content type
-            var meetingItems = await session.Query<ContentItem, ContentItemIndex>()
-                .Where(ci => ci.ContentType == nameof(Meeting))
-                .ListAsync();
-
-            var contentItem = meetingItems.FirstOrDefault(ci => ci.As<MeetingPart>()?.MeetingId == meeting.Id || ci.ContentItemId == meeting.Id);
+            // Try direct ID lookup first
+            var contentItem = await manager.GetAsync(meeting.Id, VersionOptions.Latest);
+            
+            // Fallback to scanning if not found by direct ID (for legacy GUID-based meetings)
+            if (contentItem == null)
+            {
+                var meetingItems = await session.Query<ContentItem, ContentItemIndex>()
+                    .Where(ci => ci.ContentType == nameof(Meeting))
+                    .ListAsync();
+                contentItem = meetingItems.FirstOrDefault(ci => ci.As<MeetingPart>()?.MeetingId == meeting.Id || ci.ContentItemId == meeting.Id);
+            }
 
             if (contentItem != null)
             {
@@ -1157,26 +1174,30 @@ public class TranscriptionService(
                     meetingPart.EndedAt = meeting.EndedAt;
                     meetingPart.DurationSeconds = meeting.DurationSeconds;
                     
-                    logger.LogInformation("[UPDATE] Setting Transcript with {Count} segments", meeting.Transcript.Count);
-                    meetingPart.Transcript = meeting.Transcript;
-                    logger.LogInformation("[UPDATE] After setting Transcript - TranscriptJson length={TranscriptJsonLength}", 
-                        meetingPart.TranscriptJson?.Length ?? 0);
-                    
+                    if (meeting.Transcript.Count > 0)
+                    {
+                        logger.LogInformation("[UPDATE] Updating Transcript with {Count} segments for {MeetingId}", meeting.Transcript.Count, meeting.Id);
+                        meetingPart.Transcript = meeting.Transcript;
+                        meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
+                    }
+                    else if (!string.IsNullOrEmpty(meetingPart.TranscriptJson))
+                    {
+                        logger.LogWarning("[UPDATE] Provided transcript for {MeetingId} was empty. Preserving existing DB transcript.", meeting.Id);
+                    }
+
                     meetingPart.ActionItems = meeting.ActionItems;
                     meetingPart.ExtractedNodes = meeting.ExtractedNodes;
                     meetingPart.TranscriptionCompletedAt = meeting.TranscriptionCompletedAt;
                     meetingPart.IsProcessed = meeting.IsProcessed;
-                    meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
 
                     contentItem.Apply(meetingPart);
                     
                     // DEBUG: Verify serialization worked
                     logger.LogInformation("[DEBUG] After Apply - TranscriptJson length: {Length}", meetingPart.TranscriptJson?.Length ?? 0);
-                    var reRead = contentItem.As<MeetingPart>();
-                    logger.LogInformation("[DEBUG] Re-read from contentItem - TranscriptJson length: {Length}", reRead?.TranscriptJson?.Length ?? 0);
                     
                     await manager.UpdateAsync(contentItem);
                     await manager.PublishAsync(contentItem);
+                    await session.SaveChangesAsync(); // CRITICAL: Commit the transaction in background task
                     
                     logger.LogInformation("[DB] Successfully updated meeting {MeetingId} with {Count} transcript segments", meeting.Id, meeting.Transcript.Count);
                 }
@@ -1213,29 +1234,11 @@ public class TranscriptionService(
         foreach (var contentItem in meetingItems)
         {
             var meetingPart = contentItem.As<MeetingPart>();
-            if (meetingPart == null) continue;
-            
-            // If MeetingId is missing in the database, fallback to ContentItemId 
-            // to ensure we have a valid key for links and identification.
-            var id = string.IsNullOrEmpty(meetingPart.MeetingId) ? contentItem.ContentItemId : meetingPart.MeetingId;
-            
-            // Convert Orchard Core content item back to Meeting model
-            var item = new Meeting
+            var item = Map(contentItem, meetingPart);
+            if (item != null)
             {
-                Id = id,
-                Title = contentItem.DisplayText ?? meetingPart.Title ?? "Untitled Meeting",
-                WorkContextId = meetingPart.WorkContextId ?? "",
-                Status = meetingPart.Status != null && Enum.TryParse<MeetingStatus>(meetingPart.Status, out var status) ? status : MeetingStatus.Recording,
-                StartedAt = meetingPart.StartedAt ?? DateTime.UtcNow,
-                EndedAt = meetingPart.EndedAt,
-                DurationSeconds = meetingPart.DurationSeconds,
-                Transcript = meetingPart.Transcript ?? [],
-                ActionItems = meetingPart.ActionItems ?? [],
-                ExtractedNodes = meetingPart.ExtractedNodes ?? [],
-                TranscriptionCompletedAt = meetingPart.TranscriptionCompletedAt,
-                IsProcessed = meetingPart.IsProcessed
-            };
-            meetings.Add(item);
+                meetings.Add(item);
+            }
         }
         
         return meetings.OrderByDescending(m => m.StartedAt).ToList();
@@ -1258,23 +1261,11 @@ public class TranscriptionService(
         {
             var meetingPart = contentItem.As<MeetingPart>();
             if (meetingPart?.WorkContextId != projectId) continue;
-            // Convert Orchard Core content item back to Meeting model
-            var item = new Meeting
+            var item = Map(contentItem, meetingPart);
+            if (item != null)
             {
-                Id = meetingPart.MeetingId,
-                Title = meetingPart.Title,
-                WorkContextId = meetingPart.WorkContextId,
-                Status = Enum.Parse<MeetingStatus>(meetingPart.Status ?? "Recording"),
-                StartedAt = meetingPart.StartedAt ?? DateTime.UtcNow,
-                EndedAt = meetingPart.EndedAt,
-                DurationSeconds = meetingPart.DurationSeconds,
-                Transcript = meetingPart.Transcript ?? [],
-                ActionItems = meetingPart.ActionItems ?? [],
-                ExtractedNodes = meetingPart.ExtractedNodes ?? [],
-                TranscriptionCompletedAt = meetingPart.TranscriptionCompletedAt,
-                IsProcessed = meetingPart.IsProcessed
-            };
-            meetings.Add(item);
+                meetings.Add(item);
+            }
         }
         
         return meetings.OrderByDescending(m => m.StartedAt).ToList();
@@ -1306,8 +1297,8 @@ public class TranscriptionService(
         foreach (var contentItem in meetingItems)
         {
             var meetingPart = contentItem.As<MeetingPart>();
-            if (meetingPart?.MeetingId != meetingId && contentItem.ContentItemId != meetingId) continue;
             await manager.RemoveAsync(contentItem);
+            await session.SaveChangesAsync(); // Commit the deletion
             removedFromDb = true;
             logger.LogInformation("Deleted meeting content item: {MeetingId}", meetingId);
             break;
@@ -1317,4 +1308,27 @@ public class TranscriptionService(
     }
 
     public int GetMaxRecordingDurationSeconds() => 3600; // 1 hour
+
+    private Meeting Map(ContentItem contentItem, MeetingPart meetingPart)
+    {
+        if (meetingPart == null) return null;
+        
+        var id = string.IsNullOrEmpty(meetingPart.MeetingId) ? contentItem.ContentItemId : meetingPart.MeetingId;
+        
+        return new Meeting
+        {
+            Id = id,
+            Title = contentItem.DisplayText ?? meetingPart.Title ?? "Untitled Meeting",
+            WorkContextId = meetingPart.WorkContextId ?? "",
+            Status = meetingPart.Status != null && Enum.TryParse<MeetingStatus>(meetingPart.Status, out var status) ? status : MeetingStatus.Recording,
+            StartedAt = meetingPart.StartedAt ?? DateTime.UtcNow,
+            EndedAt = meetingPart.EndedAt,
+            DurationSeconds = meetingPart.DurationSeconds,
+            Transcript = meetingPart.Transcript ?? [],
+            ActionItems = meetingPart.ActionItems ?? [],
+            ExtractedNodes = meetingPart.ExtractedNodes ?? [],
+            TranscriptionCompletedAt = meetingPart.TranscriptionCompletedAt,
+            IsProcessed = meetingPart.IsProcessed
+        };
+    }
 }
