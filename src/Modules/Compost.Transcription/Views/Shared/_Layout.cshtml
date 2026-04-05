@@ -159,9 +159,102 @@
             border-color: #28a745 !important;
         }
         
-        .sidebar { transition: all 0.3s; }
+        /* Sidebar Transitions & Premium Animations */
+        .sidebar { 
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease; 
+            width: 260px;
+            overflow-x: hidden;
+            background-color: var(--bs-body-bg) !important; 
+            border-right: 1px solid var(--bs-border-color) !important;
+            z-index: 100;
+        }
+        
+        .sidebar.collapsed {
+            width: 72px;
+        }
+
+        .sidebar .nav-link { 
+            color: var(--bs-body-color); 
+            font-weight: 500; 
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            padding: 0.8rem 1.25rem;
+            border-radius: 0;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar .nav-link i {
+            min-width: 24px;
+            font-size: 1.1rem;
+            margin-right: 1rem;
+        }
+
+        .sidebar .nav-link span {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .sidebar.collapsed .nav-link span,
+        .sidebar.collapsed .menu-section {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar.collapsed .nav-link i {
+            margin-right: 2rem;
+        }
+
+        /* Shift main content smoothly */
+        main {
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-grow: 1;
+            min-height: calc(100vh - 56px);
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        /* Toggle Button Styling */
+        #sidebarToggle {
+            cursor: pointer;
+            padding: 0.5rem;
+            color: #fff;
+            border: none;
+            background: transparent;
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        #sidebarToggle:hover {
+            opacity: 0.8;
+        }
+
+        .sidebar-sticky {
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 56px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        /* Stats Widget visibility */
+        .sidebar.collapsed .context-stats-widget {
+            display: none !important;
+        }
+
         .nav-link:hover { background-color: rgba(0, 0, 0, 0.06); border-radius: 0.25rem; }
-        .sidebar .menu-section { font-size: 0.7rem; letter-spacing: 0.05em; padding: 0.5rem 0.75rem 0.25rem; }
+        .sidebar .menu-section { 
+            font-size: 0.65rem; 
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.1em; 
+            padding: 1.5rem 1.25rem 0.5rem;
+            white-space: nowrap;
+            transition: opacity 0.2s ease;
+        }
         [data-bs-theme="light"] .sidebar .menu-section { color: #495057; }
         [data-bs-theme="dark"] .sidebar .menu-section { color: #adb5bd; }
         [data-bs-theme="light"] .text-dark { color: #212529 !important; }
@@ -204,9 +297,14 @@
     <!-- Top Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="~/">
-                <i class="fas fa-leaf me-2"></i>Compost
-            </a>
+            <div class="d-flex align-items-center">
+                <button id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a class="navbar-brand fw-bold" href="~/">
+                    <i class="fas fa-leaf me-2"></i>Compost
+                </a>
+            </div>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -228,58 +326,60 @@
         </div>
     </nav>
 
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid p-0">
+        <div class="d-flex">
             <!-- Left Sidebar Menu -->
-            <nav class="col-md-2 d-none d-md-block bg-white sidebar vh-100 border-end pt-3">
+            <nav id="sidebar" class="sidebar flex-shrink-0 pt-3">
                 <div class="sidebar-sticky">
                     <ul class="nav flex-column">
-                        <li class="nav-item mb-2">
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path == "/" ? "active bg-theme-dashboard text-on-theme-dashboard rounded" : "text-dark")" href="~/">
-                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
                             </a>
                         </li>
-                        <li class="nav-item mt-2"><span class="menu-section">Workflow</span></li>
-                        <li class="nav-item mb-2">
+                        <li class="nav-item"><span class="menu-section">Workflow</span></li>
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/Projects") ? "active bg-theme-contexts text-on-theme-contexts rounded" : "text-dark")" href="/Projects/List">
-                                <i class="fas fa-folder-open me-2"></i>Projects
+                                <i class="fas fa-folder-open"></i><span>Projects</span>
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/Transcription") ? "active bg-theme-transcription text-on-theme-transcription rounded" : "text-dark")" href="/Transcription">
-                                <i class="fas fa-microphone me-2"></i>Transcription
+                                <i class="fas fa-microphone"></i><span>Transcription</span>
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/MindMap") ? "active bg-theme-mindmaps text-on-theme-mindmaps rounded" : "text-dark")" href="/MindMap">
-                                <i class="fas fa-brain me-2"></i>Mind Maps
+                                <i class="fas fa-brain"></i><span>Mind Maps</span>
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().StartsWith("/Kanban") ? "active bg-theme-kanban text-on-theme-kanban rounded" : "text-dark")" href="/Kanban">
-                                <i class="fas fa-columns me-2"></i>Kanban Board
+                                <i class="fas fa-columns"></i><span>Kanban Board</span>
                             </a>
                         </li>
-                        <li class="nav-item mt-2"><span class="menu-section">Library</span></li>
-                        <li class="nav-item mb-2">
+                        <li class="nav-item"><span class="menu-section">Library</span></li>
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/Snippets") ? "active bg-theme-snippets text-on-theme-snippets rounded" : "text-dark")" href="/Snippets">
-                                <i class="fas fa-code me-2"></i>Snippets
+                                <i class="fas fa-code"></i><span>Snippets</span>
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/Patterns") ? "active bg-theme-patterns text-on-theme-patterns rounded" : "text-dark")" href="/Patterns">
-                                <i class="fas fa-project-diagram me-2"></i>Patterns
+                                <i class="fas fa-project-diagram"></i><span>Patterns</span>
                             </a>
                         </li>
                     </ul>
 
                     <!-- Quick Stats Widget -->
-                    @await Component.InvokeAsync("ContextStats")
+                    <div class="context-stats-widget px-3 mt-4">
+                        @await Component.InvokeAsync("ContextStats")
+                    </div>
                 </div>
             </nav>
 
             <!-- Main Content -->
-            <main class="col-md-10 ms-sm-auto px-md-4 py-4">
+            <main id="main-content" class="px-md-4 py-4">
                 @if (TempData["SuccessMessage"] != null)
                 {
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -307,7 +407,7 @@
             <div class="toast-header">
                 <i class="fas fa-info-circle me-2 text-success" id="toastIcon"></i>
                 <strong class="me-auto" id="toastTitle">Notification</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-toast="hide" aria-label="Close"></button>
             </div>
             <div class="toast-body" id="toastMessage">
                 Action completed successfully.
@@ -374,6 +474,25 @@
             } else {
                 icon.className = 'fas fa-moon';
             }
+        }
+
+        // SIDEBAR TOGGLE ENGINE
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        
+        // Initial state from localStorage
+        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (isCollapsed) {
+            sidebar.classList.add('collapsed');
+        }
+
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                const nowCollapsed = sidebar.classList.contains('collapsed');
+                localStorage.setItem('sidebarCollapsed', nowCollapsed);
+                window.dispatchEvent(new Event('resize'));
+            });
         }
     </script>
 
