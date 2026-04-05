@@ -4,6 +4,7 @@ using Compost.Core.Services;
 using Compost.Transcription.Drivers;
 using Compost.Transcription.Handlers;
 using Compost.Transcription.Hubs;
+using Compost.Transcription.Migrations;
 using Compost.Transcription.Models;
 using Compost.Transcription.Services;
 using Microsoft.AspNetCore.Builder;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OrchardCore.ContentManagement;
 using OrchardCore.ContentManagement.Display.ContentDisplay;
 using OrchardCore.ContentManagement.Handlers;
+using OrchardCore.Data.Migration;
 using OrchardCore.Modules;
 
 namespace Compost.Transcription;
@@ -30,6 +32,9 @@ public class Startup : StartupBase
         
         // Register the MeetingPart
         services.AddContentPart<MeetingPart>();
+        
+        // Register migrations
+        services.AddDataMigration<MeetingMigrations>();
     }
 
     public override void Configure(IApplicationBuilder builder, IEndpointRouteBuilder routes, IServiceProvider serviceProvider)

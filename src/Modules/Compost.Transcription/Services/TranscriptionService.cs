@@ -1145,6 +1145,9 @@ public class TranscriptionService(
                 var meetingPart = contentItem.As<MeetingPart>();
                 if (meetingPart != null)
                 {
+                    logger.LogInformation("[UPDATE] Before update - MeetingPart.MeetingId={MeetingId}, existing TranscriptJson length={TranscriptJsonLength}", 
+                        meetingPart.MeetingId, meetingPart.TranscriptJson?.Length ?? 0);
+                    
                     // Sync all properties
                     meetingPart.MeetingId = meeting.Id;
                     meetingPart.Title = meeting.Title;
@@ -1153,7 +1156,12 @@ public class TranscriptionService(
                     meetingPart.StartedAt = meeting.StartedAt;
                     meetingPart.EndedAt = meeting.EndedAt;
                     meetingPart.DurationSeconds = meeting.DurationSeconds;
+                    
+                    logger.LogInformation("[UPDATE] Setting Transcript with {Count} segments", meeting.Transcript.Count);
                     meetingPart.Transcript = meeting.Transcript;
+                    logger.LogInformation("[UPDATE] After setting Transcript - TranscriptJson length={TranscriptJsonLength}", 
+                        meetingPart.TranscriptJson?.Length ?? 0);
+                    
                     meetingPart.ActionItems = meeting.ActionItems;
                     meetingPart.ExtractedNodes = meeting.ExtractedNodes;
                     meetingPart.TranscriptionCompletedAt = meeting.TranscriptionCompletedAt;
@@ -1161,6 +1169,12 @@ public class TranscriptionService(
                     meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
 
                     contentItem.Apply(meetingPart);
+                    
+                    // DEBUG: Verify serialization worked
+                    logger.LogInformation("[DEBUG] After Apply - TranscriptJson length: {Length}", meetingPart.TranscriptJson?.Length ?? 0);
+                    var reRead = contentItem.As<MeetingPart>();
+                    logger.LogInformation("[DEBUG] Re-read from contentItem - TranscriptJson length: {Length}", reRead?.TranscriptJson?.Length ?? 0);
+                    
                     await manager.UpdateAsync(contentItem);
                     await manager.PublishAsync(contentItem);
                     
