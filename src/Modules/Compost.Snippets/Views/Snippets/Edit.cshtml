@@ -23,8 +23,8 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-8">
+    <div class="row" id="editor-row">
+        <div class="col-md-8" id="editor-column">
             <form asp-action="Edit" method="post" id="snippetForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Id" />
@@ -39,37 +39,65 @@
                         <span class="fw-bold">Code Editor</span>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label asp-for="Title" class="form-label fw-bold">Title</label>
-                            <input asp-for="Title" class="form-control" />
-                            <span asp-validation-for="Title" class="text-danger"></span>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label asp-for="Language" class="form-label fw-bold">Language</label>
-                            <select asp-for="Language" class="form-select" id="language-select">
-                                <option value="csharp">C#</option>
-                                <option value="javascript">JavaScript (React)</option>
-                                <option value="typescript">TypeScript</option>
-                                <option value="python">Python</option>
-                                <option value="sql">SQL (PostgreSQL, MSSQL)</option>
-                                <option value="clickhouse">ClickHouse SQL</option>
-                                <option value="json">JSON</option>
-                                <option value="xml">XML</option>
-                                <option value="html">HTML</option>
-                                <option value="css">CSS</option>
-                            </select>
-                            <span asp-validation-for="Language" class="text-danger"></span>
+                        <div id="editor-header-fields">
+                            <div class="mb-3">
+                                <label asp-for="Title" class="form-label fw-bold">Title</label>
+                                <input asp-for="Title" class="form-control" />
+                                <span asp-validation-for="Title" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label asp-for="Language" class="form-label fw-bold">Language</label>
+                                <select asp-for="Language" class="form-select" id="language-select">
+                                    <option value="csharp">C#</option>
+                                    <option value="javascript">JavaScript (React)</option>
+                                    <option value="typescript">TypeScript</option>
+                                    <option value="python">Python</option>
+                                    <option value="sql">SQL (PostgreSQL, MSSQL)</option>
+                                    <option value="clickhouse">ClickHouse SQL</option>
+                                    <option value="json">JSON</option>
+                                    <option value="xml">XML</option>
+                                    <option value="html">HTML</option>
+                                    <option value="css">CSS</option>
+                                </select>
+                                <span asp-validation-for="Language" class="text-danger"></span>
+                            </div>
                         </div>
     
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Editor Theme</label>
-                            <div class="btn-group w-100 mb-2" role="group">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="monaco.editor.setTheme('vs')">Light</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="monaco.editor.setTheme('vs-dark')">Dark</button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="monaco.editor.setTheme('material-dark')">Material</button>
+                            <label class="form-label fw-bold">Editor Settings</label>
+                            <!-- Monaco Toolbar -->
+                            <div class="d-flex flex-wrap gap-2 mb-2 p-2 bg-light-subtle border rounded-top border-bottom-0">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-theme-snippets" onclick="toggleWordWrap()" title="Toggle Word Wrap">
+                                        <i class="fas fa-align-left"></i> <span class="d-none d-lg-inline ms-1">Wrap</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-theme-snippets" onclick="toggleMinimap()" title="Toggle Minimap">
+                                        <i class="fas fa-search-minus"></i> <span class="d-none d-lg-inline ms-1">Minimap</span>
+                                    </button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-theme-snippets" onclick="formatCode()" title="Format Code">
+                                        <i class="fas fa-code"></i> <span class="d-none d-lg-inline ms-1">Format</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-theme-snippets" onclick="toggleStickyScroll()" title="Toggle Sticky Scroll">
+                                        <i class="fas fa-stream"></i> <span class="d-none d-lg-inline ms-1">Sticky</span>
+                                    </button>
+                                </div>
+                                <div class="btn-group btn-group-sm ms-sm-auto" role="group">
+                                    <button type="button" class="btn btn-outline-theme-snippets" onclick="copyCode()" title="Copy to Clipboard">
+                                        <i class="fas fa-copy"></i> <span class="d-none d-lg-inline ms-1">Copy</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-theme-snippets" onclick="downloadSnippet()" title="Download Snippet">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-theme-snippets" id="focusModeBtn" onclick="toggleFocusMode()" title="Focus Mode">
+                                        <i class="fas fa-expand-arrows-alt"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div id="monaco-editor-container" style="height: 500px; border: 1px solid #ccc;"></div>
+                            <!-- Editor Container -->
+                            <div id="monaco-editor-container" class="monaco-wrapper border rounded-bottom" style="height: 600px; position: relative;"></div>
                             <input type="hidden" asp-for="Code" id="code-hidden-input" />
                             <span asp-validation-for="Code" class="text-danger"></span>
                         </div>
@@ -78,7 +106,7 @@
             </form>
         </div>
         
-        <div class="col-md-4">
+        <div class="col-md-4" id="metadata-column">
             <!-- Actions Card -->
             <div class="card snippet-enhanced-card mb-3">
                 <div class="card-header d-flex align-items-center snippet-header-background">
@@ -332,16 +360,29 @@
                 language: languageMap[languageSelect.value] || 'plaintext',
                 theme: editorTheme,
                 automaticLayout: true,
-                minimap: {enabled: true}
+                fontSize: 14,
+                lineNumbers: 'on',
+                roundedSelection: true,
+                scrollBeyondLastLine: false,
+                readOnly: false,
+                cursorStyle: 'line',
+                minimap: { enabled: true },
+                wordWrap: 'on',
+                stickyScroll: { enabled: true },
+                padding: { top: 10, bottom: 10 }
             });
 
-            // Listen for theme changes
+            // Listen for theme changes from the main application
             const observer = new MutationObserver(function (mutations) {
                 mutations.forEach(function (mutation) {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
                         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-                        const newTheme = isDark ? 'hc-black' : 'vs';
-                        monaco.editor.setTheme(newTheme);
+                        // Respect manual overrides if implemented, otherwise auto-switch
+                        const currentTheme = localStorage.getItem('monaco-theme');
+                        if (!currentTheme) {
+                            const newTheme = isDark ? 'vs-dark' : 'vs';
+                            monaco.editor.setTheme(newTheme);
+                        }
                     }
                 });
             });
@@ -351,27 +392,119 @@
                 attributeFilter: ['data-bs-theme']
             });
             
+            // Sync content to hidden input
+            editor.onDidChangeModelContent(() => {
+                document.getElementById('code-hidden-input').value = editor.getValue();
+            });
+
+            // TOOLBOX FUNCTIONS
+            window.toggleWordWrap = function() {
+                const current = editor.getRawOptions().wordWrap;
+                editor.updateOptions({ wordWrap: current === 'on' ? 'off' : 'on' });
+                showToast(`Word Wrap: ${current === 'on' ? 'OFF' : 'ON'}`);
+            };
+
+            window.toggleMinimap = function() {
+                const current = editor.getRawOptions().minimap.enabled;
+                editor.updateOptions({ minimap: { enabled: !current } });
+                showToast(`Minimap: ${!current ? 'ENABLED' : 'DISABLED'}`);
+            };
+
+            window.formatCode = function() {
+                editor.getAction('editor.action.formatDocument').run();
+                showToast('Code formatted');
+            };
+
+            window.toggleStickyScroll = function() {
+                const current = editor.getOption(monaco.editor.EditorOption.stickyScroll).enabled;
+                editor.updateOptions({ stickyScroll: { enabled: !current } });
+                showToast(`Sticky Scroll: ${!current ? 'ENABLED' : 'DISABLED'}`);
+            };
+
+            window.copyCode = function() {
+                const code = editor.getValue();
+                navigator.clipboard.writeText(code).then(() => {
+                    showToast('Code copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Could not copy text: ', err);
+                });
+            };
+
+            window.downloadSnippet = function() {
+                const code = editor.getValue();
+                const lang = languageSelect.value;
+                const ext = lang === 'csharp' ? 'cs' : lang === 'javascript' ? 'js' : lang === 'typescript' ? 'ts' : lang === 'python' ? 'py' : 'txt';
+                const filename = (document.getElementById('Title').value || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                
+                const blob = new Blob([code], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filename}.${ext}`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+                showToast('Downloading snippet...');
+            };
+
+            window.toggleFocusMode = function() {
+                const editorCol = document.getElementById('editor-column');
+                const metaCol = document.getElementById('metadata-column');
+                const headerFields = document.getElementById('editor-header-fields');
+                const cardHeader = document.querySelector('.snippet-enhanced-card .card-header');
+                const settingsLabel = document.querySelector('label[for="Editor Settings"]') || document.evaluate("//label[contains(text(), 'Editor Settings')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                
+                const btn = document.getElementById('focusModeBtn');
+                const icon = btn.querySelector('i');
+                const sidebar = document.getElementById('sidebar');
+                
+                const isFocused = editorCol.classList.contains('col-md-12');
+                
+                if (!isFocused) {
+                    // Enter Focus Mode
+                    metaCol.style.display = 'none';
+                    headerFields.style.display = 'none';
+                    if (cardHeader) cardHeader.style.display = 'none';
+                    if (settingsLabel) settingsLabel.style.display = 'none';
+                    
+                    editorCol.classList.remove('col-md-8');
+                    editorCol.classList.add('col-md-12');
+                    icon.className = 'fas fa-compress-arrows-alt';
+                    btn.classList.add('active');
+                    
+                    // Collapse sidebar if not already
+                    if (sidebar && !sidebar.classList.contains('collapsed')) {
+                        sidebar.classList.add('collapsed');
+                        localStorage.setItem('sidebarCollapsed', 'true');
+                    }
+                } else {
+                    // Exit Focus Mode
+                    metaCol.style.display = 'block';
+                    headerFields.style.display = 'block';
+                    if (cardHeader) cardHeader.style.display = 'flex';
+                    if (settingsLabel) settingsLabel.style.display = 'block';
+                    
+                    editorCol.classList.remove('col-md-12');
+                    editorCol.classList.add('col-md-8');
+                    icon.className = 'fas fa-expand-arrows-alt';
+                    btn.classList.remove('active');
+                }
+                
+                // Always trigger editor layout after structural changes
+                setTimeout(() => {
+                    editor.layout();
+                    window.dispatchEvent(new Event('resize'));
+                }, 300);
+                
+                showToast(isFocused ? 'Focus Mode: OFF' : 'Focus Mode: ON');
+            };
+
             // Update editor language when select changes
             languageSelect.addEventListener('change', function() {
                 const newLang = languageMap[this.value] || 'plaintext';
                 monaco.editor.setModelLanguage(editor.getModel(), newLang);
             });
             
-            // Handle Monaco theme switching
-            const themeSelect = document.getElementById('monaco-theme-select');
-            if (themeSelect) {
-                themeSelect.addEventListener('change', function() {
-                    const selectedTheme = this.value;
-                    monaco.editor.setTheme(selectedTheme);
-                });
-            }
-            
-            // Sync content to hidden input on change
-            editor.onDidChangeModelContent(function(e) {
-                codeInput.value = editor.getValue(index);
-            });
-            
-            // Make editor globally accessible for pattern detection
+            // Make editor globally accessible
             window.monacoEditor = editor;
         });
         
