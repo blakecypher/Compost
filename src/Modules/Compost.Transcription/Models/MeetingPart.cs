@@ -37,17 +37,29 @@ public class MeetingPart : ContentPart
     {
         get
         {
-            if (string.IsNullOrEmpty(TranscriptJson)) return [];
+            if (string.IsNullOrEmpty(TranscriptJson)) 
+            {
+                System.Diagnostics.Debug.WriteLine($"[MeetingPart] TranscriptJson is null or empty for meeting {MeetingId}");
+                return [];
+            }
             try
             {
-                return JsonConvert.DeserializeObject<List<TranscriptSegment>>(TranscriptJson) ?? [];
+                System.Diagnostics.Debug.WriteLine($"[MeetingPart] Deserializing TranscriptJson for meeting {MeetingId}, length: {TranscriptJson.Length}");
+                var result = JsonConvert.DeserializeObject<List<TranscriptSegment>>(TranscriptJson) ?? [];
+                System.Diagnostics.Debug.WriteLine($"[MeetingPart] Deserialized {result.Count} segments for meeting {MeetingId}");
+                return result;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[MeetingPart] Failed to deserialize TranscriptJson for meeting {MeetingId}: {ex.Message}");
                 return [];
             }
         }
-        set => TranscriptJson = value?.Count > 0 ? JsonConvert.SerializeObject(value) : null;
+        set 
+        { 
+            TranscriptJson = value?.Count > 0 ? JsonConvert.SerializeObject(value) : null;
+            System.Diagnostics.Debug.WriteLine($"[MeetingPart] Serialized {value?.Count ?? 0} segments to TranscriptJson for meeting {MeetingId}, json length: {TranscriptJson?.Length ?? 0}");
+        }
     }
     
     [JsonProperty("actionItems")]

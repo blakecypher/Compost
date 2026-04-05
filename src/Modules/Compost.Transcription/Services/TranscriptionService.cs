@@ -1065,6 +1065,8 @@ public class TranscriptionService(
         // First check active memory (no DB query needed)
         if (ActiveMeetingsMemory.TryGetValue(meetingId, out var activeMeeting))
         {
+            logger.LogInformation("[GetMeetingById] Found meeting {MeetingId} in active memory with {Count} transcript segments", 
+                meetingId, activeMeeting.Transcript.Count);
             return activeMeeting;
         }
 
@@ -1077,24 +1079,47 @@ public class TranscriptionService(
             .Where(ci => ci.ContentType == nameof(Meeting) && ci.Published)
             .ListAsync();
 
-        return (from contentItem in meetingItems
+        var result = (from contentItem in meetingItems
         let meetingPart = contentItem.As<MeetingPart>()
         where meetingPart?.MeetingId == meetingId || contentItem.ContentItemId == meetingId
-        select new Meeting
+        select new 
         {
-            Id = meetingPart.MeetingId,
-            Title = meetingPart.Title,
-            WorkContextId = meetingPart.WorkContextId,
-            Status = Enum.Parse<MeetingStatus>(meetingPart.Status ?? "Recording"),
-            StartedAt = meetingPart.StartedAt ?? DateTime.UtcNow,
-            EndedAt = meetingPart.EndedAt,
-            DurationSeconds = meetingPart.DurationSeconds,
-            Transcript = meetingPart.Transcript ?? [],
-            ActionItems = meetingPart.ActionItems ?? [],
-            ExtractedNodes = meetingPart.ExtractedNodes ?? [],
-            TranscriptionCompletedAt = meetingPart.TranscriptionCompletedAt,
-            IsProcessed = meetingPart.IsProcessed
+            ContentItem = contentItem,
+            MeetingPart = meetingPart,
+            Meeting = new Meeting
+            {
+                Id = meetingPart.MeetingId,
+                Title = meetingPart.Title,
+                WorkContextId = meetingPart.WorkContextId,
+                Status = Enum.Parse<MeetingStatus>(meetingPart.Status ?? "Recording"),
+                StartedAt = meetingPart.StartedAt ?? DateTime.UtcNow,
+                EndedAt = meetingPart.EndedAt,
+                DurationSeconds = meetingPart.DurationSeconds,
+                Transcript = meetingPart.Transcript ?? [],
+                ActionItems = meetingPart.ActionItems ?? [],
+                ExtractedNodes = meetingPart.ExtractedNodes ?? [],
+                TranscriptionCompletedAt = meetingPart.TranscriptionCompletedAt,
+                IsProcessed = meetingPart.IsProcessed
+            }
         }).FirstOrDefault();
+        
+        if (result != null)
+        {
+            var jsonLength = result.MeetingPart.TranscriptJson?.Length ?? 0;
+            logger.LogInformation("[GetMeetingById] Loaded meeting {MeetingId} from DB with {Count} transcript segments, TranscriptJson length: {JsonLength}", 
+                meetingId, result.Meeting.Transcript.Count, jsonLength);
+            if (jsonLength > 0)
+            {
+                logger.LogDebug("[GetMeetingById] TranscriptJson preview for {MeetingId}: {Preview}", 
+                    meetingId, result.MeetingPart.TranscriptJson?[..Math.Min(100, jsonLength)]);
+            }
+            return result.Meeting;
+        }
+        else
+        {
+            logger.LogWarning("[GetMeetingById] Meeting {MeetingId} not found in DB", meetingId);
+            return null;
+        }
     }
 
     public async Task UpdateMeetingAsync(Meeting meeting)
