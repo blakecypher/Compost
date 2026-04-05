@@ -145,6 +145,9 @@ public class TranscriptionController(
             return NotFound();
         }
 
+        // Load real projects for the Mind Map association modal
+        ViewBag.WorkContexts = await projectManager.GetAllProjectsAsync();
+
         return View(meeting);
     }
 

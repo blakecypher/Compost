@@ -1,6 +1,8 @@
 @using Compost.Core.Services
+@using Compost.Core.Models
 @model Compost.Core.Models.Meeting
 @inject ITranscriptLocalizationService Localizer
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer ViewLocalizer
 
 @section Styles {
     <style>
@@ -217,15 +219,29 @@
                     
                     <div class="mb-3">
                         <label for="mindmap-context" class="form-label">Work Project</label>
+                        @{
+                            var projects = ViewBag.WorkContexts as List<Project> ?? new List<Project>();
+                        }
                         <select class="form-select" id="mindmap-context">
-                            <option value="">Select a context (optional)</option>
-                            <option value="default">Default</option>
-                            <option value="project">Project</option>
-                            <option value="meeting">Meeting</option>
-                            <option value="research">Research</option>
-                            <option value="planning">Planning</option>
+                            <option value="">Select a project (recommended)</option>
+                            @foreach (var project in projects)
+                            {
+                                <option value="@project.Id" selected="@(project.Id == Model.WorkContextId)">@project.Name</option>
+                            }
                         </select>
-                        <div class="form-text">Organize your mind map within a specific context</div>
+                        
+                        @if (!projects.Any())
+                        {
+                            <div class="alert alert-warning mt-2 py-2 small">
+                                <i class="fas fa-exclamation-triangle me-1"></i> 
+                                No active projects found. 
+                                <a href="/Projects/Create" class="alert-link">Create your first project</a> to organize your mind maps!
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="form-text">Organize your mind map within a specific project</div>
+                        }
                     </div>
                     
                     <div class="alert alert-info d-flex align-items-center" role="alert">
