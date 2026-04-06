@@ -917,10 +917,23 @@ a:hover {
 .btn.btn-outline-theme-contexts {
     background-color: transparent !important;
     border-color: var(--theme-contexts) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn.btn-outline-theme-contexts i,
+.btn.btn-outline-theme-contexts svg,
+.btn.btn-outline-theme-contexts .icon {
     color: var(--theme-contexts) !important;
 }
+
 .btn.btn-outline-theme-contexts:hover {
     background-color: var(--theme-contexts) !important;
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-contexts:hover i,
+.btn.btn-outline-theme-contexts:hover svg,
+.btn.btn-outline-theme-contexts:hover .icon {
     color: #fff !important;
 }
 
@@ -937,10 +950,23 @@ a:hover {
 .btn.btn-outline-theme-patterns {
     background-color: transparent !important;
     border-color: var(--theme-patterns) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn.btn-outline-theme-patterns i,
+.btn.btn-outline-theme-patterns svg,
+.btn.btn-outline-theme-patterns .icon {
     color: var(--theme-patterns) !important;
 }
+
 .btn.btn-outline-theme-patterns:hover {
     background-color: var(--theme-patterns) !important;
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-patterns:hover i,
+.btn.btn-outline-theme-patterns:hover svg,
+.btn.btn-outline-theme-patterns:hover .icon {
     color: #fff !important;
 }
 
@@ -951,6 +977,121 @@ a:hover {
 }
 .btn.btn-theme-snippets:hover {
     filter: brightness(1.12);
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-snippets {
+    background-color: transparent !important;
+    border-color: var(--theme-snippets) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn.btn-outline-theme-snippets i,
+.btn.btn-outline-theme-snippets svg,
+.btn.btn-outline-theme-snippets .icon {
+    color: var(--theme-snippets) !important;
+}
+
+.btn.btn-outline-theme-snippets:hover {
+    background-color: var(--theme-snippets) !important;
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-snippets:hover i,
+.btn.btn-outline-theme-snippets:hover svg,
+.btn.btn-outline-theme-snippets:hover .icon {
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-mindmaps {
+    background-color: transparent !important;
+    border-color: var(--theme-mindmaps) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn.btn-outline-theme-mindmaps i,
+.btn.btn-outline-theme-mindmaps svg,
+.btn.btn-outline-theme-mindmaps .icon {
+    color: var(--theme-mindmaps) !important;
+}
+
+.btn.btn-outline-theme-mindmaps:hover {
+    background-color: var(--theme-mindmaps) !important;
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-mindmaps:hover i,
+.btn.btn-outline-theme-mindmaps:hover svg,
+.btn.btn-outline-theme-mindmaps:hover .icon {
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-kanban {
+    background-color: transparent !important;
+    border-color: var(--theme-kanban) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn.btn-outline-theme-kanban i,
+.btn.btn-outline-theme-kanban svg,
+.btn.btn-outline-theme-kanban .icon {
+    color: var(--theme-kanban) !important;
+}
+
+.btn.btn-outline-theme-kanban:hover {
+    background-color: var(--theme-kanban) !important;
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-kanban:hover i,
+.btn.btn-outline-theme-kanban:hover svg,
+.btn.btn-outline-theme-kanban:hover .icon {
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-transcription {
+    background-color: transparent !important;
+    border-color: var(--theme-transcription) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn.btn-outline-theme-transcription i,
+.btn.btn-outline-theme-transcription svg,
+.btn.btn-outline-theme-transcription .icon {
+    color: var(--theme-transcription) !important;
+}
+
+.btn.btn-outline-theme-transcription:hover {
+    background-color: var(--theme-transcription) !important;
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-transcription:hover i,
+.btn.btn-outline-theme-transcription:hover svg,
+.btn.btn-outline-theme-transcription:hover .icon {
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-dashboard {
+    background-color: transparent !important;
+    border-color: var(--theme-dashboard) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn.btn-outline-theme-dashboard i,
+.btn.btn-outline-theme-dashboard svg,
+.btn.btn-outline-theme-dashboard .icon {
+    color: var(--theme-dashboard) !important;
+}
+
+.btn.btn-outline-theme-dashboard:hover {
+    background-color: var(--theme-dashboard) !important;
+    color: #fff !important;
+}
+
+.btn.btn-outline-theme-dashboard:hover i,
+.btn.btn-outline-theme-dashboard:hover svg,
+.btn.btn-outline-theme-dashboard:hover .icon {
     color: #fff !important;
 }
 
