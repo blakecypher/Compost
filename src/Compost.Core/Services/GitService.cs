@@ -12,56 +12,60 @@ namespace Compost.Core.Services;
 /// Implementation of IGitService using LibGit2Sharp.
 /// Note: Requires LibGit2Sharp package.
 /// </summary>
-public class GitService(ILogger<GitService> logger) : IGitService
+public class GitService(ILogger<GitService> logger, IGitCredentialProvider credentialProvider) : IGitService
 {
-    public Task<bool> CloneAsync(string remoteUrl, string localPath, string? branch = "main", string? pat = null)
+    public async Task<bool> CloneAsync(string remoteUrl, string localPath, string? branch = "main", string? pat = null)
     {
         try
         {
             if (Directory.Exists(localPath) && Directory.EnumerateFileSystemEntries(localPath).Any())
             {
                 logger.LogWarning("Clone target directory not empty: {LocalPath}", localPath);
-                return Task.FromResult(false);
+                return false;
             }
 
+            var finalPat = pat ?? (await credentialProvider.GetDefaultCredentialAsync()).PersonalAccessToken;
             var options = new CloneOptions
             {
                 BranchName = branch ?? "main",
                 Checkout = true,
-                FetchOptions = { CredentialsProvider = CreateCredentialsProvider(pat) }
+                FetchOptions = { CredentialsProvider = CreateCredentialsProvider(finalPat) }
             };
 
             Repository.Clone(remoteUrl, localPath, options);
             logger.LogInformation("Successfully cloned {RemoteUrl} to {LocalPath}", remoteUrl, localPath);
-            return Task.FromResult(true);
+            return true;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to clone repository {RemoteUrl}", remoteUrl);
-            return Task.FromResult(false);
+            return false;
         }
     }
 
-    public Task<bool> PullAsync(string localPath, string? pat = null)
+    public async Task<bool> PullAsync(string localPath, string? pat = null)
     {
         try
         {
             using var repo = new Repository(localPath);
-            var signature = new Signature("Compost Sync", "sync@compost.net", DateTimeOffset.Now);
+            var gitCredential = await credentialProvider.GetDefaultCredentialAsync();
+            var finalPat = pat ?? gitCredential.PersonalAccessToken;
+            
+            var signature = new Signature(gitCredential.AuthorName, gitCredential.AuthorEmail, DateTimeOffset.Now);
             
             var options = new PullOptions
             {
-                FetchOptions = { CredentialsProvider = CreateCredentialsProvider(pat) }
+                FetchOptions = { CredentialsProvider = CreateCredentialsProvider(finalPat) }
             };
 
             Commands.Pull(repo, signature, options);
             logger.LogInformation("Successfully pulled updates for {LocalPath}", localPath);
-            return Task.FromResult(true);
+            return true;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to pull updates for {LocalPath}", localPath);
-            return Task.FromResult(false);
+            return false;
         }
     }
 
@@ -92,9 +96,10 @@ public class GitService(ILogger<GitService> logger) : IGitService
             
             // 4. Push
             var remote = repo.Network.Remotes["origin"];
+            var finalPat = pat ?? (await credentialProvider.GetDefaultCredentialAsync()).PersonalAccessToken;
             var options = new PushOptions
             {
-                CredentialsProvider = CreateCredentialsProvider(pat)
+                CredentialsProvider = CreateCredentialsProvider(finalPat)
             };
             
             repo.Network.Push(remote, @$"refs/heads/{repo.Head.FriendlyName}", options);

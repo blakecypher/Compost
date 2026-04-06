@@ -95,3 +95,19 @@ public class EditContextViewModel
     public List<string> TestingSteps { get; set; } = [];
     public List<OpenQuestion> OpenQuestions { get; set; } = [];
 }
+
+public class GitSettingsViewModel
+{
+    [Required]
+    [Display(Name = "Personal Access Token")]
+    public string PersonalAccessToken { get; set; } = string.Empty;
+
+    [Required]
+    [Display(Name = "Author Name")]
+    public string AuthorName { get; set; } = "Compost Assistant";
+
+    [Required]
+    [EmailAddress]
+    [Display(Name = "Author Email")]
+    public string AuthorEmail { get; set; } = "assistant@compost.net";
+}

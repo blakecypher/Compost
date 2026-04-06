@@ -30,12 +30,15 @@ public class Startup : StartupBase
             .AddHandler<ProjectPartHandler>();
             
         services.AddContentPart<ProjectTemplatePart>();
+        
+        services.AddContentPart<GitSettingsPart>();
 
         // Register services
         services.AddScoped<IProjectManager, ProjectManager>();
         services.AddScoped<ITimeTrackingService, TimeTrackingService>();
         services.AddScoped<ITemplateService, TemplateService>();
         services.AddScoped<IGitService, GitService>();
+        services.AddScoped<IGitCredentialProvider, GitCredentialProvider>();
 
         // Register migrations
         services.AddScoped<IDataMigration, ContextMigrations>();
@@ -65,6 +68,13 @@ public class Startup : StartupBase
             areaName: "Compost.Contexts",
             pattern: "Projects/{action}/{id?}",
             defaults: new { controller = "Project", action = nameof(Index) }
+        );
+
+        routes.MapAreaControllerRoute(
+            name: "GitSettings",
+            areaName: "Compost.Contexts",
+            pattern: "Projects/GitSettings/{action}",
+            defaults: new { controller = "GitSettings", action = "Edit" }
         );
 
         // Legacy route to redirect old Context URLs to Project URLs

@@ -63,4 +63,17 @@ public class ContextMigrations(IContentDefinitionManager contentDefinitionManage
         
         return 3;
     }
+
+    public async Task<int> UpdateFrom3()
+    {
+        await contentDefinitionManager.AlterPartDefinitionAsync("GitSettingsPart", part => part
+            .WithDescription("Settings for Git integration.")
+        );
+
+        await contentDefinitionManager.AlterTypeDefinitionAsync("GitSettings", type => type
+            .WithPart("GitSettingsPart")
+        );
+
+        return 4;
+    }
 }

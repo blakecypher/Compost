@@ -121,6 +121,7 @@
                                 <span class="d-none d-sm-inline">@User.Identity.Name</span>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-dropdown">
+                                <li><a class="dropdown-item" href="@Url.Content("~/Projects/GitSettings/Edit")"><i class="fas fa-key"></i> Git Credentials</a></li>
                                 <li><a class="dropdown-item" href="@Url.Content("~/Admin")"><i class="fas fa-cog"></i> Admin</a></li>
                                 <li><a class="dropdown-item" href="@Url.Content("~/Admin/Users/Logout")"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                             </ul>
