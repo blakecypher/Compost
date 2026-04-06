@@ -45,7 +45,7 @@ else
             var status = item.Status;
             
             <div class="col-lg-6 col-xl-4">
-                <div class="card h-100 project-enhanced-card border-top-theme">
+                <div class="card h-100 contexts-enhanced-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -105,22 +105,88 @@ else
 }
 
 <style>
-    .border-top-theme {
+    /* Contexts Theme - Matching other module pages */
+    :root {
+        --theme-contexts: #7c3aed;
+    }
+    
+    .text-theme-contexts {
+        color: var(--theme-contexts) !important;
+    }
+    
+    .btn-theme-contexts {
+        background-color: var(--theme-contexts) !important;
+        border-color: var(--theme-contexts) !important;
+        color: #fff !important;
+    }
+    
+    .btn-theme-contexts:hover {
+        background-color: #6d28d9 !important;
+        border-color: #6d28d9 !important;
+        filter: brightness(1.05);
+    }
+    
+    .btn-outline-theme-contexts {
+        color: var(--theme-contexts) !important;
+        border-color: var(--theme-contexts) !important;
+        background-color: transparent;
+    }
+    
+    .btn-outline-theme-contexts:hover {
+        background-color: var(--theme-contexts) !important;
+        color: #fff !important;
+    }
+    
+    /* Enhanced card styling - matching Projects page */
+    .contexts-enhanced-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         border-top: 5px solid var(--theme-contexts) !important;
-        background: var(--bg-gradient-card) !important;
-        border-left: 1px solid #8f9fb5 !important;
-        border-right: 1px solid #8f9fb5 !important;
-        border-bottom: 1px solid #8f9fb5 !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+        border-radius: 16px !important;
+        overflow: hidden;
     }
     
-    [data-bs-theme="dark"] .border-top-theme {
-        border-left: 1px solid #555555 !important;
-        border-right: 1px solid #555555 !important;
-        border-bottom: 1px solid #555555 !important;
+    .contexts-enhanced-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     
-    .border-top-theme .card-header {
-        border-bottom: 1px solid var(--theme-contexts) !important;
+    /* Dark mode card styling */
+    [data-bs-theme="dark"] .contexts-enhanced-card {
+        border-left-color: #444444 !important;
+        border-right-color: #444444 !important;
+        border-bottom-color: #444444 !important;
+    }
+    
+    /* Stats box styling - matching project metadata style */
+    .repo-stats {
+        background: var(--bs-light) !important;
+        border: 1px solid var(--bs-border-color) !important;
+        border-radius: 8px;
+        padding: 0.75rem;
+    }
+    
+    [data-bs-theme="dark"] .repo-stats {
+        background: #2d2d2d !important;
+        border-color: #444444 !important;
+    }
+    
+    [data-bs-theme="light"] .repo-stats {
+        border-color: #bfc6cd !important;
+    }
+    
+    [data-bs-theme="dark"] .repo-stats code {
+        background: #1a1a1a !important;
+        border-color: #444444 !important;
+        color: #d4d4d8 !important;
+    }
+    
+    [data-bs-theme="light"] .repo-stats code {
+        border-color: #bfc6cd !important;
+    }
+    
+    /* Border top theme compatibility */
+    .border-top-theme {
+        border-top: 4px solid var(--theme-contexts) !important;
     }
 </style>

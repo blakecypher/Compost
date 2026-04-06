@@ -105,7 +105,7 @@
                                 <span class="fw-bold">@(segment.Context.TryGetValue("SpeakerName", out var name) ? name : speakerLabel)</span>
                                 <small class="text-muted">@segment.StartTime.ToString(@"hh\:mm\:ss")</small>
                             </div>
-                            <div>@segment.Text</div>
+                            <div class="markdown-content">@segment.Text</div>
                             @if (segment.Context.Any())
                             {
                                 <div class="mt-2 small text-muted">
@@ -316,7 +316,24 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
 <script>
+    // Configure marked.js options
+    marked.setOptions({
+        breaks: true,
+        gfm: true,
+        headerIds: false,
+        mangle: false
+    });
+
+    // Render markdown in transcript segments after page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.markdown-content').forEach(function(element) {
+            const rawText = element.textContent;
+            element.innerHTML = marked.parse(rawText);
+        });
+    });
+
     document.getElementById('extract-insights').addEventListener('click', async function() {
         this.disabled = true;
         this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Extracting...';

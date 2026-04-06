@@ -93,9 +93,9 @@
     
     /* Light mode enhancements for Kanban board */
     [data-bs-theme="light"] .kanban-column {
-        background: #a8b0bd !important;
-        border: 1px solid #8f9fb5 !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.10) !important;
+        background: #f5f7fa !important;
+        border: 1px solid #e1e5eb !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
     }
     [data-bs-theme="light"] .kanban-card {
         background: #bdc5cf !important;
@@ -223,8 +223,15 @@
         --bs-heading-color: #212529;
     }
     [data-bs-theme="dark"] {
-        --bs-heading-color: #ff6b35;
+        --bs-heading-color: #e4e4e7;
     }
+    
+    /* Remove color from kanban lane titles and card titles in dark mode */
+    [data-bs-theme="dark"] .kanban-column h5,
+    [data-bs-theme="dark"] .kanban-card .card-title {
+        color: inherit !important;
+    }
+    
     .cursor-pointer {
         cursor: pointer;
     }
