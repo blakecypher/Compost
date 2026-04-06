@@ -23,6 +23,39 @@
     </div>
 </div>
 
+<!-- Search and Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Search Repositories</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="repoSearch" class="form-control" placeholder="Search by project name or path..." onkeyup="filterRepos()">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status Filter</label>
+                <select id="repoStatusFilter" class="form-select" onchange="filterRepos()">
+                    <option value="">All Statuses</option>
+                    <option value="clean">Clean</option>
+                    <option value="dirty">Dirty (Uncommitted Changes)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sort By</label>
+                <select id="repoSort" class="form-select" onchange="sortRepos()">
+                    <option value="name">Project Name</option>
+                    <option value="sync">Last Synced</option>
+                    <option value="status">Status (Dirty First)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
 @if (!Model.Any())
 {
     <div class="card shadow-sm text-center py-5">
@@ -188,3 +221,58 @@ else
         border-top: 4px solid var(--theme-contexts) !important;
     }
 </style>
+
+<script>
+    function filterRepos() {
+        const searchTerm = document.getElementById('repoSearch').value.toLowerCase();
+        const statusFilter = document.getElementById('repoStatusFilter').value;
+        const cards = document.querySelectorAll('.contexts-enhanced-card');
+        
+        cards.forEach(card => {
+            const projectName = card.querySelector('h5').textContent.toLowerCase();
+            const projectPath = card.querySelector('.text-muted.small').textContent.toLowerCase();
+            const statusBadge = card.querySelector('.badge');
+            const isDirty = statusBadge.textContent.trim() === 'Dirty';
+            
+            let matchesSearch = projectName.includes(searchTerm) || projectPath.includes(searchTerm);
+            let matchesStatus = true;
+            
+            if (statusFilter === 'clean') {
+                matchesStatus = !isDirty;
+            } else if (statusFilter === 'dirty') {
+                matchesStatus = isDirty;
+            }
+            
+            const cardContainer = card.closest('.col-lg-6');
+            if (matchesSearch && matchesStatus) {
+                cardContainer.style.display = '';
+            } else {
+                cardContainer.style.display = 'none';
+            }
+        });
+    }
+    
+    function sortRepos() {
+        const sortBy = document.getElementById('repoSort').value;
+        const container = document.querySelector('.row.g-4');
+        const cards = Array.from(container.querySelectorAll('.col-lg-6'));
+        
+        cards.sort((a, b) => {
+            const cardA = a.querySelector('.contexts-enhanced-card');
+            const cardB = b.querySelector('.contexts-enhanced-card');
+            
+            if (sortBy === 'name') {
+                const nameA = cardA.querySelector('h5').textContent;
+                const nameB = cardB.querySelector('h5').textContent;
+                return nameA.localeCompare(nameB);
+            } else if (sortBy === 'status') {
+                const statusA = cardA.querySelector('.badge').textContent.trim() === 'Dirty' ? 0 : 1;
+                const statusB = cardB.querySelector('.badge').textContent.trim() === 'Dirty' ? 0 : 1;
+                return statusA - statusB;
+            }
+            return 0;
+        });
+        
+        cards.forEach(card => container.appendChild(card));
+    }
+</script>

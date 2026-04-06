@@ -13,6 +13,40 @@
     </a>
 </div>
 
+<!-- Search and Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Search Meetings</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="meetingSearch" class="form-control" placeholder="Search by title or description..." onkeyup="filterMeetings()">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status Filter</label>
+                <select id="meetingStatusFilter" class="form-select" onchange="filterMeetings()">
+                    <option value="">All Statuses</option>
+                    <option value="Recording">Recording</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sort By</label>
+                <select id="meetingSort" class="form-select" onchange="sortMeetings()">
+                    <option value="date">Date (Newest First)</option>
+                    <option value="title">Title (A-Z)</option>
+                    <option value="duration">Duration (Longest First)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
 @if (Model != null && Model.Any())
 {
     <div class="row">
@@ -297,3 +331,60 @@ else
         color: #fff !important;
     }
 </style>
+
+<script>
+    function filterMeetings() {
+        const searchTerm = document.getElementById('meetingSearch').value.toLowerCase();
+        const statusFilter = document.getElementById('meetingStatusFilter').value;
+        const cards = document.querySelectorAll('.meeting-card');
+        
+        cards.forEach(card => {
+            const title = card.querySelector('.card-title').textContent.toLowerCase();
+            const description = card.querySelector('.card-text')?.textContent.toLowerCase() || '';
+            const statusBadge = card.querySelector('.badge');
+            const status = statusBadge.textContent.trim();
+            
+            let matchesSearch = title.includes(searchTerm) || description.includes(searchTerm);
+            let matchesStatus = true;
+            
+            if (statusFilter) {
+                matchesStatus = status === statusFilter;
+            }
+            
+            const cardContainer = card.closest('.col-lg-4, .col-md-6');
+            if (matchesSearch && matchesStatus) {
+                cardContainer.style.display = '';
+            } else {
+                cardContainer.style.display = 'none';
+            }
+        });
+    }
+    
+    function sortMeetings() {
+        const sortBy = document.getElementById('meetingSort').value;
+        const container = document.querySelector('.col-lg-9 .row');
+        const cards = Array.from(container.querySelectorAll('.col-lg-4, .col-md-6'));
+        
+        cards.sort((a, b) => {
+            const cardA = a.querySelector('.meeting-card');
+            const cardB = b.querySelector('.meeting-card');
+            
+            if (sortBy === 'date') {
+                const dateTextA = cardA.querySelector('.fa-calendar-alt').parentNode.textContent.trim();
+                const dateTextB = cardB.querySelector('.fa-calendar-alt').parentNode.textContent.trim();
+                return new Date(dateTextB) - new Date(dateTextA);
+            } else if (sortBy === 'title') {
+                const titleA = cardA.querySelector('.card-title').textContent;
+                const titleB = cardB.querySelector('.card-title').textContent;
+                return titleA.localeCompare(titleB);
+            } else if (sortBy === 'duration') {
+                const durationTextA = cardA.querySelector('.fa-hourglass-half').parentNode.textContent.trim();
+                const durationTextB = cardB.querySelector('.fa-hourglass-half').parentNode.textContent.trim();
+                return durationTextB.localeCompare(durationTextA);
+            }
+            return 0;
+        });
+        
+        cards.forEach(card => container.appendChild(card));
+    }
+</script>

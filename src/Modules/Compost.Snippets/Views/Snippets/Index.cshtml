@@ -21,6 +21,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form asp-action="Index" method="get">
+            <label class="form-label">Search Snippets</label>
             <div class="input-group">
                 <input type="text" name="query" class="form-control" placeholder="Search snippets by name, language, or content..." value="@ViewBag.SearchQuery">
                 <button class="btn btn-outline-theme-snippets" type="submit">

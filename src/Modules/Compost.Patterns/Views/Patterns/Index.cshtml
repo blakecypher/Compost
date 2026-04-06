@@ -21,8 +21,9 @@
 <div class="card mb-4">
     <div class="card-body">
         <form asp-action="Index" method="get">
-            <div class="row g-3">
+            <div class="row g-3 align-items-end">
                 <div class="col-md-8">
+                    <label class="form-label">Search Patterns</label>
                     <input type="text" name="query" class="form-control" placeholder="Search patterns by name, usage, description, or keywords..." value="@ViewBag.SearchQuery">
                 </div>
                 <div class="col-md-4">
