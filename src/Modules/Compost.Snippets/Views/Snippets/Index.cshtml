@@ -53,12 +53,11 @@
                     var textColorClass = baseColor is "warning" or "info" ? "text-dark" : "text-white";
                     
                     <div class="col-md-6 mb-4">
-                        <div class="card h-100 snippet-card border-0" style="border-top: 5px solid var(--theme-snippets); transition: transform 0.1s, box-shadow 0.2s; background: var(--bg-gradient-card) !important; border-left: 1px solid #8f9fb5; border-right: 1px solid #8f9fb5; border-bottom: 1px solid #8f9fb5; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div class="card-header @headerClass d-flex justify-content-between align-items-center" style="background-color: transparent; border-bottom: 1px solid var(--theme-snippets);">
-                                <span class="fw-bold"><i class="fas fa-code me-1"></i> @snippet.Language.ToUpper()
-                                </span>
+                        <div class="card h-100 enhanced-card snippet-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span class="fw-bold"><i class="fas fa-code me-1"></i> @snippet.Language.ToUpper()</span>
                                 <div class="dropdown">
-                                    <button class="btn btn-link @textColorClass p-0" type="button" data-bs-toggle="dropdown" style="text-decoration: none;">
+                                    <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" style="text-decoration: none;">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
@@ -82,12 +81,12 @@
                                    }
                                 </div>
                                  <!-- Code preview with theme support -->
-                                <div class="p-3 rounded snippet-code-preview" style="max-height: 200px; overflow: hidden; position: relative; border-left: 4px solid @(baseColor == "dark" ? "#6c757d" : $"var(--bs-{baseColor})"); background: var(--bs-body-bg);">
+                                <div class="p-3 rounded snippet-code-preview" style="max-height: 200px; overflow: hidden; position: relative; border-left: 4px solid var(--theme-snippets); background: var(--bs-body-bg);">
                                     <pre class="m-0" style="background: transparent; padding: 0;"><code class="language-@snippet.Language" style="font-family: 'Fira Code', Consolas, monospace; font-size: 0.85rem; color: var(--bs-body-color);">@snippet.Code</code></pre>
                                     <div class="position-absolute bottom-0 start-0 w-100 h-25 snippet-preview-gradient" style="background: linear-gradient(to bottom, transparent, var(--bs-body-bg));"></div>
                                 </div>
                             </div>
-                             <div class="card-footer border-0 d-flex justify-content-between align-items-center pt-0 pb-3" style="background: var(--bs-card-bg);">
+                             <div class="card-footer d-flex justify-content-between align-items-center pt-0 pb-3">
                                 <small class="text-muted">
                                     <i class="fas fa-folder me-1"></i> @(snippet.Category ?? "Uncategorized")
                                 </small>
