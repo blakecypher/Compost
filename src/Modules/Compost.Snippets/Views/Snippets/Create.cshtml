@@ -23,11 +23,12 @@
         </div>
     </div>
 
-    <div class="row" id="editor-row">
-        <div class="col-md-8" id="editor-column">
-            <form asp-action="Create" method="post" id="snippetForm">
-                @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    <form asp-action="Create" method="post" id="snippetForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        
+        <div class="row" id="editor-row">
+            <div class="col-md-8" id="editor-column">
                 
                 <!-- Code Editor Card -->
                 <div class="card snippet-enhanced-card mb-3">
@@ -102,10 +103,9 @@
                         </div>
                     </div>
                 </div>
-            </form>
-        </div>
-        
-        <div class="col-md-4" id="metadata-column">
+            </div>
+            
+            <div class="col-md-4" id="metadata-column">
             <!-- Actions Card -->
             <div class="card snippet-enhanced-card mb-3">
                 <div class="card-header d-flex align-items-center snippet-header-background">
@@ -116,7 +116,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button type="button" onclick="document.getElementById('snippetForm').submit();" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
+                        <button type="button" onclick="submitSnippetForm()" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
                             <i class="fas fa-save me-2"></i> Create Snippet
                         </button>
                         <a asp-action="Index" class="btn btn-outline-theme-snippets">
@@ -149,7 +149,9 @@
                     
                     <div class="mb-3">
                         <label asp-for="ProjectName" class="form-label fw-bold">Project</label>
-                        <input asp-for="ProjectName" class="form-control" />
+                        <select asp-for="ProjectName" class="form-select" asp-items="@(Model.AvailableProjects?.Select(p => new SelectListItem { Value = p.Key, Text = p.Value }) ?? Enumerable.Empty<SelectListItem>())">
+                            <option value="">-- None --</option>
+                        </select>
                         <span asp-validation-for="ProjectName" class="text-danger"></span>
                     </div>
                     
@@ -173,15 +175,22 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label asp-for="GitRelativePath" class="form-label fw-bold">Git Relative Path</label>
+                        <input asp-for="GitRelativePath" class="form-control" placeholder="e.g. src/Utils/Helper.cs" />
+                        <span asp-validation-for="GitRelativePath" class="text-danger"></span>
+                        <div class="form-text small">Path relative to project root.</div>
+                    </div>
+
+                    <div class="mb-3">
                         <label asp-for="Description" class="form-label fw-bold">Description / Usage Notes</label>
                         <textarea asp-for="Description" class="form-control" rows="5"></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </form>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
     <script>
@@ -364,6 +373,17 @@
             // Make editor globally accessible
             window.monacoEditor = editor;
         });
+
+        function syncCodeToHidden() {
+            if (window.monacoEditor) {
+                document.getElementById('code-hidden-input').value = window.monacoEditor.getValue();
+            }
+        }
+
+        function submitSnippetForm() {
+            syncCodeToHidden();
+            document.getElementById('snippetForm').submit();
+        }
         
         // Debounce timer for auto-detection
         let patternDetectionTimer = null;

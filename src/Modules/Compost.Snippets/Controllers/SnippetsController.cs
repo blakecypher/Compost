@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Compost.Core.Models;
 using Compost.Core.Services;
+using Compost.Core.Interfaces;
 using Compost.Snippets.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using OrchardCore.ContentManagement;
@@ -12,7 +13,7 @@ using YesSql;
 
 namespace Compost.Snippets.Controllers;
 
-public class SnippetsController(IContentManager contentManager, ISession session, AiIntegrationService aiService)
+public class SnippetsController(IContentManager contentManager, ISession session, AiIntegrationService aiService, IGitService gitService, IProjectManager projectManager)
     : Controller
 {
     public async Task<IActionResult> Index(string query)
@@ -54,6 +55,7 @@ public class SnippetsController(IContentManager contentManager, ISession session
     {
         var model = new SnippetViewModel();
         await PopulatePatternsAsync(model);
+        await PopulateProjectsAsync(model);
         return View(model);
     }
 
@@ -77,6 +79,8 @@ public class SnippetsController(IContentManager contentManager, ISession session
                 part.ProjectName = model.ProjectName;
                 part.RelatedPatternId = model.RelatedPatternId;
                 part.Documentation = model.Description;
+                part.GitRelativePath = model.GitRelativePath;
+                part.LastCommitHash = model.LastCommitHash;
                 
                 if (!string.IsNullOrWhiteSpace(model.Tags))
                 {
@@ -100,14 +104,24 @@ public class SnippetsController(IContentManager contentManager, ISession session
                         part.RelatedSnippetIds.Add(contentItem.ContentItemId);
                     }
                 });
-                await contentManager.UpdateAsync(pattern);
-                await contentManager.PublishAsync(pattern);
+                if (pattern != null)
+                {
+                    pattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
+                        if (!part.RelatedSnippetIds.Contains(contentItem.ContentItemId))
+                        {
+                            part.RelatedSnippetIds.Add(contentItem.ContentItemId);
+                        }
+                    });
+                    await contentManager.UpdateAsync(pattern);
+                    await contentManager.PublishAsync(pattern);
+                }
             }
 
             return RedirectToAction(nameof(Index));
         }
         
         await PopulatePatternsAsync(model);
+        await PopulateProjectsAsync(model);
         return View(model);
     }
 
@@ -144,10 +158,13 @@ public class SnippetsController(IContentManager contentManager, ISession session
             ProjectName = part?.ProjectName,
             RelatedPatternId = part?.RelatedPatternId,
             Description = part?.Documentation,
+            GitRelativePath = part?.GitRelativePath,
+            LastCommitHash = part?.LastCommitHash,
             Tags = part?.Tags != null ? string.Join(", ", part.Tags) : string.Empty
         };
 
         await PopulatePatternsAsync(model);
+        await PopulateProjectsAsync(model);
         return View(model);
     }
 
@@ -177,6 +194,8 @@ public class SnippetsController(IContentManager contentManager, ISession session
             part.ProjectName = model.ProjectName;
             part.RelatedPatternId = model.RelatedPatternId;
             part.Documentation = model.Description;
+            part.GitRelativePath = model.GitRelativePath;
+            part.LastCommitHash = model.LastCommitHash;
             
             if (!string.IsNullOrWhiteSpace(model.Tags))
             {
@@ -193,8 +212,8 @@ public class SnippetsController(IContentManager contentManager, ISession session
         await contentManager.UpdateAsync(contentItem);
         await contentManager.PublishAsync(contentItem);
         
-        // Handle bidirectional updates
-        if (oldPatternId == model.RelatedPatternId) return RedirectToAction(nameof(Index));
+        // Handle bidirectional updates ONLY if it changed
+        if (oldPatternId != model.RelatedPatternId)
         {
             // Remove from old pattern if exists
             if (!string.IsNullOrEmpty(oldPatternId))
@@ -212,24 +231,77 @@ public class SnippetsController(IContentManager contentManager, ISession session
             }
             
             // Add to new pattern if exists
-            if (string.IsNullOrEmpty(model.RelatedPatternId)) return RedirectToAction(nameof(Index));
+            if (!string.IsNullOrEmpty(model.RelatedPatternId))
             {
                 var newPattern = await contentManager.GetAsync(model.RelatedPatternId, VersionOptions.DraftRequired);
-                if (newPattern == null) return RedirectToAction(nameof(Index));
-                newPattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
-                    if (!part.RelatedSnippetIds.Contains(contentItem.ContentItemId))
-                    {
-                        part.RelatedSnippetIds.Add(contentItem.ContentItemId);
-                    }
-                });
-                await contentManager.UpdateAsync(newPattern);
-                await contentManager.PublishAsync(newPattern);
+                if (newPattern != null)
+                {
+                    newPattern.Alter<ArchitecturalPatternPart>("ArchitecturalPatternPart", part => {
+                        if (!part.RelatedSnippetIds.Contains(contentItem.ContentItemId))
+                        {
+                            part.RelatedSnippetIds.Add(contentItem.ContentItemId);
+                        }
+                    });
+                    await contentManager.UpdateAsync(newPattern);
+                    await contentManager.PublishAsync(newPattern);
+                }
             }
         }
 
+        TempData["SuccessMessage"] = "Snippet updated successfully.";
         return RedirectToAction(nameof(Index));
     }
     
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PushToGit(string id)
+    {
+        var contentItem = await contentManager.GetAsync(id);
+        if (contentItem == null) return NotFound();
+
+        var part = contentItem.As<CodeSnippetPart>();
+        if (part == null || string.IsNullOrEmpty(part.GitRelativePath))
+        {
+            TempData["ErrorMessage"] = "Git path is not configured for this snippet.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        // Find the project associated with this snippet
+        var allProjects = await projectManager.GetAllProjectsAsync();
+        var project = allProjects.FirstOrDefault(p => p.Name == part.ProjectName);
+        
+        if (project == null || !project.IsGitActive || string.IsNullOrEmpty(project.GitLocalPath))
+        {
+            TempData["ErrorMessage"] = "Git sync is not active for the associated project.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        var message = $"Snippet Update: {contentItem.DisplayText}";
+        var hash = await gitService.CommitAndPushAsync(
+            project.GitLocalPath, 
+            part.GitRelativePath, 
+            part.Code, 
+            message, 
+            "Compost Assistant", 
+            "assistant@compost.net");
+
+        if (!string.IsNullOrEmpty(hash))
+        {
+            part.LastCommitHash = hash;
+            contentItem.Apply(nameof(CodeSnippetPart), part);
+            await contentManager.UpdateAsync(contentItem);
+            await contentManager.PublishAsync(contentItem);
+            
+            TempData["SuccessMessage"] = $"Successfully pushed to repository. Commit: {hash.Substring(0, 8)}";
+        }
+        else
+        {
+            TempData["ErrorMessage"] = "Failed to push to repository. Check logs.";
+        }
+
+        return RedirectToAction(nameof(Edit), new { id });
+    }
+
     public async Task<IActionResult> Delete(string id)
     {
         var contentItem = await contentManager.GetAsync(id, VersionOptions.Latest);
@@ -329,6 +401,12 @@ public class SnippetsController(IContentManager contentManager, ISession session
     {
         var patterns = await session.Query<ContentItem, ContentItemIndex>(x => x.ContentType == "ArchitecturalPattern" && x.Published).ListAsync();
         model.AvailablePatterns = patterns.ToDictionary(p => p.ContentItemId, p => p.DisplayText ?? "Untitled Pattern");
+    }
+
+    private async Task PopulateProjectsAsync(SnippetViewModel model)
+    {
+        var projects = await projectManager.GetAllProjectsAsync();
+        model.AvailableProjects = projects.ToDictionary(p => p.Name, p => p.Name);
     }
 }
 

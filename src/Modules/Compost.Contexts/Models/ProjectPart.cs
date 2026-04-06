@@ -92,6 +92,24 @@ public class ProjectPart : ContentPart
     /// </summary>
     [JsonInclude]
     public string Status { get; set; } = "To Do";
+
+    /// <summary>
+    /// Local path where the Git repository is cloned
+    /// </summary>
+    [JsonInclude]
+    public string? GitLocalPath { get; set; }
+
+    /// <summary>
+    /// Is Git integration active for this project
+    /// </summary>
+    [JsonInclude]
+    public bool IsGitActive { get; set; }
+
+    /// <summary>
+    /// Date and time of last sync with remote
+    /// </summary>
+    [JsonInclude]
+    public DateTime? LastSyncAt { get; set; }
 }
 
 /// <summary>

@@ -105,6 +105,21 @@ public class Project
     /// Current status of the project (e.g., "To Do", "In Progress", "Done", "Blocked")
     /// </summary>
     public string Status { get; set; } = "To Do";
+
+    /// <summary>
+    /// Local path where the Git repository is cloned
+    /// </summary>
+    public string? GitLocalPath { get; set; }
+
+    /// <summary>
+    /// Is Git integration active for this project
+    /// </summary>
+    public bool IsGitActive { get; set; }
+
+    /// <summary>
+    /// Last sync date with remote
+    /// </summary>
+    public DateTime? LastSyncAt { get; set; }
 }
 
 /// <summary>

@@ -5,6 +5,7 @@ using Compost.Contexts.Models;
 using Compost.Contexts.Navigation;
 using Compost.Contexts.Services;
 using Compost.Core.Interfaces;
+using Compost.Core.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,8 @@ using OrchardCore.Data;
 using OrchardCore.Data.Migration;
 using OrchardCore.Modules;
 using OrchardCore.Navigation;
+using OrchardCore.BackgroundTasks;
+using Compost.Contexts.Tasks;
 
 namespace Compost.Contexts;
 
@@ -32,6 +35,7 @@ public class Startup : StartupBase
         services.AddScoped<IProjectManager, ProjectManager>();
         services.AddScoped<ITimeTrackingService, TimeTrackingService>();
         services.AddScoped<ITemplateService, TemplateService>();
+        services.AddScoped<IGitService, GitService>();
 
         // Register migrations
         services.AddScoped<IDataMigration, ContextMigrations>();
@@ -41,6 +45,9 @@ public class Startup : StartupBase
 
         // Register navigation
         services.AddScoped<INavigationProvider, AdminMenu>();
+
+        // Register background tasks
+        services.AddSingleton<IBackgroundTask, GitSyncBackgroundTask>();
     }
 
     public override void Configure(IApplicationBuilder builder, IEndpointRouteBuilder routes, IServiceProvider serviceProvider)

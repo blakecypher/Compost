@@ -39,6 +39,12 @@ public class CreateContextViewModel
 
     [Display(Name = nameof(Status))]
     public string Status { get; set; } = "To Do";
+
+    [Display(Name = "Local Git Path")]
+    public string? GitLocalPath { get; set; }
+
+    [Display(Name = "Enable Git Sync")]
+    public bool IsGitActive { get; set; }
 }
 
 public class EditContextViewModel
@@ -73,6 +79,14 @@ public class EditContextViewModel
 
     [Display(Name = nameof(Status))]
     public string Status { get; set; } = "To Do";
+
+    [Display(Name = "Local Git Path")]
+    public string? GitLocalPath { get; set; }
+
+    [Display(Name = "Enable Git Sync")]
+    public bool IsGitActive { get; set; }
+
+    public DateTime? LastSyncAt { get; set; }
 
     public bool IsActive { get; set; }
     public long TotalTimeSpentSeconds { get; set; }

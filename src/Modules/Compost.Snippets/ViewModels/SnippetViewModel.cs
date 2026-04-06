@@ -14,7 +14,13 @@ public class SnippetViewModel
     public string Tags { get; set; } // Comma separated for editing
     public string ProjectName { get; set; }
     public string RelatedPatternId { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Display(Name = "Git Relative Path")]
+    public string? GitRelativePath { get; set; }
+
+    public string? LastCommitHash { get; set; }
     
     // For SelectList in view
     public Dictionary<string, string> AvailablePatterns { get; set; } = new();
+    public Dictionary<string, string> AvailableProjects { get; set; } = new();
 }

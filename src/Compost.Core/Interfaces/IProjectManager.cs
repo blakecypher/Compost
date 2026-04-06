@@ -25,7 +25,7 @@ public interface IProjectManager
     /// <summary>
     /// Create a new project
     /// </summary>
-    Task<Project> CreateProjectAsync(string name, string? description = null, string? repositoryName = null, string? repositoryUrl = null, string? currentBranch = null, List<string>? tags = null, string status = "To Do", string? parentProjectId = null, int displayOrder = 0);
+    Task<Project> CreateProjectAsync(string name, string? description = null, string? repositoryName = null, string? repositoryUrl = null, string? currentBranch = null, List<string>? tags = null, string status = "To Do", string? parentProjectId = null, int displayOrder = 0, string? gitLocalPath = null, bool isGitActive = false);
 
     /// <summary>
     /// Switch to a different project

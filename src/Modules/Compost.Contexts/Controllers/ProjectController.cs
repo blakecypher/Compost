@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Compost.Contexts.Controllers;
 
-public class ProjectController(IProjectManager projectManager, ITimeTrackingService timeTrackingService)
+public class ProjectController(IProjectManager projectManager, ITimeTrackingService timeTrackingService, IGitService gitService)
     : Controller
 {
     public async Task<IActionResult> Index()
@@ -77,7 +77,9 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             tags,
             model.Status,
             model.ParentContextId,
-            model.DisplayOrder
+            model.DisplayOrder,
+            model.GitLocalPath,
+            model.IsGitActive
         );
         
         TempData["SuccessMessage"] = $"Project '{model.Name}' created successfully.";
@@ -108,6 +110,9 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             DisplayOrder = project.DisplayOrder,
             Status = project.Status,
             IsActive = project.IsActive,
+            GitLocalPath = project.GitLocalPath,
+            IsGitActive = project.IsGitActive,
+            LastSyncAt = project.LastSyncAt,
             TotalTimeSpentSeconds = project.TotalTimeSpentSeconds,
             CurrentSessionStartedAt = project.CurrentSessionStartedAt,
             TestingSteps = project.TestingSteps,
@@ -152,13 +157,15 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
         context.DisplayOrder = model.DisplayOrder;
         context.Status = model.Status;
         context.IsActive = model.IsActive;
+        context.GitLocalPath = model.GitLocalPath;
+        context.IsGitActive = model.IsGitActive;
         
         Console.WriteLine($"[DEBUG] Edit POST - Project before save: RepoName='{context.RepositoryName}', Tags='{string.Join(",", context.Tags ?? [])}'");
 
         await projectManager.UpdateProjectAsync(context);
         
         TempData["SuccessMessage"] = $"Project '{model.Name}' updated successfully.";
-        return RedirectToAction(nameof(List));
+        return RedirectToAction(nameof(TreeView));
     }
 
     [HttpPost]
@@ -246,6 +253,35 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Sync(string id)
+    {
+        var project = await projectManager.GetProjectByIdAsync(id);
+        if (project == null) return NotFound();
+
+        if (!project.IsGitActive || string.IsNullOrEmpty(project.GitLocalPath))
+        {
+            TempData["ErrorMessage"] = "Git sync is not configured for this project.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        var success = await gitService.PullAsync(project.GitLocalPath);
+        if (success)
+        {
+            project.LastSyncAt = DateTime.UtcNow;
+            await projectManager.UpdateProjectAsync(project);
+            TempData["SuccessMessage"] = "Successfully synchronized with remote repository.";
+        }
+        else
+        {
+            TempData["ErrorMessage"] = "Failed to sync with remote repository. Check logs.";
+        }
+
+        return RedirectToAction(nameof(Edit), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ResolveQuestion(string projectId, string questionId, string answer)
     {
         if (!string.IsNullOrWhiteSpace(answer))

@@ -41,4 +41,14 @@ public class CodeSnippetPart : ContentPart
     /// Reference to a related architectural pattern
     /// </summary>
     public string? RelatedPatternId { get; set; }
+
+    /// <summary>
+    /// Relative path within the Git repository
+    /// </summary>
+    public string? GitRelativePath { get; set; }
+
+    /// <summary>
+    /// Last commit hash when this snippet was synced
+    /// </summary>
+    public string? LastCommitHash { get; set; }
 }

@@ -55,11 +55,11 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
         return MapToWorkProject(contentItem);
     }
 
-    public async Task<Project> CreateProjectAsync(string name, string? description = null, string? repositoryName = null, string? repositoryUrl = null, string? currentBranch = null, List<string>? tags = null, string status = "To Do", string? parentProjectId = null, int displayOrder = 0)
+    public async Task<Project> CreateProjectAsync(string name, string? description = null, string? repositoryName = null, string? repositoryUrl = null, string? currentBranch = null, List<string>? tags = null, string status = "To Do", string? parentProjectId = null, int displayOrder = 0, string? gitLocalPath = null, bool isGitActive = false)
     {
         logger.LogInformation("=== CreateProjectAsync START ===");
-        logger.LogInformation("Creating context: Name={Name}, RepoName={RepoName}, RepoUrl={RepoUrl}, Branch={Branch}, ParentId={ParentId}, DisplayOrder={DisplayOrder}, Tags=[{Tags}]", 
-            name, repositoryName, repositoryUrl, currentBranch, parentProjectId, displayOrder, string.Join(", ", tags ??
+        logger.LogInformation("Creating context: Name={Name}, RepoName={RepoName}, RepoUrl={RepoUrl}, Branch={Branch}, ParentId={ParentId}, DisplayOrder={DisplayOrder}, GitLocalPath={GitPath}, IsGitActive={IsGitActive}, Tags=[{Tags}]", 
+            name, repositoryName, repositoryUrl, currentBranch, parentProjectId, displayOrder, gitLocalPath, isGitActive, string.Join(", ", tags ??
                 []));
         
         var contentItem = await contentManager.NewAsync(nameof(Project));
@@ -78,12 +78,14 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
             part.ParentProjectId = parentProjectId;
             part.DisplayOrder = displayOrder;
             part.Status = status;
+            part.GitLocalPath = gitLocalPath;
+            part.IsGitActive = isGitActive;
             
             // CRITICAL: Apply the part to ensure it's serialized to Content
             contentItem.Apply(nameof(ProjectPart), part);
             
-            logger.LogInformation("Part values set: RepoName='{RepoName}', RepoUrl='{RepoUrl}', Branch='{Branch}', ParentId='{ParentId}', DisplayOrder={DisplayOrder}, Tags=[{Tags}]",
-                part.RepositoryName, part.RepositoryUrl, part.CurrentBranch, part.ParentProjectId, part.DisplayOrder, string.Join(", ", part.Tags));
+            logger.LogInformation("Part values set: RepoName='{RepoName}', RepoUrl='{RepoUrl}', Branch='{Branch}', ParentId='{ParentId}', DisplayOrder={DisplayOrder}, GitLocalPath='{GitPath}', IsGitActive={IsGitActive}, Tags=[{Tags}]",
+                part.RepositoryName, part.RepositoryUrl, part.CurrentBranch, part.ParentProjectId, part.DisplayOrder, part.GitLocalPath, part.IsGitActive, string.Join(", ", part.Tags));
         }
         else
         {
@@ -187,6 +189,9 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
             part.TestingSteps = context.TestingSteps;
             part.IsActive = context.IsActive;
             part.Status = context.Status;
+            part.GitLocalPath = context.GitLocalPath;
+            part.IsGitActive = context.IsGitActive;
+            part.LastSyncAt = context.LastSyncAt;
             if (context.Notes != null)
                 part.Notes = context.Notes;
             
@@ -346,6 +351,9 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
             ParentProjectId = part?.ParentProjectId,
             DisplayOrder = part?.DisplayOrder ?? 0,
             Status = part?.Status ?? "To Do",
+            GitLocalPath = part?.GitLocalPath,
+            IsGitActive = part?.IsGitActive ?? false,
+            LastSyncAt = part?.LastSyncAt,
             CreatedAt = contentItem.CreatedUtc ?? DateTime.UtcNow,
             LastAccessedAt = contentItem.ModifiedUtc ?? DateTime.UtcNow
         };
