@@ -11,38 +11,26 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
 {
     public async Task<IActionResult> Index()
     {
-        var projects = await projectManager.GetAllProjectsAsync();
-        var activeProject = await projectManager.GetActiveProjectAsync();
-        
-        var viewModel = new ContextListViewModel
-        {
-            Contexts = projects.Select(p => new Project
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                RepositoryName = p.RepositoryName,
-                RepositoryUrl = p.RepositoryUrl,
-                CurrentBranch = p.CurrentBranch,
-                Tags = p.Tags,
-                ParentProjectId = p.ParentProjectId,
-                DisplayOrder = p.DisplayOrder,
-                Status = p.Status,
-                IsActive = p.IsActive,
-                TotalTimeSpentSeconds = p.TotalTimeSpentSeconds,
-                TestingSteps = p.TestingSteps,
-                OpenQuestions = p.OpenQuestions,
-                CreatedAt = p.CreatedAt,
-                LastAccessedAt = p.LastAccessedAt,
-                CurrentSessionStartedAt = p.CurrentSessionStartedAt
-            }).ToList(),
-            ActiveContextId = activeProject?.Id
-        };
-
-        // Redirect to TreeView as the main interface
-        return RedirectToAction(nameof(TreeView));
+        return RedirectToAction(nameof(GitDashboard));
     }
 
+    public async Task<IActionResult> GitDashboard()
+    {
+        var projects = await projectManager.GetAllProjectsAsync();
+        var gitProjects = projects.Where(p => p.IsGitActive).ToList();
+        
+        var statusList = new List<(Project Project, GitStatus Status)>();
+        foreach (var project in gitProjects)
+        {
+            if (!string.IsNullOrEmpty(project.GitLocalPath))
+            {
+                var status = gitService.GetRepositoryStatus(project.GitLocalPath);
+                statusList.Add((project, status));
+            }
+        }
+        
+        return View("../Context/GitDashboard", statusList);
+    }
     public IActionResult List()
     {
         // Redirect to TreeView as it's now the primary interface
@@ -110,6 +98,7 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             DisplayOrder = project.DisplayOrder,
             Status = project.Status,
             IsActive = project.IsActive,
+            IsRepositoryPresent = !string.IsNullOrEmpty(project.GitLocalPath) && gitService.IsRepositoryValid(project.GitLocalPath),
             GitLocalPath = project.GitLocalPath,
             IsGitActive = project.IsGitActive,
             LastSyncAt = project.LastSyncAt,
@@ -257,24 +246,63 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
     public async Task<IActionResult> Sync(string id)
     {
         var project = await projectManager.GetProjectByIdAsync(id);
-        if (project == null) return NotFound();
-
-        if (!project.IsGitActive || string.IsNullOrEmpty(project.GitLocalPath))
+        if (project == null || !project.IsGitActive || string.IsNullOrEmpty(project.GitLocalPath))
         {
-            TempData["ErrorMessage"] = "Git sync is not configured for this project.";
+            TempData["ErrorMessage"] = "Git sync is not active for this project.";
             return RedirectToAction(nameof(Edit), new { id });
         }
 
-        var success = await gitService.PullAsync(project.GitLocalPath);
-        if (success)
+        try
         {
-            project.LastSyncAt = DateTime.UtcNow;
-            await projectManager.UpdateProjectAsync(project);
-            TempData["SuccessMessage"] = "Successfully synchronized with remote repository.";
+            var result = await gitService.PullAsync(project.GitLocalPath);
+            if (result)
+            {
+                project.LastSyncAt = DateTime.UtcNow;
+                await projectManager.UpdateProjectAsync(project);
+                TempData["SuccessMessage"] = "Successfully synced with remote repository.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Sync failed. Check if remote exists and credentials are valid.";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            TempData["ErrorMessage"] = "Failed to sync with remote repository. Check logs.";
+            TempData["ErrorMessage"] = $"Sync error: {ex.Message}";
+        }
+
+        return RedirectToAction(nameof(Edit), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Clone(string id)
+    {
+        var project = await projectManager.GetProjectByIdAsync(id);
+        if (project == null || string.IsNullOrEmpty(project.RepositoryUrl) || string.IsNullOrEmpty(project.GitLocalPath))
+        {
+            TempData["ErrorMessage"] = "Repository URL or local path missing.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        try
+        {
+            var result = await gitService.CloneAsync(project.RepositoryUrl, project.GitLocalPath, project.CurrentBranch);
+            if (result)
+            {
+                project.IsGitActive = true;
+                project.LastSyncAt = DateTime.UtcNow;
+                await projectManager.UpdateProjectAsync(project);
+                TempData["SuccessMessage"] = "Successfully cloned repository.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Clone failed. Directory might not be empty or remote is unreachable.";
+            }
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Clone error: {ex.Message}";
         }
 
         return RedirectToAction(nameof(Edit), new { id });
@@ -348,4 +376,33 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
         }
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SyncAll()
+    {
+        var projects = await projectManager.GetAllProjectsAsync();
+        var gitProjects = projects.Where(p => p.IsGitActive && !string.IsNullOrEmpty(p.GitLocalPath)).ToList();
+        
+        int successCount = 0;
+        int failCount = 0;
+        
+        foreach (var project in gitProjects)
+        {
+            try
+            {
+                var result = await gitService.PullAsync(project.GitLocalPath);
+                if (result)
+                {
+                    project.LastSyncAt = DateTime.UtcNow;
+                    await projectManager.UpdateProjectAsync(project);
+                    successCount++;
+                }
+                else failCount++;
+            }
+            catch { failCount++; }
+        }
+        
+        TempData["SuccessMessage"] = $"Sync complete. Success: {successCount}, Failed: {failCount}";
+        return RedirectToAction(nameof(GitDashboard));
+    }
 }

@@ -121,16 +121,33 @@ public class GitService(ILogger<GitService> logger) : IGitService
         }
     }
 
-    public string? GetCurrentCommitHash(string localPath)
+    public GitStatus GetRepositoryStatus(string localPath)
     {
         try
         {
+            if (!IsRepositoryValid(localPath)) return new GitStatus { Branch = "Not a Repository" };
+            
             using var repo = new Repository(localPath);
-            return repo.Head.Tip.Sha;
+            var status = new GitStatus
+            {
+                Branch = repo.Head.FriendlyName,
+                CommitHash = repo.Head.Tip.Sha,
+                HasUncommittedChanges = repo.RetrieveStatus().IsDirty
+            };
+
+            // Calculate ahead/behind if tracking a remote branch
+            if (repo.Head.TrackingDetails != null)
+            {
+                status.Ahead = repo.Head.TrackingDetails.AheadBy ?? 0;
+                status.Behind = repo.Head.TrackingDetails.BehindBy ?? 0;
+            }
+
+            return status;
         }
-        catch
+        catch (Exception ex)
         {
-            return null;
+            logger.LogError(ex, "Failed to get repository status for {LocalPath}", localPath);
+            return new GitStatus { Branch = "Error" };
         }
     }
 

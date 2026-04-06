@@ -89,6 +89,7 @@ public class EditContextViewModel
     public DateTime? LastSyncAt { get; set; }
 
     public bool IsActive { get; set; }
+    public bool IsRepositoryPresent { get; set; }
     public long TotalTimeSpentSeconds { get; set; }
     public DateTime? CurrentSessionStartedAt { get; set; }
     public List<string> TestingSteps { get; set; } = [];

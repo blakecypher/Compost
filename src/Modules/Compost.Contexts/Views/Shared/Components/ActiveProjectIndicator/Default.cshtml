@@ -15,6 +15,23 @@
         <span class="indicator-text">
             <i class="fas fa-play-circle"></i>
             <span class="d-none d-lg-inline">@Model.Name</span>
+            @{
+                var gitStatus = ViewData["GitStatus"] as Compost.Core.Interfaces.GitStatus;
+            }
+            @if (gitStatus != null)
+            {
+                <span class="ms-1" style="opacity: 0.8; font-size: 0.85em;">
+                    <i class="fab fa-git-alt mx-1 @(gitStatus.HasUncommittedChanges ? "text-warning" : "")"></i>@gitStatus.Branch
+                    @if (gitStatus.Ahead > 0)
+                    {
+                        <i class="fas fa-arrow-up text-success ms-1"></i>@gitStatus.Ahead
+                    }
+                    @if (gitStatus.Behind > 0)
+                    {
+                        <i class="fas fa-arrow-down text-danger ms-1"></i>@gitStatus.Behind
+                    }
+                </span>
+            }
             <span class="indicator-time">@timeDisplay</span>
         </span>
     </a>

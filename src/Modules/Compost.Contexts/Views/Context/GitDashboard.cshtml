@@ -1,0 +1,111 @@
+@using Compost.Core.Models
+@using Compost.Core.Interfaces
+@model List<(Project Project, GitStatus Status)>
+
+@{
+    ViewBag.Title = "Git Dashboard";
+}
+
+<div class="row align-items-center mb-4">
+    <div class="col-md-6">
+        <h1 class="text-theme-contexts">
+            <i class="fab fa-git-alt me-2"></i>Git Dashboard
+        </h1>
+        <p class="text-muted">Repository status and synchronization for all Git-enabled projects.</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <form asp-action="SyncAll" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-theme-contexts">
+                <i class="fas fa-sync-alt me-1"></i> Sync All Projects
+            </button>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card shadow-sm text-center py-5">
+        <div class="card-body">
+            <i class="fas fa-code-branch fa-3x mb-3 text-muted"></i>
+            <h4>No Git-Enabled Projects</h4>
+            <p class="text-muted">Enable Git sync in your project settings to see them here.</p>
+            <a asp-action="TreeView" class="btn btn-outline-theme-contexts">
+                <i class="fas fa-sitemap me-1"></i> Go to Projects
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var item in Model)
+        {
+            var project = item.Project;
+            var status = item.Status;
+            
+            <div class="col-lg-6 col-xl-4">
+                <div class="card h-100 project-enhanced-card border-top-theme">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="fw-bold mb-0">@project.Name</h5>
+                                <p class="text-muted small mb-0">@project.GitLocalPath</p>
+                            </div>
+                            <div class="badge @(status.HasUncommittedChanges ? "bg-warning text-dark" : "bg-success")">
+                                @(status.HasUncommittedChanges ? "Dirty" : "Clean")
+                            </div>
+                        </div>
+
+                        <div class="repo-stats bg-light p-3 rounded mb-3">
+                            <div class="row text-center">
+                                <div class="col-4 border-end">
+                                    <div class="small fw-bold text-muted">Branch</div>
+                                    <div class="text-truncate">@status.Branch</div>
+                                </div>
+                                <div class="col-4 border-end">
+                                    <div class="small fw-bold text-muted text-success">Ahead</div>
+                                    <div class="fs-5">@status.Ahead</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="small fw-bold text-muted text-danger">Behind</div>
+                                    <div class="fs-5">@status.Behind</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="small text-muted mb-1">Current Commit</div>
+                            <code class="d-block p-1 bg-light border rounded">@status.CommitHash.Substring(0, Math.Min(12, status.CommitHash.Length))</code>
+                        </div>
+
+                        @if (project.LastSyncAt.HasValue)
+                        {
+                            <div class="small text-muted mb-3">
+                                <i class="fas fa-history me-1"></i>Last Sync: @project.LastSyncAt.Value.ToLocalTime().ToString("g")
+                            </div>
+                        }
+
+                        <div class="d-grid gap-2">
+                            <form asp-action="Sync" asp-route-id="@project.Id" method="post" class="d-grid">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-theme-contexts">
+                                    <i class="fas fa-sync-alt me-1"></i> Sync Now
+                                </button>
+                            </form>
+                            <a asp-action="Edit" asp-route-id="@project.Id" class="btn btn-light btn-sm mt-1">
+                                <i class="fas fa-cog me-1"></i> Git Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .border-top-theme {
+        border-top: 4px solid var(--theme-contexts) !important;
+    }
+</style>

@@ -28,7 +28,16 @@ public interface IGitService
     bool IsRepositoryValid(string localPath);
 
     /// <summary>
-    /// Gets the current commit hash of the local repository
+    /// Gets the status of the local repository (ahead/behind remote)
     /// </summary>
-    string? GetCurrentCommitHash(string localPath);
+    GitStatus GetRepositoryStatus(string localPath);
+}
+
+public class GitStatus
+{
+    public string Branch { get; set; } = string.Empty;
+    public string CommitHash { get; set; } = string.Empty;
+    public int Ahead { get; set; }
+    public int Behind { get; set; }
+    public bool HasUncommittedChanges { get; set; }
 }
