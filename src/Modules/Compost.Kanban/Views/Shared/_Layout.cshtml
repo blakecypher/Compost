@@ -22,7 +22,7 @@
         .sidebar { 
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease; 
             width: 260px;
-            overflow-x: hidden;
+            /* overflow-x replaced for sticky support */
             background-color: var(--bs-body-bg) !important; 
             border-right: 1px solid var(--bs-border-color) !important;
             z-index: 100;
@@ -121,6 +121,7 @@
             --theme-transcription: #68a073;
             --theme-snippets: #943a3a;
             --theme-patterns: #6629d9;
+            --bg-gradient-card: linear-gradient(135deg, #ebebeb 0%, #e1e1e1 50%, #ebebeb 100%);
         }
         /* Module Theme Variables - Dark */
         [data-bs-theme="dark"] {
@@ -131,24 +132,58 @@
             --theme-transcription: #68a073;
             --theme-snippets: #943a3a;
             --theme-patterns: #6629d9;
+            --bg-gradient-card: var(--bg-card, #212529);
         }
         /* Module Theme Utilities */
         .bg-theme-dashboard    { background-color: var(--theme-dashboard) !important; }
         .bg-theme-contexts     { background-color: var(--theme-contexts) !important; }
         .bg-theme-mindmaps     { background-color: var(--theme-mindmaps) !important; }
-        .bg-theme-kanban       { background-color: var(--theme-kanban) !important; }
+        [data-bs-theme="dark"] .card { background-color: #212529; border-color: #373b3e; }
         .bg-theme-transcription { background-color: var(--theme-transcription) !important; }
         .bg-theme-snippets     { background-color: var(--theme-snippets) !important; }
         .bg-theme-patterns     { background-color: var(--theme-patterns) !important; }
         .text-on-theme-dashboard, .text-on-theme-contexts, .text-on-theme-mindmaps,
         .text-on-theme-transcription, .text-on-theme-snippets, .text-on-theme-patterns { color: #fff !important; }
         .text-on-theme-kanban { color: #212529 !important; }
+        /* Dark Mode Sidebar Nav Color Reset */
+        [data-bs-theme="dark"] .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            box-shadow: none !important;
+        }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-dashboard { color: var(--theme-dashboard, #198754) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-contexts { color: var(--theme-contexts, #6629d9) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-mindmaps { color: var(--theme-mindmaps, #ff6b35) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-kanban { color: var(--theme-kanban, #ffc107) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-transcription { color: var(--theme-transcription, #68a073) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-snippets { color: var(--theme-snippets, #943a3a) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-patterns { color: var(--theme-patterns, #6629d9) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-primary { color: var(--bs-primary, #0d6efd) !important; }
+        
+        .sidebar .nav-link.active i, .sidebar .nav-link:hover i {
+            color: inherit !important;
+        }
+        /* h1 Color Strip & Icon Retention */
+        h1.text-theme-dashboard, h1.text-theme-contexts, h1.text-theme-mindmaps, 
+        h1.text-theme-kanban, h1.text-theme-transcription, h1.text-theme-snippets, 
+        h1.text-theme-patterns, h1.text-primary, h1.text-transcription, h1.text-success, h1.text-danger { 
+            color: var(--bs-body-color) !important; 
+        }
+        h1.text-theme-dashboard i { color: var(--theme-dashboard, #198754) !important; }
+        h1.text-theme-contexts i { color: var(--theme-contexts, #6629d9) !important; }
+        h1.text-theme-mindmaps i { color: var(--theme-mindmaps, #ff6b35) !important; }
+        h1.text-theme-kanban i { color: var(--theme-kanban, #ffc107) !important; }
+        h1.text-theme-transcription i, h1.text-transcription i { color: var(--theme-transcription, #68a073) !important; }
+        h1.text-theme-snippets i { color: var(--theme-snippets, #f87171) !important; }
+        h1.text-theme-patterns i { color: var(--theme-patterns, #a855f7) !important; }
+        h1.text-primary i { color: var(--bs-primary, #0d6efd) !important; }
+        h1.text-success i { color: var(--bs-success, #198754) !important; }
+        h1.text-danger i { color: var(--bs-danger, #dc3545) !important; }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="bg-body-tertiary">
     <script>document.body.classList.add('css-loaded');</script>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm sticky-top" style="z-index: 1040;">
         <div class="container-fluid">
             <div class="d-flex align-items-center">
                 <button id="sidebarToggle" title="Toggle Sidebar">

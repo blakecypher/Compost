@@ -122,11 +122,11 @@ class CompostMindMap {
 
     getThemedStyle(isDark) {
         const primaryColor = isDark ? '#ff6b35' : '#2563eb';
-        const nodeBg = isDark ? '#2d2d2d' : '#f8fafc';
+        const nodeBg = isDark ? '#2d2d2d' : '#f5f7fa';
         const nodeText = isDark ? '#ffffff' : '#1e293b';
-        const edgeColor = isDark ? '#444444' : '#cbd5e1';
+        const edgeColor = isDark ? '#444444' : '#b8c4d4';
         const shadowColor = isDark ? 'rgba(255, 107, 53, 0.4)' : 'rgba(37, 99, 235, 0.2)';
-        const outlineColor = isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)';
+        const outlineColor = isDark ? 'rgba(0,0,0,0.8)' : 'rgba(245,247,250,0.9)';
 
         return [
             // Base node style
@@ -1026,7 +1026,7 @@ class CompostMindMap {
         const isDark = this.isDarkMode();
         const png = this.cy.png({
             output: 'blob',
-            bg: isDark ? '#0f172a' : '#ffffff',
+            bg: isDark ? '#0f172a' : '#f5f7fa',
             full: true,
             scale: 2
         });

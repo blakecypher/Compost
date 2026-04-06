@@ -11,17 +11,18 @@
     --danger-color: #dc2626;
     --info-color: #0891b2;
     
-    /* Background Colors */
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8fafc;
-    --bg-tertiary: #f1f5f9;
-    --bg-card: #ffffff;
+    /* Background Colors - muted, reduced brightness */
+    --bg-primary: #e8ecf2;
+    --bg-secondary: #dde2ea;
+    --bg-tertiary: #d2d9e4;
+    --bg-card: #bdc5cf;
+    --bg-gradient-card: linear-gradient(135deg, #ebebeb 0%, #e1e1e1 50%, #ebebeb 100%);
     --bg-overlay: rgba(0, 0, 0, 0.5);
     
-    /* Text Colors */
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --text-muted: #94a3b8;
+    /* Text Colors - darkened for higher contrast */
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #4b5563;
     --text-inverse: #ffffff;
     
     /* Module Theme Colors - Light Mode */
@@ -33,21 +34,21 @@
     --theme-snippets: #6c757d;        /* Secondary Grey */
     --theme-patterns: #7c3aed;        /* Electric Violet - Highly Vibrant */
     
-    /* Border Colors */
-    --border-light: #e2e8f0;
-    --border-medium: #cbd5e1;
-    --border-dark: #94a3b8;
+    /* Border Colors - stronger for clear element separation */
+    --border-light: #b4bfce;
+    --border-medium: #8f9fb5;
+    --border-dark: #637185;
     
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    /* Shadows - deeper for clear depth on muted backgrounds */
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 2px -1px rgba(0, 0, 0, 0.09);
+    --shadow-md: 0 4px 10px -1px rgba(0, 0, 0, 0.16), 0 2px 6px -1px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0 10px 20px -3px rgba(0, 0, 0, 0.18), 0 4px 8px -2px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 20px 30px -5px rgba(0, 0, 0, 0.20), 0 10px 14px -5px rgba(0, 0, 0, 0.12);
     
     /* Glassmorphism */
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    --glass-bg: rgba(232, 236, 242, 0.88);
+    --glass-border: rgba(143, 159, 181, 0.50);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.22);
     
     /* Spacing */
     --spacing-xs: 0.25rem;
@@ -134,6 +135,7 @@
     --bg-secondary: #1e293b;
     --bg-tertiary: #334155;
     --bg-card: #1e293b;
+    --bg-gradient-card: linear-gradient(135deg, #1f1f1f 0%, #252525 50%, #202020 100%);
     --bg-overlay: rgba(0, 0, 0, 0.7);
     
     --text-primary: #f8fafc;
@@ -233,15 +235,25 @@ a:hover {
 
 /* Navigation */
 .navbar {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-light);
+    /* Light mode: deep slate — same contrast gap as dark mode navbar has against dark pages */
+    background: #2d3a4a;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 2px solid #1e2a38;
     padding: var(--spacing-md) 0;
     position: sticky;
     top: 0;
     z-index: 1000;
     transition: all var(--transition-base);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.28);
+}
+
+[data-bs-theme="dark"] .navbar {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-light);
+    box-shadow: none;
 }
 
 .navbar-brand {
@@ -427,16 +439,37 @@ a:hover {
 /* Cards */
 .card {
     background: var(--bg-card);
-    border: 1px solid var(--border-light);
+    border-top: 4px solid var(--border-light);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
     overflow: hidden;
     transition: all var(--transition-base);
 }
 
+/* ---- Light mode: cards at quarter-point between page and navbar ---- */
+/* Halfway between page (#e8ecf2) and previous midpoint (#9198a2) = #bdc5cf */
+[data-bs-theme="light"] .card,
+:not([data-bs-theme="dark"]) .card {
+    background: #bdc5cf;
+    border-top: 4px solid #8f9fb5;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
+    color: #111827;
+}
+
 .card:hover {
     box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
+}
+
+[data-bs-theme="light"] .card:hover,
+:not([data-bs-theme="dark"]) .card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.26), 0 2px 6px rgba(0,0,0,0.16);
 }
 
 .card-header {
@@ -446,8 +479,65 @@ a:hover {
     font-weight: 600;
 }
 
+/* Card header: slightly darker than card body for depth */
+[data-bs-theme="light"] .card-header,
+:not([data-bs-theme="dark"]) .card-header {
+    background: #a8b0bd;
+    border-bottom: 1px solid #8f9fb5;
+    color: #111827;
+}
+
 .card-body {
     padding: var(--spacing-lg);
+}
+
+/* ---- List Group Items (card items on lister pages) ---- */
+.list-group-item {
+    border-top: 4px solid var(--border-light);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+}
+
+[data-bs-theme="light"] .list-group-item,
+:not([data-bs-theme="dark"]) .list-group-item {
+    border-top: 4px solid #8f9fb5;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+}
+
+/* ---- Bootstrap Modal — same midpoint bg ---- */
+[data-bs-theme="light"] .modal-content,
+:not([data-bs-theme="dark"]) .modal-content {
+    background: #bdc5cf;
+    border: 1px solid #8f9fb5;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+    color: #111827;
+}
+
+[data-bs-theme="light"] .modal-header,
+:not([data-bs-theme="dark"]) .modal-header {
+    background: #a8b0bd;
+    border-bottom: 1px solid #8f9fb5;
+    color: #111827;
+}
+
+[data-bs-theme="light"] .modal-footer,
+:not([data-bs-theme="dark"]) .modal-footer {
+    background: #a8b0bd;
+    border-top: 1px solid #8f9fb5;
+}
+
+/* ============================================================
+   Global Background Utilities (to catch hardcoded views)
+   ============================================================ */
+[data-bs-theme="light"] .bg-white,
+[data-bs-theme="light"] .bg-light,
+:not([data-bs-theme="dark"]) .bg-white,
+:not([data-bs-theme="dark"]) .bg-light {
+    background-color: var(--bg-card) !important;
+    color: #111827 !important;
 }
 
 /* Buttons */
@@ -521,6 +611,27 @@ a:hover {
     transition: all var(--transition-fast);
 }
 
+/* Light mode inputs: lighter than page bg, strong border, clearly interactive */
+[data-bs-theme="light"] .form-control,
+[data-bs-theme="light"] .form-select,
+[data-bs-theme="light"] .form-control-color,
+:not([data-bs-theme="dark"]) .form-control,
+:not([data-bs-theme="dark"]) .form-select {
+    background: #f8f9fc;
+    border: 1px solid #7a8ba0;
+    color: #111827;
+}
+
+[data-bs-theme="light"] .form-control:focus,
+[data-bs-theme="light"] .form-select:focus,
+:not([data-bs-theme="dark"]) .form-control:focus,
+:not([data-bs-theme="dark"]) .form-select:focus {
+    background: #ffffff;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    outline: none;
+}
+
 .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -532,6 +643,47 @@ a:hover {
     margin-bottom: var(--spacing-sm);
     font-weight: 500;
     color: var(--text-primary);
+}
+
+/* ============================================================
+   Bootstrap input override — light mode only
+   Targets all native form controls BS doesn't expose via .form-control
+   ============================================================ */
+[data-bs-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+[data-bs-theme="light"] textarea,
+[data-bs-theme="light"] select,
+[data-bs-theme="light"] .input-group-text,
+:not([data-bs-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not(.btn),
+:not([data-bs-theme="dark"]) textarea,
+:not([data-bs-theme="dark"]) .input-group-text {
+    background-color: #f8f9fc !important;
+    border-color: #7a8ba0 !important;
+    color: #111827 !important;
+}
+
+[data-bs-theme="light"] input:not([type="checkbox"]):not([type="radio"]):focus,
+[data-bs-theme="light"] textarea:focus,
+[data-bs-theme="light"] select:focus,
+:not([data-bs-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]):focus:not(.btn),
+:not([data-bs-theme="dark"]) textarea:focus {
+    background-color: #ffffff !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
+}
+
+/* Input group separator text (e.g. "@" prefix) */
+[data-bs-theme="light"] .input-group-text,
+:not([data-bs-theme="dark"]) .input-group-text {
+    background: #eaecf2 !important;
+    border-color: #7a8ba0 !important;
+    color: #374151 !important;
+}
+
+/* Search / filter boxes (often have .form-control-sm) */
+[data-bs-theme="light"] .form-control-sm,
+:not([data-bs-theme="dark"]) .form-control-sm {
+    border-color: #7a8ba0 !important;
+    background: #f8f9fc !important;
 }
 
 /* Grid System */
@@ -999,6 +1151,191 @@ a:hover {
     font-size: 0.75rem;
 }
 
+/* ============================================================
+   High Contrast Mode — prefers-contrast: more
+   Automatically activates when the OS/browser requests it.
+   Adjusts light theme only (dark mode already has strong contrast).
+   All values meet WCAG AA (minimum 4.5:1 for normal text).
+   ============================================================ */
+@media (prefers-contrast: more) {
+    :root:not([data-bs-theme="dark"]) {
+        /* Flatten backgrounds to near-neutral for max clarity */
+        --bg-primary: #d8dde6;
+        --bg-secondary: #cdd4de;
+        --bg-tertiary: #c1c9d6;
+        --bg-card: #dce0e9;
+
+        /* Push text to near-black for 7:1+ contrast */
+        --text-primary: #0a0f1a;
+        --text-secondary: #1f2937;
+        --text-muted: #374151;
+        --text-inverse: #ffffff;
+
+        /* Saturated borders — visible without relying on shadows */
+        --border-light: #7a8ba0;
+        --border-medium: #5a6b80;
+        --border-dark: #3b4d60;
+
+        /* Crisper, harder shadows */
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.22);
+        --shadow-md: 0 4px 10px -1px rgba(0, 0, 0, 0.28), 0 2px 6px -1px rgba(0, 0, 0, 0.18);
+        --shadow-lg: 0 10px 22px -3px rgba(0, 0, 0, 0.30), 0 4px 10px -2px rgba(0, 0, 0, 0.20);
+        --shadow-xl: 0 20px 32px -5px rgba(0, 0, 0, 0.34), 0 10px 16px -5px rgba(0, 0, 0, 0.22);
+
+        /* Remove translucency from glass entirely */
+        --glass-bg: #d8dde6;
+        --glass-border: #5a6b80;
+        --glass-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.30);
+    }
+
+    /* Ensure all text on light has strong contrast */
+    :root:not([data-bs-theme="dark"]) body {
+        color: var(--text-primary);
+    }
+
+    /* Strengthen card and nav borders */
+    :root:not([data-bs-theme="dark"]) .card {
+        border-top: 5px solid var(--border-medium) !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        box-shadow: var(--shadow-md) !important;
+    }
+
+    :root:not([data-bs-theme="dark"]) .navbar {
+        border-bottom: 2px solid var(--border-dark) !important;
+        background: var(--glass-bg) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* Form elements — full opacity borders */
+    :root:not([data-bs-theme="dark"]) .form-control,
+    :root:not([data-bs-theme="dark"]) .form-select {
+        border: 2px solid var(--border-medium) !important;
+        background: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+    }
+
+    :root:not([data-bs-theme="dark"]) .form-control:focus,
+    :root:not([data-bs-theme="dark"]) .form-select:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35) !important;
+    }
+
+    /* Buttons — full-opacity, no semi-transparent backgrounds */
+    :root:not([data-bs-theme="dark"]) .btn-outline {
+        border-width: 2px !important;
+    }
+
+    /* Navigation links — stronger hover/active states */
+    :root:not([data-bs-theme="dark"]) .nav-link {
+        color: var(--text-primary) !important;
+    }
+
+    :root:not([data-bs-theme="dark"]) .nav-link:hover,
+    :root:not([data-bs-theme="dark"]) .nav-link.active {
+        outline: 2px solid currentColor;
+        outline-offset: -2px;
+    }
+
+    /* Text utilities — override muted to remain legible */
+    :root:not([data-bs-theme="dark"]) .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    :root:not([data-bs-theme="dark"]) .text-secondary {
+        color: var(--text-secondary) !important;
+    }
+
+    /* Card headers — enforce visual separation */
+    :root:not([data-bs-theme="dark"]) .card-header {
+        border-bottom: 2px solid var(--border-medium) !important;
+    }
+
+    /* List group items in high contrast */
+    :root:not([data-bs-theme="dark"]) .list-group-item {
+        border-top: 5px solid var(--border-medium) !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+    }
+
+    /* Sidebar stronger — darker bg, bolder border, solid colors */
+    :root:not([data-bs-theme="dark"]) .sidebar {
+        background-color: #bdc6d6 !important;  /* noticeably darker than page */
+        border-right: 3px solid var(--border-dark) !important;
+    }
+
+    :root:not([data-bs-theme="dark"]) .sidebar .nav-link {
+        color: #0a0f1a !important;
+        border-left-width: 4px !important;
+    }
+
+    :root:not([data-bs-theme="dark"]) .sidebar .nav-link i {
+        color: #1f2937 !important;
+    }
+
+    :root:not([data-bs-theme="dark"]) .sidebar .nav-link:hover {
+        background-color: rgba(0, 0, 0, 0.15) !important;
+        color: #000000 !important;
+        border-left-color: var(--border-dark) !important;
+    }
+
+    :root:not([data-bs-theme="dark"]) .sidebar .menu-section {
+        color: #111827 !important;
+    }
+}
+
+/* --- Navigation & Layout Enhancements --- */
+body {
+    padding-top: 56px !important; /* Offset for fixed top navbar */
+}
+
+/* Fixed Navbar */
+.navbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1040 !important;
+}
+
+/* Fixed Sidebar */
+.sidebar {
+    position: fixed !important;
+    top: 56px !important; /* start right under navbar */
+    bottom: 0 !important;
+    left: 0 !important;
+    height: calc(100vh - 56px) !important;
+    z-index: 1030 !important;
+    overflow-y: auto !important;
+}
+
+/* Flex bypass: accommodate fixed sidebar space by shifting main content */
+main, .main-content {
+    margin-left: 260px !important;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Accommodate collapsed space */
+.sidebar.collapsed ~ main,
+.sidebar.collapsed ~ .main-content {
+    margin-left: 72px !important;
+}
+
+/* Sidebar Icon Color Sync (icon matches text) */
+.sidebar .nav-link.active i,
+.sidebar .nav-link:hover i {
+    color: inherit !important;
+}
+
+/* Strip vivid colored backgrounds from dark mode sidebar active states */
+[data-bs-theme="dark"] .sidebar .nav-link.active {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
 /* Print Styles */
 @media print {
     .navbar,
@@ -1013,9 +1350,19 @@ a:hover {
     }
     
     .card {
-        border: 1px solid #ccc !important;
+        border-top: 4px solid #ccc !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
         box-shadow: none !important;
         page-break-inside: avoid;
+    }
+
+    .list-group-item {
+        border-top: 4px solid #ccc !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
     }
 }
 

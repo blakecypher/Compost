@@ -106,6 +106,21 @@ else
 
 <style>
     .border-top-theme {
-        border-top: 4px solid var(--theme-contexts) !important;
+        border-top: 5px solid var(--theme-contexts) !important;
+        background: var(--bg-gradient-card) !important;
+        border-left: 1px solid #8f9fb5 !important;
+        border-right: 1px solid #8f9fb5 !important;
+        border-bottom: 1px solid #8f9fb5 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    [data-bs-theme="dark"] .border-top-theme {
+        border-left: 1px solid #555555 !important;
+        border-right: 1px solid #555555 !important;
+        border-bottom: 1px solid #555555 !important;
+    }
+    
+    .border-top-theme .card-header {
+        border-bottom: 1px solid var(--theme-contexts) !important;
     }
 </style>

@@ -27,7 +27,7 @@
                             @foreach (var structure in Model)
                             {
                                 <div class="col-md-6 col-lg-4 mb-4">
-                                    <div class="card h-100">
+                                    <div class="card h-100" style="background: var(--bg-gradient-card) !important;">
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h6 class="mb-0">@structure.Title</h6>
                                             <span class="badge bg-@GetStructureTypeColor(structure.StructureType)">

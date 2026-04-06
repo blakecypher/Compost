@@ -20,8 +20,9 @@
 </div>
 
 <div class="row">
-    <div class="col-md-4">
-        <div class="card transcription-enhanced-card mb-4">
+    <!-- Full Width Player Section -->
+    <div class="col-12 mb-3">
+        <div class="card transcription-enhanced-card">
             <div class="card-header d-flex align-items-center transcription-header-background">
                 <div class="transcription-icon me-2">
                     <i class="fas fa-cog text-theme-transcription"></i>
@@ -29,46 +30,50 @@
                 <span class="fw-bold">Session Info</span>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Meeting Title</label>
-                    <input type="text" id="meetingTitle" class="form-control" placeholder="e.g., Standup Meeting" value="Meeting @DateTime.Now.ToString("yyyy-MM-dd HH:mm")" />
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Meeting Title</label>
+                            <input type="text" id="meetingTitle" class="form-control" placeholder="e.g., Standup Meeting" value="Meeting @DateTime.Now.ToString("yyyy-MM-dd HH:mm")" />
+                        </div>
+                        <div class="mb-3 mb-md-0">
+                            <label class="form-label fw-bold">Project</label>
+                            <select id="projectId" class="form-select">
+                                @foreach (var context in ViewBag.WorkContexts as List<Project> ?? [])
+                                {
+                                    <option value="@context.Id" selected="@(context.Id == ViewBag.SelectedContextId)">@context.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div id="recording-timer" class="display-6 mb-2 fw-bold">00:00:00</div>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button id="start-btn" class="btn btn-theme-transcription btn-lg">
+                                <i class="fas fa-circle me-1"></i> Start
+                            </button>
+                            <button id="stop-btn" class="btn btn-outline-theme-transcription btn-lg" disabled>
+                                <i class="fas fa-square me-1"></i> Stop
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light">
+                            <div class="card-header bg-transparent border-0 py-1">
+                                <small class="fw-bold text-muted"><i class="fas fa-users me-1"></i> Speakers Detected</small>
+                            </div>
+                            <div class="card-body py-2" id="speaker-list">
+                                <p class="text-muted small mb-0">Speakers will appear here during recording.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Project</label>
-                    <select id="projectId" class="form-select">
-                        @foreach (var context in ViewBag.WorkContexts as List<Project> ?? [])
-                        {
-                            <option value="@context.Id" selected="@(context.Id == ViewBag.SelectedContextId)">@context.Name</option>
-                        }
-                    </select>
-                </div>
-                <hr />
-                <div class="text-center">
-                    <div id="recording-timer" class="display-6 mb-3 fw-bold">00:00:00</div>
-                    <button id="start-btn" class="btn btn-theme-transcription btn-lg w-100 mb-2">
-                        <i class="fas fa-circle me-1"></i> Start Recording
-                    </button>
-                    <button id="stop-btn" class="btn btn-outline-theme-transcription btn-lg w-100" disabled>
-                        <i class="fas fa-square me-1"></i> Stop & Save
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="card transcription-enhanced-card">
-            <div class="card-header d-flex align-items-center transcription-header-background">
-                <div class="transcription-icon me-2">
-                    <i class="fas fa-users text-theme-transcription"></i>
-                </div>
-                <span class="fw-bold">Speakers Detected</span>
-            </div>
-            <div class="card-body" id="speaker-list">
-                <p class="text-muted small">Speakers will appear here during recording.</p>
             </div>
         </div>
     </div>
 
-    <div class="col-md-8">
+    <!-- Transcript Section - Reduced Height -->
+    <div class="col-12">
         <div class="card h-100 transcription-enhanced-card">
             <div class="card-header d-flex justify-content-between align-items-center transcription-header-background">
                 <div class="d-flex align-items-center">
@@ -79,9 +84,9 @@
                 </div>
                 <span class="badge bg-success" id="status-badge">Ready</span>
             </div>
-            <div class="card-body overflow-auto p-0" id="transcript-container" style="height: 500px;">
+            <div class="card-body overflow-auto p-0" id="transcript-container" style="height: 300px;">
                 <div id="transcript-content" class="p-3">
-                    <p class="text-muted text-center italic mt-5 mt-md-10">Transcript will appear here once you start recording...</p>
+                    <p class="text-muted text-center italic mt-5">Transcript will appear here once you start recording...</p>
                 </div>
             </div>
             <div class="card-footer text-muted small">
@@ -218,7 +223,8 @@
             if (document.documentElement.getAttribute('data-bs-theme') === 'dark') {
                 currentInterimDiv.classList.add('bg-dark', 'text-white');
             } else {
-                currentInterimDiv.classList.add('bg-white');
+                currentInterimDiv.style.backgroundColor = '#bdc5cf';
+                currentInterimDiv.style.color = '#111827';
             }
             
             transcriptContent.appendChild(currentInterimDiv);
@@ -241,7 +247,8 @@
         if (document.documentElement.getAttribute('data-bs-theme') === 'dark') {
             p.classList.add('bg-dark', 'text-white');
         } else {
-            p.classList.add('bg-white');
+            p.style.backgroundColor = '#bdc5cf';
+            p.style.color = '#111827';
         }
         
         const time = new Date().toLocaleTimeString();
@@ -501,7 +508,9 @@
     
     /* Light mode specific styles */
     [data-bs-theme="light"] .transcript-line {
-        background-color: var(--bs-white) !important;
+        background-color: #bdc5cf !important;
+        border: 1px solid #8f9fb5;
+        color: #111827 !important;
     }
     
     /* Transcription theme card styling */

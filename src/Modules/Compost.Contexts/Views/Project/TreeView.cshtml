@@ -663,10 +663,17 @@
     .project-card {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border-radius: 16px !important;
-        border: 2px solid var(--border-light) !important;
+        border-top: 5px solid var(--border-light) !important;
         background: var(--bg-secondary) !important;
         cursor: pointer;
         overflow: hidden;
+    }
+    
+    /* Maximum specificity dark mode override - use shorthand to beat .card rule */
+    html[data-bs-theme="dark"] body .container-fluid #projectsBoard .project-card.card.project-enhanced-card,
+    html[data-bs-theme="dark"] body .container-fluid .row.g-4 > .col-lg-4 > .project-card.card.project-enhanced-card {
+        border: 1px solid #444444 !important;
+        border-top: 5px solid var(--theme-contexts) !important;
     }
     
     .project-card:hover {
@@ -727,11 +734,16 @@
         cursor: grab;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         background: var(--bg-secondary) !important;
-        border: 2px solid var(--border-medium) !important;
-        border-top: 4px solid var(--theme-contexts) !important;
-        color: var(--text-primary);
+        border-top: 5px solid var(--theme-contexts) !important;
+
         border-radius: 16px !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    [data-bs-theme="dark"] .tree-node-content {
+        border-left: 1px solid #555555 !important;
+        border-right: 1px solid #555555 !important;
+        border-bottom: 1px solid #555555 !important;
     }
     
     .tree-node-content:hover {
@@ -777,6 +789,19 @@
     /* Enhanced Project Card Styles */
     .project-enhanced-card {
         transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border-top: 5px solid var(--theme-contexts) !important;
+        border-left-width: 1px !important;
+        border-left-style: solid !important;
+        border-right-width: 1px !important;
+        border-right-style: solid !important;
+        border-bottom-width: 1px !important;
+        border-bottom-style: solid !important;
+    }
+    
+    [data-bs-theme="dark"] .project-enhanced-card {
+        border-left-color: #444444 !important;
+        border-right-color: #444444 !important;
+        border-bottom-color: #444444 !important;
     }
     
     .project-enhanced-card:hover {
@@ -869,6 +894,57 @@
         background: var(--bs-info);
     }
 </style>
+
+<script>
+    // Force dark mode border colors on project cards
+    (function forceDarkModeBorders() {
+        function applyDarkBorders() {
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            const cards = document.querySelectorAll('.project-card, .project-enhanced-card, .border-theme-contexts');
+            cards.forEach(card => {
+                let style = card.getAttribute('style') || '';
+                // Remove existing border styles
+                style = style.replace(/border-top:\s*[^;]+;?/gi, '');
+                style = style.replace(/border-left:\s*[^;]+;?/gi, '');
+                style = style.replace(/border-right:\s*[^;]+;?/gi, '');
+                style = style.replace(/border-bottom:\s*[^;]+;?/gi, '');
+                if (isDark) {
+                    style += ' border-top: 5px solid var(--theme-contexts) !important;';
+                    style += ' border-left: 1px solid #444444 !important;';
+                    style += ' border-right: 1px solid #444444 !important;';
+                    style += ' border-bottom: 1px solid #444444 !important;';
+                } else {
+                    style += ' border-top: 5px solid var(--theme-contexts);';
+                }
+                card.setAttribute('style', style.trim());
+            });
+        }
+        
+        // Apply on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyDarkBorders);
+        } else {
+            applyDarkBorders();
+        }
+        
+        // Apply after short delays
+        setTimeout(applyDarkBorders, 100);
+        setTimeout(applyDarkBorders, 500);
+        setTimeout(applyDarkBorders, 1000);
+        setTimeout(applyDarkBorders, 2000);
+        
+        // Watch for theme changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'data-bs-theme') {
+                    applyDarkBorders();
+                }
+            });
+        });
+        
+        observer.observe(document.documentElement, { attributes: true });
+    })();
+</script>
 
 <script>
     function copyProjectLink(projectId) {

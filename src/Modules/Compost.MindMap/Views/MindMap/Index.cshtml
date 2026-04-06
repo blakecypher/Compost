@@ -53,13 +53,24 @@
     
     /* Style cards similar to Kanban cards */
     .mindmap-card {
-        border-top: 4px solid #ffc107 !important;
+        border-top: 5px solid var(--theme-mindmaps) !important;
+        border-left: 1px solid #8f9fb5 !important;
+        border-right: 1px solid #8f9fb5 !important;
+        border-bottom: 1px solid #8f9fb5 !important;
         transition: transform 0.1s, box-shadow 0.2s;
-        background: var(--bs-body-bg) !important;
-        border-left: 1px solid var(--bs-border-color);
-        border-right: 1px solid var(--bs-border-color);
-        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bg-gradient-card) !important;
     }
+    
+    [data-bs-theme="dark"] .mindmap-card {
+        border-left: 1px solid #555555 !important;
+        border-right: 1px solid #555555 !important;
+        border-bottom: 1px solid #555555 !important;
+    }
+    
+    .mindmap-card-header {
+        border-bottom: 1px solid var(--theme-mindmaps) !important;
+    }
+    
     .mindmap-card:hover {
         transform: translateY(-2px);
     }
@@ -85,9 +96,9 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="text-primary">
+        <h1 class="text-theme-mindmaps">
             <i class="fas fa-brain"></i> Mind Maps
-        </h2>
+        </h1>
         <p class="text-muted">Procedural flow visualization from text, transcripts, and requirements.</p>
     </div>
     <div class="d-flex gap-2">

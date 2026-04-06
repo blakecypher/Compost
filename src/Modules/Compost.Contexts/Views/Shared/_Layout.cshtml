@@ -95,6 +95,7 @@
             --theme-contexts: #8b5cf6;   /* Vibrant Purple */
             --theme-patterns: #8b5cf6;  /* Vibrant Purple */
             --theme-snippets: #9ca3af;  /* Light Slate */
+            --bg-gradient-card: var(--card-bg);
         }
 
         /* Global Styles */
@@ -109,7 +110,7 @@
         .sidebar { 
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease; 
             width: 260px;
-            overflow-x: hidden;
+            /* overflow-x replaced for sticky support */
             background-color: var(--sidebar-bg) !important; 
             border-right: 1px solid var(--border-color) !important;
             z-index: 100;
@@ -251,6 +252,7 @@
 
         /* Force overrides for bootstrap utilities */
         .bg-light { background-color: var(--gruv-bg-soft) !important; }
+        [data-bs-theme="dark"] .card { background-color: var(--card-bg) !important; border-color: #373b3e; }
         .bg-white { background-color: var(--card-bg) !important; }
         .text-dark { color: var(--gruv-fg) !important; }
         .text-muted { color: var(--gruv-gray) !important; }
@@ -355,13 +357,46 @@
         .badge.bg-theme-contexts { background-color: var(--theme-contexts) !important; }
         .badge.bg-theme-patterns { background-color: var(--theme-patterns) !important; }
         .badge.bg-theme-snippets { background-color: var(--theme-snippets) !important; }
+        /* Dark Mode Sidebar Nav Color Reset */
+        [data-bs-theme="dark"] .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            box-shadow: none !important;
+        }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-dashboard { color: var(--theme-dashboard, #198754) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-contexts { color: var(--theme-contexts, #6629d9) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-mindmaps { color: var(--theme-mindmaps, #ff6b35) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-kanban { color: var(--theme-kanban, #ffc107) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-transcription { color: var(--theme-transcription, #68a073) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-snippets { color: var(--theme-snippets, #943a3a) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-patterns { color: var(--theme-patterns, #6629d9) !important; }
+        [data-bs-theme="dark"] .sidebar .nav-link.active.bg-primary { color: var(--bs-primary, #0d6efd) !important; }
+        
+        .sidebar .nav-link.active i, .sidebar .nav-link:hover i {
+            color: inherit !important;
+        }
+        /* h1 Color Strip & Icon Retention */
+        h1.text-theme-dashboard, h1.text-theme-contexts, h1.text-theme-mindmaps, 
+        h1.text-theme-kanban, h1.text-theme-transcription, h1.text-theme-snippets, 
+        h1.text-theme-patterns, h1.text-primary, h1.text-transcription, h1.text-success, h1.text-danger { 
+            color: var(--bs-body-color) !important; 
+        }
+        h1.text-theme-dashboard i { color: var(--theme-dashboard, #198754) !important; }
+        h1.text-theme-contexts i { color: var(--theme-contexts, #6629d9) !important; }
+        h1.text-theme-mindmaps i { color: var(--theme-mindmaps, #ff6b35) !important; }
+        h1.text-theme-kanban i { color: var(--theme-kanban, #ffc107) !important; }
+        h1.text-theme-transcription i, h1.text-transcription i { color: var(--theme-transcription, #68a073) !important; }
+        h1.text-theme-snippets i { color: var(--theme-snippets, #f87171) !important; }
+        h1.text-theme-patterns i { color: var(--theme-patterns, #a855f7) !important; }
+        h1.text-primary i { color: var(--bs-primary, #0d6efd) !important; }
+        h1.text-success i { color: var(--bs-success, #198754) !important; }
+        h1.text-danger i { color: var(--bs-danger, #dc3545) !important; }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="bg-body-tertiary">
     <script>document.body.classList.add('css-loaded');</script>
     <!-- Top Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm sticky-top" style="z-index: 1040;">
         <div class="container-fluid">
             <div class="d-flex align-items-center">
                 <button id="sidebarToggle" title="Toggle Sidebar">
