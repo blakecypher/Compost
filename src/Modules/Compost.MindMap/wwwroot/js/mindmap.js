@@ -54,11 +54,15 @@ class CompostMindMap {
                 
                 // Cytoscape layout options
                 layout: {
-                    name: 'preset',
+                    name: 'breadthfirst',
                     animate: true,
                     animationDuration: 500,
                     fit: true,
-                    padding: 50
+                    padding: 50,
+                    directed: true,
+                    spacingFactor: 1.2,
+                    roots: undefined,
+                    maximal: false
                 },
                 
                 // Interaction options
@@ -380,6 +384,16 @@ class CompostMindMap {
         
         try {
             this.cy.add(elements);
+            // Apply hierarchical layout after adding nodes
+            this.cy.layout({
+                name: 'breadthfirst',
+                animate: true,
+                animationDuration: 500,
+                fit: true,
+                padding: 50,
+                directed: true,
+                spacingFactor: 1.2
+            }).run();
             this.cy.fit(undefined, 50);
         } catch (error) {
             console.error('Error adding elements to Cytoscape:', error);
