@@ -220,6 +220,11 @@
                             </a>
                         </li>
                         <li class="nav-item mb-1">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/GitDashboard") ? "active bg-primary text-white rounded" : "text-dark")" href="/Projects/GitDashboard">
+                                <i class="fab fa-git-alt"></i><span>Git</span>
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/Transcription") ? "active bg-theme-transcription text-on-theme-transcription rounded" : "text-dark")" href="/Transcription">
                                 <i class="fas fa-microphone"></i><span>Transcription</span>
                             </a>

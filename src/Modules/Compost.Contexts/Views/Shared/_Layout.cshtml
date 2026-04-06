@@ -425,6 +425,11 @@
                             </a>
                         </li>
                         <li class="nav-item mb-1">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/GitDashboard") ? "active" : "")" href="/Projects/GitDashboard">
+                                <i class="fab fa-git-alt"></i><span>Git</span>
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/TreeView") ? "active" : "")" href="/Contexts/TreeView">
                                 <i class="fas fa-sitemap"></i><span>Tree View</span>
                             </a>

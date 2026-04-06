@@ -358,6 +358,11 @@
                                 <i class="fas fa-columns"></i><span>Kanban Board</span>
                             </a>
                         </li>
+                        <li class="nav-item mb-1">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/GitDashboard") ? "active bg-primary text-white rounded" : "text-dark")" href="/Projects/GitDashboard">
+                                <i class="fab fa-git-alt"></i><span>Git</span>
+                            </a>
+                        </li>
                         <li class="nav-item"><span class="menu-section">Library</span></li>
                         <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/Snippets") ? "active bg-theme-snippets text-on-theme-snippets rounded" : "text-dark")" href="/Snippets">

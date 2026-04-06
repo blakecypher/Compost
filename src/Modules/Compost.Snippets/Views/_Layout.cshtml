@@ -453,6 +453,11 @@
                             </a>
                         </li>
                         <li class="nav-item mb-1">
+                            <a class="nav-link @(Context.Request.Path.ToString().Contains("/GitDashboard") ? "active" : "")" href="/Projects/GitDashboard">
+                                <i class="fab fa-git-alt"></i><span>Git</span>
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
                             <a class="nav-link @(Context.Request.Path.ToString().Contains("/Transcription") ? "active" : "")" href="/Transcription">
                                 <i class="fas fa-microphone"></i><span>Transcription</span>
                             </a>
