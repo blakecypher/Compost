@@ -353,7 +353,7 @@ class CompostMindMap {
             elements.push({
                 data: {
                     id: node.id,
-                    label: node.text,
+                    label: node.title || node.text,
                     type: node.nodeType,
                     color: node.color,
                     icon: icon, // Set icon based on node type
@@ -371,11 +371,12 @@ class CompostMindMap {
         
         // Add edges
         nodes.forEach(node => {
-            if (node.parentId) {
+            const parentId = node.parentNodeId || node.parentId;
+            if (parentId) {
                 elements.push({
                     data: {
-                        id: `${node.parentId}-${node.id}`,
-                        source: node.parentId,
+                        id: `${parentId}-${node.id}`,
+                        source: parentId,
                         target: node.id
                     }
                 });
