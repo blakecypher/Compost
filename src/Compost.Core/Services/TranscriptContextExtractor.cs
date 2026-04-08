@@ -136,7 +136,7 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
             Id = Guid.NewGuid().ToString(),
             Title = segment.ProposedTitle ?? (segment.Text.Length > 60 ? segment.Text[..57].Trim() + "..." : segment.Text.Trim()),
             Description = $"[{segment.SemanticType}] {segment.Text}",
-            NodeType = segment.SuggestedNodeType,
+            NodeType = segment.SuggestedNodeType.ToString(),
             OriginalTranscript = segment.Text,
             CreatedAt = DateTime.UtcNow,
             Tags = segment.Keywords.Take(5).ToList(),
@@ -151,41 +151,94 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
     
     private static void BuildSemanticEdges(List<MindMapNode> nodes, List<ContextualSegment> segments)
     {
-        // Connect nodes that share keywords or are temporally adjacent
+        if (nodes.Count == 0) return;
+
+        // 1) Build inverted indices for faster semantic matching
+        var nodesByType = new Dictionary<SegmentSemanticType, List<string>>();
+        var nodesByKeyword = new Dictionary<string, List<string>>();
+
+        for (var i = 0; i < nodes.Count; i++)
+        {
+            var nodeId = nodes[i].Id;
+            var seg = segments[i];
+
+            // Type index
+            if (!nodesByType.TryGetValue(seg.SemanticType, out var typeList))
+            {
+                typeList = new List<string>();
+                nodesByType[seg.SemanticType] = typeList;
+            }
+            typeList.Add(nodeId);
+
+            // Keyword index
+            foreach (var kw in seg.Keywords)
+            {
+                if (!nodesByKeyword.TryGetValue(kw, out var kwList))
+                {
+                    kwList = new List<string>();
+                    nodesByKeyword[kw] = kwList;
+                }
+                kwList.Add(nodeId);
+            }
+        }
+
+        // 2) Connect nodes using indices to avoid O(n^2)
+        var edgeSet = new HashSet<(string From, string To)>();
+
         for (var i = 0; i < nodes.Count; i++)
         {
             var currentNode = nodes[i];
-            var currentSegment = segments[i];
             
-            // Connect to temporally adjacent segments (dialogue flow)
+            // Connect to temporally adjacent segment (dialogue flow)
             if (i > 0)
             {
+                var prevNodeId = nodes[i - 1].Id;
                 nodes[i - 1].Edges.Add(new NodeEdge
                 {
-                    FromNodeId = nodes[i - 1].Id,
+                    FromNodeId = prevNodeId,
                     ToNodeId = currentNode.Id,
                     Label = "follows",
                     Type = "temporal"
                 });
+                edgeSet.Add((prevNodeId, currentNode.Id));
             }
-            
-            // Connect semantically related nodes (same type or shared keywords)
-            for (var j = i + 1; j < nodes.Count; j++)
+
+            var currentSegment = segments[i];
+
+            // Find semantic matches
+            var semanticTargets = new HashSet<string>();
+
+            if (nodesByType.TryGetValue(currentSegment.SemanticType, out var sameTypeNodes))
             {
-                var otherNode = nodes[j];
-                var otherSegment = segments[j];
+                foreach (var targetId in sameTypeNodes)
+                    semanticTargets.Add(targetId);
+            }
+
+            foreach (var kw in currentSegment.Keywords)
+            {
+                if (nodesByKeyword.TryGetValue(kw, out var matchNodes))
+                {
+                    foreach (var targetId in matchNodes)
+                        semanticTargets.Add(targetId);
+                }
+            }
+
+            // Generate edges (avoiding self-edges and duplicates)
+            foreach (var targetId in semanticTargets)
+            {
+                if (targetId == currentNode.Id) continue;
                 
-                // Check for semantic relationship
-                var sameType = currentSegment.SemanticType == otherSegment.SemanticType;
-                var sharedKeywords = currentSegment.Keywords.Intersect(otherSegment.Keywords).Any();
-                
-                if (sameType || sharedKeywords)
+                // Keep a consistent ordering for unordered semantic edges to avoid reverse-duplicate counting
+                var a = string.Compare(currentNode.Id, targetId, StringComparison.Ordinal) < 0 ? currentNode.Id : targetId;
+                var b = a == currentNode.Id ? targetId : currentNode.Id;
+
+                if (edgeSet.Add((a, b)))
                 {
                     currentNode.Edges.Add(new NodeEdge
                     {
                         FromNodeId = currentNode.Id,
-                        ToNodeId = otherNode.Id,
-                        Label = sameType ? "same-type" : "related",
+                        ToNodeId = targetId,
+                        Label = "related",
                         Type = "semantic"
                     });
                 }
@@ -218,22 +271,14 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
         return consolidated;
     }
 
-    private bool IsContinuation(TranscriptSegment current, TranscriptSegment next)
-    {
-        // DISABLED: We no longer merge segments - each is an atomic unit
-        // This preserves natural dialogue boundaries and intonation-based segmentation
-        return false;
-    }
-
     private async Task<List<ContextualSegment>> ClassifySegmentsAsync(List<TranscriptSegment> segments)
     {
-        var contextualSegments = new List<ContextualSegment>();
-
-        foreach (var segment in segments)
-        {
-            var contextual = await ClassifySingleSegmentAsync(segment);
-            contextualSegments.Add(contextual);
-        }
+        // CPU-bound synchronous classification runs in parallel; corpus is read-only/thread-safe
+        var contextualSegments = segments
+            .AsParallel()
+            .AsOrdered()
+            .Select(ClassifySingleSegment)
+            .ToList();
 
         // Enhance with AI if available
         if (!string.IsNullOrEmpty(_geminiApiKey) && segments.Count > 0)
@@ -244,78 +289,71 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
         return contextualSegments;
     }
 
-    private Task<ContextualSegment> ClassifySingleSegmentAsync(TranscriptSegment segment)
+    private ContextualSegment ClassifySingleSegment(TranscriptSegment segment)
     {
-        try
+        var text = segment.Text.ToLowerInvariant();
+        var scores = new Dictionary<SegmentSemanticType, double>();
+
+        // Pattern-based classification
+        foreach (var (type, patterns) in _semanticPatterns)
         {
-            var text = segment.Text.ToLowerInvariant();
-            var scores = new Dictionary<SegmentSemanticType, double>();
-
-            // Pattern-based classification
-            foreach (var (type, patterns) in _semanticPatterns)
+            var typeScore = 0.0;
+            foreach (var (pattern, weight) in patterns)
             {
-                var typeScore = 0.0;
-                foreach (var (pattern, weight) in patterns)
-                {
-                    var matches = pattern.Matches(text);
-                    typeScore += matches.Count * weight;
-                }
-                scores[type] = Math.Min(typeScore, 1.0);
+                var matches = pattern.Matches(text);
+                typeScore += matches.Count * weight;
             }
-
-            // Corpus-based classification using dictionary lookup
-            var corpusScores = _corpus.ClassifyText(segment.Text);
-            foreach (var (type, score) in corpusScores)
-            {
-                if (!scores.TryAdd(type, score))
-                    scores[type] = Math.Max(scores[type], score);
-            }
-
-            // Determine primary type
-            var primaryType = scores.OrderByDescending(s => s.Value).FirstOrDefault();
-            var semanticType = primaryType.Value > 0.3 ? primaryType.Key : SegmentSemanticType.Informational;
-
-            // Map to mind map node type
-            var suggestedNodeType = MapSemanticTypeToNodeType(semanticType);
-
-            // Extract keywords
-            var keywords = ExtractKeywords(segment.Text);
-
-            // Generate proposed title
-            var proposedTitle = GenerateProposedTitle(segment.Text, semanticType);
-
-            // Determine if key insight - expanded for intellectual discourse
-            var isKeyInsight = primaryType.Value > 0.6 || // Lower threshold
-                               semanticType == SegmentSemanticType.Decision ||
-                               semanticType == SegmentSemanticType.Action ||
-                               semanticType == SegmentSemanticType.Risk ||
-                               semanticType == SegmentSemanticType.Idea ||
-                               semanticType == SegmentSemanticType.Insight ||
-                               semanticType == SegmentSemanticType.Theory ||
-                               semanticType == SegmentSemanticType.Hypothesis ||
-                               semanticType == SegmentSemanticType.Principle ||
-                               semanticType == SegmentSemanticType.Synthesis ||
-                               semanticType == SegmentSemanticType.Concept;
-
-            return Task.FromResult(new ContextualSegment
-            {
-                Id = segment.Id,
-                Text = segment.Text,
-                StartTime = segment.StartTime,
-                EndTime = segment.EndTime,
-                SpeakerId = segment.SpeakerId,
-                SemanticType = semanticType,
-                ClassificationConfidence = primaryType.Value,
-                Keywords = keywords,
-                SuggestedNodeType = suggestedNodeType,
-                ProposedTitle = proposedTitle,
-                IsKeyInsight = isKeyInsight
-            });
+            scores[type] = Math.Min(typeScore, 1.0);
         }
-        catch (Exception exception)
+
+        // Corpus-based classification using dictionary lookup
+        var corpusScores = _corpus.ClassifyText(segment.Text);
+        foreach (var (type, score) in corpusScores)
         {
-            return Task.FromException<ContextualSegment>(exception);
+            if (!scores.TryAdd(type, score))
+                scores[type] = Math.Max(scores[type], score);
         }
+
+        // Determine primary type
+        var primaryType = scores.OrderByDescending(s => s.Value).FirstOrDefault();
+        var semanticType = primaryType.Value > 0.3 ? primaryType.Key : SegmentSemanticType.Informational;
+
+        // Map to mind map node type
+        var suggestedNodeType = MapSemanticTypeToNodeType(semanticType);
+
+        // Extract keywords
+        var keywords = ExtractKeywords(segment.Text);
+
+        // Generate proposed title
+        var proposedTitle = GenerateProposedTitle(segment.Text, semanticType);
+
+        // Determine if key insight (threshold 0.8 matches ExtractKeyInsights filter)
+        var isKeyInsight = primaryType.Value > 0.8 ||
+                           semanticType == SegmentSemanticType.Decision ||
+                           semanticType == SegmentSemanticType.Action ||
+                           semanticType == SegmentSemanticType.Risk ||
+                           semanticType == SegmentSemanticType.Idea ||
+                           semanticType == SegmentSemanticType.Insight ||
+                           semanticType == SegmentSemanticType.Theory ||
+                           semanticType == SegmentSemanticType.Hypothesis ||
+                           semanticType == SegmentSemanticType.Principle ||
+                           semanticType == SegmentSemanticType.Synthesis ||
+                           semanticType == SegmentSemanticType.Concept;
+
+        return new ContextualSegment
+        {
+            Id = segment.Id,
+            Text = segment.Text,
+            StartTime = segment.StartTime,
+            EndTime = segment.EndTime,
+            SpeakerId = segment.SpeakerId,
+            SemanticType = semanticType,
+            ClassificationConfidence = primaryType.Value,
+            Keywords = keywords,
+            SuggestedNodeType = suggestedNodeType,
+            ProposedTitle = proposedTitle,
+            IsKeyInsight = isKeyInsight
+        };
     }
 
     private async Task EnhanceClassificationsWithAiAsync(List<ContextualSegment> segments)
@@ -339,8 +377,9 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
     private async Task EnhanceBatchWithAiAsync(List<ContextualSegment> batch)
     {
         var prompt = BuildEnhancementPrompt(batch);
-        var response = await CallGeminiAsync(prompt);
-        
+        // Use CallAiAsync to enable Ollama → Gemini fallback chain
+        var response = await CallAiAsync(prompt);
+
         if (!string.IsNullOrEmpty(response))
         {
             ApplyAiEnhancements(batch, response);
@@ -547,74 +586,6 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
             .ToList();
     }
 
-    private List<MindMapNode> ExtractNodesFromRemainingSegments(List<ContextualSegment> segments, List<MindMapNode> existingNodes)
-    {
-        var usedTexts = new HashSet<string>(existingNodes.Select(n => n.OriginalTranscript ?? ""));
-
-        var remaining = segments
-            .Where(s => !usedTexts.Contains(s.Text) && s.Text.Length > 30)
-            .OrderByDescending(s => s.ClassificationConfidence)
-            .Take(10 - existingNodes.Count);
-
-        return remaining.Select(segment => new MindMapNode
-            {
-                Id = Guid.NewGuid().ToString(),
-                Title = segment.ProposedTitle ?? (segment.Text.Length > 50 ? segment.Text[..47] + "..." : segment.Text),
-                Description = segment.Text,
-                NodeType = segment.SuggestedNodeType,
-                OriginalTranscript = segment.Text,
-                CreatedAt = DateTime.UtcNow,
-                Tags = segment.Keywords.Take(3).ToList()
-            })
-            .ToList();
-    }
-
-    private MindMapNode CreateThemeNode(ContextualTheme theme, List<ContextualSegment> allSegments)
-    {
-        var themeSegments = allSegments.Where(s => theme.SegmentIds.Contains(s.Id)).ToList();
-        var representativeText = themeSegments.OrderByDescending(s => s.ClassificationConfidence).First().Text;
-
-        return new MindMapNode
-        {
-            Id = Guid.NewGuid().ToString(),
-            Title = theme.Name.Length > 60 ? theme.Name[..57] + "..." : theme.Name,
-            Description = $"Theme: {theme.Name}\n\nKey segments:\n" + 
-                         string.Join("\n", themeSegments.Take(3).Select(s => $"- {s.Text[..Math.Min(100, s.Text.Length)]}")),
-            NodeType = theme.SuggestedNodeType,
-            OriginalTranscript = representativeText,
-            CreatedAt = DateTime.UtcNow,
-            Tags = theme.Keywords.ToList()
-        };
-    }
-
-    private MindMapNode CreateSegmentNode(ContextualSegment segment, string parentId)
-    {
-        return new MindMapNode
-        {
-            Id = Guid.NewGuid().ToString(),
-            Title = segment.ProposedTitle ?? (segment.Text.Length > 50 ? segment.Text[..47] + "..." : segment.Text),
-            Description = segment.Text,
-            NodeType = segment.SuggestedNodeType,
-            OriginalTranscript = segment.Text,
-            ParentNodeId = parentId,
-            CreatedAt = DateTime.UtcNow,
-            Tags = segment.Keywords.Take(3).ToList()
-        };
-    }
-
-    private MindMapNode CreateInsightNode(ContextualSegment insight)
-    {
-        return new MindMapNode
-        {
-            Id = Guid.NewGuid().ToString(),
-            Title = insight.ProposedTitle ?? (insight.Text.Length > 50 ? insight.Text[..47] + "..." : insight.Text),
-            Description = insight.Text,
-            NodeType = insight.SuggestedNodeType,
-            OriginalTranscript = insight.Text,
-            CreatedAt = DateTime.UtcNow,
-            Tags = insight.Keywords.Take(3).ToList()
-        };
-    }
 
     private static MindMapNodeType MapSemanticTypeToNodeType(SegmentSemanticType semanticType)
     {
@@ -896,7 +867,13 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
                 (new Regex(@"\b(feature request|brainstorming|explore|experiment|pilot|proof of concept|poc|prototype|mvp)\b", RegexOptions.IgnoreCase), 0.8)
             },
 
-            [SegmentSemanticType.Resource] = new Dictionary<string, double>().Select(kvp => (new Regex($@"\b{kvp.Key}\b", RegexOptions.IgnoreCase), kvp.Value)).ToList(),
+            [SegmentSemanticType.Resource] = new List<(Regex, double)>
+            {
+                (new Regex(@"\b(resource|resources|budget|funding|cost|spend|investment|allocation)\b", RegexOptions.IgnoreCase), 0.85),
+                (new Regex(@"\b(headcount|capacity|bandwidth|availability|manpower|staffing|team size)\b", RegexOptions.IgnoreCase), 0.85),
+                (new Regex(@"\b(tool|tools|library|libraries|framework|platform|infrastructure|environment)\b", RegexOptions.IgnoreCase), 0.75),
+                (new Regex(@"\b(time|timeline|schedule|deadline|effort|estimate|velocity)\b", RegexOptions.IgnoreCase), 0.7)
+            },
 
             [SegmentSemanticType.Technical] = new List<(Regex, double)>
             {

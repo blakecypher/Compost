@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Compost.Core.Interfaces;
 using Compost.Core.Models;
+using Compost.Core.Extensions;
 using Compost.Kanban.Models;
 using Compost.MindMap.Models;
 using Compost.MindMap.ViewModels;
@@ -11,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using OrchardCore.ContentManagement;
 using IMindMapService = Compost.MindMap.Services.IMindMapService;
-using MindMapNodeModel = Compost.MindMap.Models.MindMapNode;
+using MindMapNodeModel = Compost.Core.Models.MindMapNode;
 
 namespace Compost.MindMap.Controllers;
 
@@ -20,6 +21,7 @@ public class MindMapController(
     IProjectManager projectManager,
     IDecompositionEngine decompositionEngine,
     IContentManager contentManager,
+    ITranscriptionService transcriptionService,
     ILogger<MindMapController> logger)
     : Controller
 {
@@ -76,42 +78,22 @@ public class MindMapController(
     {
         try
         {
-            // Debug logging
-            Debug.WriteLine($"FromMeeting called with meetingId: '{meetingId}'");
-
             if (string.IsNullOrEmpty(meetingId))
-            {
-                Debug.WriteLine("Meeting ID is null or empty");
                 return BadRequest("Meeting ID is required");
-            }
 
-            // Get the transcription service to extract meeting data
-            var transcriptionService =
-                HttpContext.RequestServices.GetService(typeof(ITranscriptionService)) as ITranscriptionService;
-            if (transcriptionService == null) return BadRequest("Transcription service not available");
-
-            // Get meeting and extract mind map nodes
             var meeting = await transcriptionService.GetMeetingByIdAsync(meetingId);
             if (meeting == null) return NotFound("Meeting not found");
 
-            // Extract mind map nodes if not already extracted
             var mindMapNodes = await transcriptionService.ExtractMindMapNodesAsync(meetingId);
-
             if (mindMapNodes.Count == 0) return BadRequest("No mind map nodes found for this meeting");
 
-            // Create mind map from extracted nodes with default values
-            var mindMapName = $"Meeting: {meeting.Title}";
-            var workContextId = meeting.WorkContextId;
-            var mindMap =
-                await mindMapService.CreateMindMapFromMeetingNodesAsync(mindMapNodes, mindMapName, workContextId,
-                    meetingId);
+            var mindMap = await mindMapService.CreateMindMapFromMeetingNodesAsync(
+                mindMapNodes, $"Meeting: {meeting.Title}", meeting.WorkContextId, meetingId);
 
-            // Redirect to the mind map view
             return RedirectToAction(nameof(ViewMap), new { id = mindMap.Id });
         }
         catch (Exception ex)
         {
-            // Log error and return error view
             return StatusCode(500, $"Error creating mind map from meeting: {ex.Message}");
         }
     }
@@ -123,46 +105,25 @@ public class MindMapController(
     {
         try
         {
-            // Debug logging
-            Debug.WriteLine(
-                $"FromMeeting POST called with meetingId: '{meetingId}', name: '{model.Name}'");
-
             if (string.IsNullOrEmpty(meetingId)) return BadRequest("Meeting ID is required");
 
-            // Get the transcription service to extract meeting data
-            var transcriptionService =
-                HttpContext.RequestServices.GetService(typeof(ITranscriptionService)) as ITranscriptionService;
-            if (transcriptionService == null) return BadRequest("Transcription service not available");
-
-            // Get meeting and extract mind map nodes
             var meeting = await transcriptionService.GetMeetingByIdAsync(meetingId);
             if (meeting == null) return NotFound("Meeting not found");
 
-            // Extract mind map nodes if not already extracted
             var mindMapNodes = await transcriptionService.ExtractMindMapNodesAsync(meetingId);
-
             if (mindMapNodes is not { Count: not 0 })
                 return BadRequest("No mind map nodes found for this meeting");
 
-            // Create mind map from extracted nodes with custom values
-            var mindMapName = model.Name;
-            var workContextId = model.WorkContextId;
-            var description = model.Description;
+            var mindMap = await mindMapService.CreateMindMapFromMeetingNodesAsync(
+                mindMapNodes, model.Name, model.WorkContextId, meetingId);
 
-            var mindMap =
-                await mindMapService.CreateMindMapFromMeetingNodesAsync(mindMapNodes, mindMapName, workContextId,
-                    meetingId);
-
-            // Update the mind map with custom description
-            mindMap.Description = description;
+            mindMap.Description = model.Description;
             await mindMapService.SaveMindMapAsync(mindMap);
 
-            // Redirect to the mind map view
             return RedirectToAction(nameof(ViewMap), new { id = mindMap.Id });
         }
         catch (Exception ex)
         {
-            // Log error and return error view
             return StatusCode(500, $"Error creating mind map from meeting: {ex.Message}");
         }
     }
@@ -369,7 +330,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
             Color = GetNodeColor(model.NodeType),
             PositionX = model.PositionX,
             PositionY = model.PositionY,
-            Tags = model.Tags?.Split(',').Select(t => t.Trim()).ToList() ?? [],
+            Tags = model.Tags.ParseTags(),
             SourceText = model.SourceText
         };
 
@@ -428,7 +389,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         node.ParentId = model.ParentNodeId;
         node.PositionX = model.PositionX;
         node.PositionY = model.PositionY;
-        node.Tags = model.Tags?.Split(',').Select(t => t.Trim()).ToList() ?? [];
+        node.Tags = model.Tags.ParseTags();
         node.SourceText = model.SourceText;
 
         await mindMapService.SaveMindMapAsync(mindMap);
@@ -597,16 +558,24 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
 
     private int CalculateMaxDepth(List<MindMapNodeModel> nodes)
     {
+        if (nodes.Count == 0) return 0;
+
+        var childrenMap = nodes.Where(n => n.ParentId != null)
+                               .GroupBy(n => n.ParentId!)
+                               .ToDictionary(g => g.Key, g => g.ToList());
+
         var maxDepth = 0;
         foreach (var root in nodes.Where(n => n.ParentId == null))
-            maxDepth = Math.Max(maxDepth, CalculateNodeDepth(root, nodes, 1));
+            maxDepth = Math.Max(maxDepth, CalculateNodeDepth(root, childrenMap, 1));
         return maxDepth;
     }
 
-    private static int CalculateNodeDepth(MindMapNodeModel node, List<MindMapNodeModel> allNodes, int currentDepth)
+    private static int CalculateNodeDepth(MindMapNodeModel node, Dictionary<string, List<MindMapNodeModel>> childrenMap, int currentDepth)
     {
-        var children = allNodes.Where(n => n.ParentId == node.Id).ToList();
-        return children.Count == 0 ? currentDepth : children.Select(child => CalculateNodeDepth(child, allNodes, currentDepth + 1)).Prepend(currentDepth).Max();
+        if (!childrenMap.TryGetValue(node.Id, out var children))
+            return currentDepth;
+
+        return children.Select(child => CalculateNodeDepth(child, childrenMap, currentDepth + 1)).Prepend(currentDepth).Max();
     }
 
     // ========== API for interactive mind map (save/load/promote) ==========

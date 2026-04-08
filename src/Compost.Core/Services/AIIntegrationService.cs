@@ -11,11 +11,12 @@ public class AiIntegrationService(
     ILogger<AiIntegrationService> logger,
     IConfiguration configuration,
     HttpClient httpClient)
-    : IaiIntegrationService
+    : IAiIntegrationService
 {
     private readonly IConfiguration _configuration = configuration;
     private readonly string? _geminiApiKey = configuration["Compost:Gemini:ApiKey"];
     private readonly string? _geminiModel = configuration["Compost:Gemini:Model"] ?? "gemini-2.0-flash";
+    private readonly ContextCorpusDictionary _corpus = new ContextCorpusDictionary();
     private static readonly char[] Separator = ['.', '!', '?'];
 
     public async Task<int> EstimateStoryPointsAsync(string requirement, string? context = null)
@@ -167,12 +168,6 @@ public class AiIntegrationService(
         var result = JsonSerializer.Deserialize<GeminiResponse>(responseContent);
         
         return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text ?? string.Empty;
-    }
-
-    private async Task<string> CallOpenAiAsync(string prompt)
-    {
-        // Deprecated - redirects to Gemini
-        return await CallGeminiAsync(prompt);
     }
 
     private string BuildStoryPointPrompt(string requirement, string? context)
@@ -375,7 +370,7 @@ public class AiIntegrationService(
                     {
                         Title = itemElement.GetProperty("title").GetString() ?? "",
                         Description = itemElement.GetProperty("description").GetString() ?? "",
-                        NodeType = nodeType,
+                        NodeType = nodeType.ToString(),
                         OriginalTranscript = itemElement.TryGetProperty("sourceText", out var sourceText) ? sourceText.GetString() : null,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -517,45 +512,29 @@ public class AiIntegrationService(
 
         foreach (var sentence in sentenceSource)
         {
-            var lower = sentence.ToLower();
+            var corpusScores = _corpus.ClassifyText(sentence);
+            var primaryType = corpusScores.OrderByDescending(s => s.Value).FirstOrDefault();
+            
+            // Map SegmentSemanticType to MindMapNodeType
             var nodeType = MindMapNodeType.Idea; // Default
-            bool matched = false;
-
-            // 1. Decisions (High Priority)
-            if (System.Text.RegularExpressions.Regex.IsMatch(lower, @"\b(?:decided|agreed|consensus|finalized|conclusion|conclusion is|we'll go with|signed off)\b"))
+            if (primaryType.Value > 0.3)
             {
-                nodeType = MindMapNodeType.Decision;
-                matched = true;
+                nodeType = primaryType.Key switch
+                {
+                    SegmentSemanticType.Decision => MindMapNodeType.Decision,
+                    SegmentSemanticType.Action => MindMapNodeType.Action,
+                    SegmentSemanticType.Requirement => MindMapNodeType.Requirement,
+                    SegmentSemanticType.Risk => MindMapNodeType.Risk,
+                    SegmentSemanticType.Problem => MindMapNodeType.Risk,
+                    SegmentSemanticType.Question => MindMapNodeType.Question,
+                    SegmentSemanticType.Idea or SegmentSemanticType.Insight or SegmentSemanticType.Theory => MindMapNodeType.Idea,
+                    _ => MindMapNodeType.Note
+                };
             }
-            // 2. Requirements / Needs
-            else if (System.Text.RegularExpressions.Regex.IsMatch(lower, @"\b(?:need to|must|should|ought to|requirement|required|mandatory|essential|have to|want to see|we want)\b"))
-            {
-                nodeType = MindMapNodeType.Requirement;
-                matched = true;
-            }
-            // 3. Risks / Problems
-            else if (System.Text.RegularExpressions.Regex.IsMatch(lower, @"\b(?:risk|issue|problem|danger|concern|worry|bottleneck|blocker|obstacle|failure|error)\b"))
-            {
-                nodeType = MindMapNodeType.Risk;
-                matched = true;
-            }
-            // 4. Notes / Information
-            else if (System.Text.RegularExpressions.Regex.IsMatch(lower, @"\b(?:context|background|note that|specifically|for instance|example|history|current state)\b"))
-            {
-                nodeType = MindMapNodeType.Note;
-                matched = true;
-            }
-            // 5. Suggestions / Ideas
-            else if (System.Text.RegularExpressions.Regex.IsMatch(lower, @"\b(?:idea|suggestion|maybe|how about|what if|could we|think about|proposal|potential)\b"))
-            {
-                nodeType = MindMapNodeType.Idea;
-                matched = true;
-            }
-
             // Fallback categorization for long significant sentences
-            if (!matched && sentence.Length > 50)
+            else if (sentence.Length > 50)
             {
-                // Simple heuristic: if it contains modal verbs but didn't match previous, it's likely a Requirement or Suggestion
+                var lower = sentence.ToLowerInvariant();
                 if (lower.Contains(" can ") || lower.Contains(" will "))
                 {
                     nodeType = MindMapNodeType.Idea;
@@ -564,23 +543,17 @@ public class AiIntegrationService(
                 {
                     nodeType = MindMapNodeType.Note; // Default long factual statements to Notes
                 }
-                matched = true;
             }
 
-            if (matched)
+            nodes.Add(new MindMapNode
             {
-                // If it's the same speaker as the last node and related, we could merge, 
-                // but for fallback it's safer to keep separate and just increase expansiveness.
-                nodes.Add(new MindMapNode
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Title = sentence.Length > 60 ? sentence[..57].Trim() + "..." : sentence,
-                    Description = sentence,
-                    NodeType = nodeType,
-                    OriginalTranscript = sentence,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
+                Id = Guid.NewGuid().ToString(),
+                Title = sentence.Length > 60 ? sentence[..57].Trim() + "..." : sentence,
+                Description = sentence,
+                NodeType = nodeType.ToString(),
+                OriginalTranscript = sentence,
+                CreatedAt = DateTime.UtcNow
+            });
         }
 
         // Final pass: Group short adjacent notes from the same speaker if they form a larger thought
@@ -590,7 +563,7 @@ public class AiIntegrationService(
             var current = nodes[i];
             
             // Try to merge with next if they are both notes and from the same speaker segment
-            if (i < nodes.Count - 1 && current.NodeType == MindMapNodeType.Note && nodes[i+1].NodeType == MindMapNodeType.Note)
+            if (i < nodes.Count - 1 && current.NodeType == MindMapNodeType.Note.ToString() && nodes[i+1].NodeType == MindMapNodeType.Note.ToString())
             {
                 // Simple heuristic: if total length is reasonable, merge
                 if (current.Description.Length + nodes[i+1].Description.Length < 400)
@@ -609,40 +582,4 @@ public class AiIntegrationService(
     }
 }
 
-// Gemini API Response Models
-public class GeminiResponse
-{
-    public List<Candidate>? Candidates { get; set; }
-}
 
-public class Candidate
-{
-    public Content? Content { get; set; }
-}
-
-public class Content
-{
-    public string? Role { get; set; }
-    public List<Part>? Parts { get; set; }
-}
-
-public class Part
-{
-    public string? Text { get; set; }
-}
-
-// Legacy OpenAI response models (kept for compatibility)
-public class OpenAiResponse
-{
-    public List<Choice>? Choices { get; set; }
-}
-
-public class Choice
-{
-    public Message? Message { get; set; }
-}
-
-public class Message
-{
-    public string? Content { get; set; }
-}

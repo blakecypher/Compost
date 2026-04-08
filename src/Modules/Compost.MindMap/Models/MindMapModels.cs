@@ -1,70 +1,17 @@
-using System.ComponentModel.DataAnnotations;
 using Compost.Core.Models;
 
 namespace Compost.MindMap.Models;
 
-/// <summary>
-/// Represents a mind map node in the procedural flow
-/// </summary>
-public class MindMapNode
-{
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    
-    [Required]
-    public string Text { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// Node type: Root, Idea, Requirement, Question, Action, Decision, Risk, Note
-    /// </summary>
-    public string NodeType { get; set; } = "Idea";
-    
-    /// <summary>
-    /// Parent node ID (null for root nodes)
-    /// </summary>
-    public string? ParentId { get; set; }
-    
-    /// <summary>
-    /// Child node IDs
-    /// </summary>
-    public List<string> ChildIds { get; set; } = [];
-    
-    /// <summary>
-    /// Position for visualization
-    /// </summary>
-    public double PositionX { get; set; }
-    public double PositionY { get; set; }
-    
-    /// <summary>
-    /// Visual properties
-    /// </summary>
-    public string? Color { get; set; }
-    public string? Icon { get; set; } // FontAwesome icon class
-    public int Level { get; set; } // Depth in the tree
-    public string? Shape { get; set; } = "circle";
-    public int FontSize { get; set; } = 12;
-    public double Size { get; set; } = 1.0;
-    public List<NodeEdge> Edges { get; set; } = [];
-    
-    /// <summary>
-    /// Source information - where this node came from
-    /// </summary>
-    public string? SourceType { get; set; } // "Manual", "Transcript", "Requirement", "TextParse"
-    public string? SourceReference { get; set; } // Meeting ID, document ID, etc.
-    public string? SourceTimestamp { get; set; } // Time in transcript
-    public string? SourceText { get; set; } // Original text that generated this node
-    
-    /// <summary>
-    /// Metadata and State
-    /// </summary>
-    public List<string> Tags { get; set; } = [];
-    public string? Notes { get; set; }
-    public bool IsExpanded { get; set; } = true;
-    public string Status { get; set; } = "Draft"; // Draft, Pending, Approved, Rejected
-    public bool IsPromoted { get; set; }
-    public string? PromotedToId { get; set; } // Reference to created ProjectContext or TreeNode
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-}
+// ── MindMapNode ───────────────────────────────────────────────────────────────
+// The canonical MindMapNode has been consolidated into Compost.Core.Models.MindMapNode.
+// All code in this module should reference that type directly.
+// The type alias below is kept for backwards compatibility with any tooling/serialisers
+// that resolve against this namespace.
+using MindMapNode = Compost.Core.Models.MindMapNode;
 
+// ── MindMapNodeStatus ─────────────────────────────────────────────────────────
+// Status values are now stored as the string property MindMapNode.Status.
+// This enum is retained for switch-statement compatibility.
 public enum MindMapNodeStatus
 {
     Draft,
@@ -74,7 +21,7 @@ public enum MindMapNodeStatus
 }
 
 /// <summary>
-/// A mind map collection for a project context
+/// A mind map collection for a project context.
 /// </summary>
 public class MindMapCollection
 {
@@ -89,7 +36,7 @@ public class MindMapCollection
 }
 
 /// <summary>
-/// Parsed segment from text/transcript
+/// Parsed segment from text/transcript used during initial mind-map generation.
 /// </summary>
 public class ParsedSegment
 {

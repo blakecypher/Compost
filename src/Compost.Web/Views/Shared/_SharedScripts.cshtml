@@ -1,0 +1,68 @@
+@* _SharedScripts.cshtml - Shared JS engine for all Compost module layouts *@
+@* Requires Bootstrap to already be loaded before this partial *@
+<script>
+    // ── Toast helper ──────────────────────────────────────────────────────────
+    function showToast(message, title, type) {
+        title = title || 'Notification';
+        type  = type  || 'success';
+        try {
+            var toastEl = document.getElementById('liveToast');
+            if (!toastEl) return;
+            document.getElementById('toastMessage').textContent = message;
+            document.getElementById('toastTitle').textContent   = title;
+            var icon = document.getElementById('toastIcon');
+            if (type === 'danger')       { icon.className = 'fas fa-exclamation-circle me-2 text-danger'; }
+            else if (type === 'warning') { icon.className = 'fas fa-exclamation-triangle me-2 text-warning'; }
+            else                         { icon.className = 'fas fa-check-circle me-2 text-success'; }
+            new bootstrap.Toast(toastEl).show();
+        } catch(e) { console.error('Toast failed:', e); }
+    }
+
+    // ── Theme toggle engine ───────────────────────────────────────────────────
+    (function () {
+        var html        = document.documentElement;
+        var themeToggle = document.getElementById('themeToggle');
+        var saved       = localStorage.getItem('theme') || 'light';
+
+        html.setAttribute('data-bs-theme', saved);
+        updateToggleIcon(saved);
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                var next = html.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light';
+                html.setAttribute('data-bs-theme', next);
+                localStorage.setItem('theme', next);
+                updateToggleIcon(next);
+            });
+        }
+
+        function updateToggleIcon(theme) {
+            var icon = themeToggle && themeToggle.querySelector('i');
+            if (!icon) return;
+            icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    })();
+
+    // ── Sidebar collapse engine ───────────────────────────────────────────────
+    (function () {
+        var sidebar       = document.getElementById('sidebar');
+        var sidebarToggle = document.getElementById('sidebarToggle');
+
+        if (!sidebar) return;
+
+        // Restore state synchronously (already applied by inline script in _SidebarNav)
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function () {
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+                window.dispatchEvent(new Event('resize'));
+            });
+        }
+
+        // Re-enable transitions after initial render
+        setTimeout(function () {
+            document.documentElement.classList.remove('no-transitions');
+        }, 100);
+    })();
+</script>

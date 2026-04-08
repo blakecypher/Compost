@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Compost.Core.Interfaces;
 using Compost.Core.Models;
 using Compost.Kanban.Models;
+using Compost.Kanban.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using OrchardCore.ContentManagement;
@@ -134,8 +135,7 @@ public class KanbanController(
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UpdateCardField([FromForm] string contentItemId, [FromForm] string field, [FromForm] string value)
     {
-        var contentItem = await contentManager.GetAsync(contentItemId, VersionOptions.Latest)
-                         ?? await contentManager.GetAsync(contentItemId, VersionOptions.Published);
+        var contentItem = await GetCardContentItemAsync(contentItemId);
         if (contentItem == null) return NotFound();
 
         var part = contentItem.As<KanbanCardPart>();
@@ -174,8 +174,7 @@ public class KanbanController(
         {
             logger.LogInformation("Getting card data for ID: {CardId}", id);
             
-            var contentItem = await contentManager.GetAsync(id, VersionOptions.Latest)
-                             ?? await contentManager.GetAsync(id, VersionOptions.Published);
+            var contentItem = await GetCardContentItemAsync(id);
             if (contentItem == null) 
             {
                 logger.LogWarning("Card not found: {CardId}", id);
@@ -219,8 +218,7 @@ public class KanbanController(
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UpdateCard([FromBody] CardUpdateRequest request)
     {
-        var contentItem = await contentManager.GetAsync(request.ContentItemId, VersionOptions.Latest)
-                         ?? await contentManager.GetAsync(request.ContentItemId, VersionOptions.Published);
+        var contentItem = await GetCardContentItemAsync(request.ContentItemId);
         if (contentItem == null) return NotFound();
 
         var part = contentItem.As<KanbanCardPart>();
@@ -269,8 +267,7 @@ public class KanbanController(
     {
         try
         {
-            var contentItem = await contentManager.GetAsync(contentItemId, VersionOptions.Latest)
-                             ?? await contentManager.GetAsync(contentItemId, VersionOptions.Published);
+            var contentItem = await GetCardContentItemAsync(contentItemId);
             if (contentItem == null) return NotFound();
 
             await contentManager.RemoveAsync(contentItem);
@@ -285,171 +282,9 @@ public class KanbanController(
         }
     }
 
-    // Debug endpoint to create a test card
-    [HttpGet]
-    public async Task<IActionResult> CreateTestCard()
+    private async Task<ContentItem?> GetCardContentItemAsync(string id)
     {
-        var cardItem = await contentManager.NewAsync(nameof(KanbanCard));
-        cardItem.DisplayText = "Test Card - " + DateTime.Now.ToString("HH:mm:ss");
-        
-        var cardPart = cardItem.As<KanbanCardPart>();
-        cardPart.WorkContextId = "test-context";
-        cardPart.Status = KanbanStatus.Backlog;
-        cardPart.OrderInColumn = 0;
-        cardPart.AcceptanceCriteria = ["Test acceptance criteria 1", "Test acceptance criteria 2"];
-        
-        if (cardItem.Content.MarkdownBodyPart != null)
-        {
-            cardItem.Content.MarkdownBodyPart.Markdown = "This is a test card created for debugging purposes.";
-        }
-        
-        await contentManager.CreateAsync(cardItem);
-        await contentManager.PublishAsync(cardItem);
-
-        logger.LogInformation("Created test Kanban card: {CardId}, Latest: {Latest}, Published: {Published}", 
-            cardItem.ContentItemId, cardItem.Latest, cardItem.Published);
-
-        return Json(new { 
-            success = true, 
-            cardId = cardItem.ContentItemId,
-            title = cardItem.DisplayText,
-            status = cardPart.Status
-        });
+        return await contentManager.GetAsync(id, VersionOptions.Latest)
+               ?? await contentManager.GetAsync(id, VersionOptions.Published);
     }
-
-    // Debug endpoint to publish all unpublished cards
-    [HttpGet]
-    public async Task<IActionResult> PublishAllCards()
-    {
-        try
-        {
-            // Get all cards regardless of published status
-            var allCards = await session.Query<ContentItem, ContentItemIndex>()
-                .Where(x => x.ContentType == nameof(KanbanCard))
-                .ListAsync();
-
-            var publishedCount = 0;
-            var contentItems = allCards.ToList();
-            foreach (var card in contentItems)
-            {
-                // Try to get the latest version and publish it
-                var latestVersion = await contentManager.GetAsync(card.ContentItemId, VersionOptions.Latest);
-                switch (latestVersion)
-                {
-                    case { Published: false }:
-                        await contentManager.PublishAsync(latestVersion);
-                        publishedCount++;
-                        logger.LogInformation("Published latest version of card: {CardId}", card.ContentItemId);
-                        break;
-                    case null:
-                    {
-                        // If no latest version, try to publish the current version
-                        if (!card.Published)
-                        {
-                            await contentManager.PublishAsync(card);
-                            publishedCount++;
-                            logger.LogInformation("Published card: {CardId}", card.ContentItemId);
-                        }
-
-                        break;
-                    }
-                }
-            }
-
-            return Json(new { 
-                success = true, 
-                publishedCount = publishedCount,
-                totalCards = contentItems.Count,
-                message = $"Published {publishedCount} out of {contentItems.Count} cards"
-            });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error publishing cards");
-            return Json(new { success = false, error = ex.Message });
-        }
-    }
-
-    // Debug endpoint to list all cards with their status
-    [HttpGet]
-    public async Task<IActionResult> ListAllCards()
-    {
-        try
-        {
-            var allRows = await session.Query<ContentItem, ContentItemIndex>()
-                .Where(x => x.ContentType == nameof(KanbanCard))
-                .ListAsync();
-
-            var allRowsList = allRows.ToList();
-
-            // Group by ContentItemId to detect versioning duplicates
-            var grouped = allRowsList
-                .GroupBy(c => c.ContentItemId)
-                .Select(g =>
-                {
-                    var latest = g.FirstOrDefault(c => c.Latest) ?? g.OrderByDescending(c => c.ModifiedUtc).First();
-                    var part = latest.As<KanbanCardPart>();
-                    return new
-                    {
-                        Id = latest.ContentItemId,
-                        Title = latest.DisplayText,
-                        VersionCount = g.Count(),
-                        Latest = latest.Latest,
-                        Published = latest.Published,
-                        ShowsOnBoard = latest.Latest && latest.Published,
-                        Status = part?.Status.ToString() ?? "N/A",
-                        WorkContextId = part?.WorkContextId ?? "(empty)",
-                        ExclusionReason = (!latest.Latest ? "Not Latest" :
-                                          !latest.Published ? "Not Published" :
-                                          string.IsNullOrEmpty(part?.WorkContextId) ? "No WorkContextId - orphan" : "OK")
-                    };
-                })
-                .OrderBy(c => c.ExclusionReason)
-                .ToList();
-
-            var boardCount = grouped.Count(c => c.ShowsOnBoard);
-            var notPublished = grouped.Count(c => !c.Published);
-            var notLatest = grouped.Count(c => !c.Latest);
-            var orphans = grouped.Count(c => string.IsNullOrEmpty(c.WorkContextId.Trim('(', ')')));
-
-            return Json(new
-            {
-                success = true,
-                totalCmsRows = allRowsList.Count,
-                distinctCards = grouped.Count,
-                boardVisibleCount = boardCount,
-                notPublishedCount = notPublished,
-                notLatestCount = notLatest,
-                orphanCount = orphans,
-                cards = grouped
-            });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error listing cards");
-            return Json(new { success = false, error = ex.Message });
-        }
-    }
-}
-
-public class KanbanBoardViewModel
-{
-    public List<Project> Contexts { get; set; } = [];
-    public string? SelectedContextId { get; set; }
-    public List<ContentItem> Cards { get; set; } = [];
-}
-
-public class CardUpdateRequest
-{
-    public string ContentItemId { get; set; }
-    public string Title { get; set; }
-    public string Description { get; set; }
-    public int? StoryPoints { get; set; }
-    public string Priority { get; set; }
-    public string DueDate { get; set; }
-    public string Assignee { get; set; }
-    public string Status { get; set; }
-    public bool IsBlocked { get; set; }
-    public string BlockedReason { get; set; }
-    public string SourceTranscriptExcerpt { get; set; }
 }

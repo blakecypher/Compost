@@ -290,7 +290,10 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
         if (part != null)
         {
             part.TestingSteps.Add(step);
+            // CRITICAL: Apply the part to ensure it's serialised to Content
+            contentItem.Apply(nameof(ProjectPart), part);
             await contentManager.UpdateAsync(contentItem);
+            await contentManager.PublishAsync(contentItem);
         }
     }
 
@@ -300,11 +303,16 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
         var part = contentItem?.As<ProjectPart>();
         if (part != null)
         {
-            var item = new OpenQuestion();
-            item.Question = question;
-            item.CreatedAt = DateTime.UtcNow;
+            var item = new OpenQuestion
+            {
+                Question = question,
+                CreatedAt = DateTime.UtcNow
+            };
             part.OpenQuestions.Add(item);
+            // CRITICAL: Apply the part to ensure it's serialised to Content
+            contentItem.Apply(nameof(ProjectPart), part);
             await contentManager.UpdateAsync(contentItem);
+            await contentManager.PublishAsync(contentItem);
         }
     }
 
@@ -313,12 +321,15 @@ public class ProjectManager(IContentManager contentManager, ISession session, IL
         var contentItem = await contentManager.GetAsync(projectId, VersionOptions.Latest);
         var part = contentItem?.As<ProjectPart>();
         var question = part?.OpenQuestions.FirstOrDefault(q => q.Id == questionId);
-        if (question != null)
+        if (question != null && contentItem != null && part != null)
         {
             question.Answer = answer;
             question.IsResolved = true;
             question.ResolvedAt = DateTime.UtcNow;
+            // CRITICAL: Apply the part to ensure it's serialised to Content
+            contentItem.Apply(nameof(ProjectPart), part);
             await contentManager.UpdateAsync(contentItem);
+            await contentManager.PublishAsync(contentItem);
         }
     }
 

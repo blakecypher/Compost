@@ -1,0 +1,381 @@
+/* =============================================================================
+   compost-shared.css
+   Centralised Compost design system - included by every module _Layout.cshtml
+   =============================================================================
+
+   Contents:
+   1.  FOUC-prevention helper class (toggled by inline <script> on body)
+   2.  Module theme CSS custom properties (light + dark)
+   3.  Bootstrap overrides
+   4.  Navbar
+   5.  Sidebar shell & transitions
+   6.  Sidebar nav-link states (hover, active, dark-mode reset)
+   7.  Section labels (.menu-section)
+   8.  Module theme utility classes (.bg-theme-*, .text-theme-*, .btn-theme-*)
+   9.  h1 colour strip + icon retention
+   10. Card utilities
+   11. Form controls
+   12. Misc global helpers
+   ============================================================================= */
+
+/* ---------------------------------------------------------------------------
+   1.  FOUC prevention
+   --------------------------------------------------------------------------- */
+body { visibility: hidden; }
+body.css-loaded { visibility: visible; }
+
+/* ---------------------------------------------------------------------------
+   2.  Module theme CSS custom properties
+   --------------------------------------------------------------------------- */
+:root,
+[data-bs-theme="light"] {
+    /* Module accent colours */
+    --theme-dashboard:    #198754;
+    --theme-contexts:     #6629d9;
+    --theme-mindmaps:     #ff6b35;
+    --theme-kanban:       #ffc107;
+    --theme-transcription:#b74c4c;
+    --theme-snippets:     #943a3a;
+    --theme-patterns:     #6629d9;
+
+    /* Surface & border */
+    --sidebar-bg:         #d6dce8;
+    --border-color:       #8f9fb5;
+    --card-bg:            #f8f9fc;
+    --bg-gradient-card:   linear-gradient(135deg, #ebebeb 0%, #e1e1e1 50%, #ebebeb 100%);
+}
+
+[data-bs-theme="dark"] {
+    /* Module accent colours - same in dark */
+    --theme-dashboard:    #198754;
+    --theme-contexts:     #6629d9;
+    --theme-mindmaps:     #ff6b35;
+    --theme-kanban:       #ffc107;
+    --theme-transcription:#b74c4c;
+    --theme-snippets:     #943a3a;
+    --theme-patterns:     #6629d9;
+
+    /* Surface & border */
+    --sidebar-bg:         #1e293b;
+    --border-color:       #334155;
+    --card-bg:            #212529;
+    --bg-gradient-card:   var(--bg-card, #212529);
+}
+
+/* ---------------------------------------------------------------------------
+   3.  Bootstrap overrides
+   --------------------------------------------------------------------------- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bs-body-bg, #f8f9fc) !important;
+    color: var(--bs-body-color) !important;
+}
+
+.bg-light              { background-color: var(--sidebar-bg) !important; }
+html[data-bs-theme="dark"] .bg-white,
+html[data-bs-theme="dark"] .bg-light,
+html[data-bs-theme="dark"] .card-body .bg-white,
+html[data-bs-theme="dark"] .card-body .bg-light { background-color: var(--card-bg) !important; color: var(--bs-body-color) !important; }
+@media (prefers-color-scheme: dark) {
+  html:not([data-bs-theme="light"]) .bg-white,
+  html:not([data-bs-theme="light"]) .bg-light,
+  html:not([data-bs-theme="light"]) .card-body .bg-white,
+  html:not([data-bs-theme="light"]) .card-body .bg-light { background-color: var(--card-bg) !important; color: var(--bs-body-color) !important; }
+}
+.text-dark             { color: var(--bs-body-color) !important; }
+.text-muted            { color: #6c757d !important; }
+.border                { border-color: var(--border-color) !important; }
+[data-bs-theme="dark"] .card { background-color: var(--card-bg) !important; border-color: #373b3e; }
+[data-bs-theme="light"] .text-dark { color: #111827 !important; }
+
+/* ---------------------------------------------------------------------------
+   4.  Navbar
+   --------------------------------------------------------------------------- */
+[data-bs-theme="light"] .navbar,
+:not([data-bs-theme="dark"]) .navbar {
+    background-color: #2d3a4a !important;
+    border-bottom: 2px solid #1e2a38 !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.30) !important;
+}
+
+[data-bs-theme="light"] .navbar .navbar-brand,
+[data-bs-theme="light"] .navbar .nav-link,
+:not([data-bs-theme="dark"]) .navbar .navbar-brand,
+:not([data-bs-theme="dark"]) .navbar .nav-link,
+:not([data-bs-theme="dark"]) .navbar i {
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="light"] .navbar .navbar-brand:hover,
+[data-bs-theme="light"] .navbar .nav-link:hover,
+:not([data-bs-theme="dark"]) .navbar .navbar-brand:hover,
+:not([data-bs-theme="dark"]) .navbar .nav-link:hover {
+    color: #ffffff !important;
+}
+
+/* Toggle button in navbar */
+#sidebarToggle {
+    cursor: pointer;
+    padding: 0.5rem;
+    color: #fff;
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+    transition: transform 0.3s ease;
+}
+#sidebarToggle:hover { opacity: 0.8; }
+
+/* ---------------------------------------------------------------------------
+   5.  Sidebar shell & transitions
+   --------------------------------------------------------------------------- */
+
+/* Disable transitions on initial page-load to avoid FOUC */
+html.no-transitions .sidebar,
+html.no-transitions .sidebar *,
+html.no-transitions .nav-link,
+html.no-transitions .menu-section {
+    transition: none !important;
+}
+
+.sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    width: 260px;
+    z-index: 100;
+    background-color: var(--sidebar-bg) !important;
+    border-right: 2px solid var(--border-color) !important;
+    border-bottom: 2px solid var(--border-color);
+    /* Sticky left panel */
+    position: sticky;
+    align-self: flex-start;
+    max-height: calc(100vh - 84px);
+    border-radius: 0 0 12px 0;
+    margin: 0 8px 12px 0;
+    padding-bottom: 20px;
+    overflow: hidden;
+}
+
+[data-bs-theme="dark"] .sidebar {
+    border-right: 2px solid #334155 !important;
+    border-bottom: 2px solid #334155;
+}
+
+.sidebar.collapsed { width: 72px; }
+
+/* Collapsed text/label fade */
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed .menu-section { opacity: 0; pointer-events: none; }
+.sidebar.collapsed .nav-link i   { margin-right: 2rem; }
+.sidebar.collapsed .context-stats-widget { display: none !important; }
+
+/* Sticky inner container */
+.sidebar-sticky {
+    padding-top: .5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 100%;
+}
+
+main {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-grow: 1;
+    min-height: calc(100vh - 56px);
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   6.  Sidebar nav-link states
+   --------------------------------------------------------------------------- */
+.sidebar .nav-link {
+    color: #1f2937;
+    font-weight: 600;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0;
+    border-left: 3px solid transparent;
+    transition: all 0.15s ease;
+    margin: 1px 0;
+}
+
+[data-bs-theme="dark"] .sidebar .nav-link { color: #cbd5e1; }
+
+.sidebar .nav-link i {
+    min-width: 24px;
+    font-size: 1.1rem;
+    margin-right: 1rem;
+    color: #4b5563;
+    transition: color 0.15s ease;
+}
+
+[data-bs-theme="dark"] .sidebar .nav-link i { color: #64748b; }
+
+.sidebar .nav-link span {
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+/* Hover */
+.sidebar .nav-link:hover {
+    background-color: rgba(0,0,0,0.10) !important;
+    color: #111827 !important;
+    border-left-color: var(--border-color);
+    border-radius: 0;
+}
+
+[data-bs-theme="dark"] .sidebar .nav-link:hover {
+    background-color: rgba(255,255,255,0.07) !important;
+    color: #f1f5f9 !important;
+    border-left-color: #475569;
+}
+
+.sidebar .nav-link:hover i       { color: #1f2937; }
+[data-bs-theme="dark"] .sidebar .nav-link:hover i { color: #94a3b8; }
+
+/* Active */
+.sidebar .nav-link.active {
+    border-left-color: currentColor !important;
+    font-weight: 700 !important;
+}
+
+/* Icon always inherits active/hover colour */
+.sidebar .nav-link.active i,
+.sidebar .nav-link:hover  i { color: inherit !important; }
+
+/* Dark mode: override active backgrounds to a subtle tint + text colour */
+[data-bs-theme="dark"] .sidebar .nav-link.active {
+    background-color: rgba(255,255,255,0.08) !important;
+    box-shadow: none !important;
+}
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-dashboard    { color: var(--theme-dashboard) !important; }
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-contexts     { color: var(--theme-contexts) !important; }
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-mindmaps     { color: var(--theme-mindmaps) !important; }
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-kanban       { color: var(--theme-kanban) !important; }
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-transcription{ color: var(--theme-transcription) !important; }
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-snippets     { color: var(--theme-snippets) !important; }
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-patterns     { color: var(--theme-patterns) !important; }
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-primary            { color: var(--bs-primary, #0d6efd) !important; }
+
+/* ---------------------------------------------------------------------------
+   7.  Section labels
+   --------------------------------------------------------------------------- */
+.sidebar .menu-section {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    padding: 1.5rem 1.25rem 0.5rem;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+}
+[data-bs-theme="light"] .sidebar .menu-section { color: #374151; }
+[data-bs-theme="dark"]  .sidebar .menu-section { color: #94a3b8; }
+
+/* ---------------------------------------------------------------------------
+   8.  Module theme utility classes
+   --------------------------------------------------------------------------- */
+.bg-theme-dashboard    { background-color: var(--theme-dashboard)    !important; }
+.bg-theme-contexts     { background-color: var(--theme-contexts)     !important; }
+.bg-theme-mindmaps     { background-color: var(--theme-mindmaps)     !important; }
+.bg-theme-kanban       { background-color: var(--theme-kanban)       !important; }
+.bg-theme-transcription{ background-color: var(--theme-transcription)!important; }
+.bg-theme-snippets     { background-color: var(--theme-snippets)     !important; }
+.bg-theme-patterns     { background-color: var(--theme-patterns)     !important; }
+
+.text-theme-dashboard    { color: var(--theme-dashboard)    !important; }
+.text-theme-contexts     { color: var(--theme-contexts)     !important; }
+.text-theme-mindmaps     { color: var(--theme-mindmaps)     !important; }
+.text-theme-kanban       { color: var(--theme-kanban)       !important; }
+.text-theme-transcription{ color: var(--theme-transcription)!important; }
+.text-theme-snippets     { color: var(--theme-snippets)     !important; }
+.text-theme-patterns     { color: var(--theme-patterns)     !important; }
+
+.text-on-theme-dashboard,
+.text-on-theme-contexts,
+.text-on-theme-mindmaps,
+.text-on-theme-transcription,
+.text-on-theme-snippets,
+.text-on-theme-patterns  { color: #fff     !important; }
+.text-on-theme-kanban    { color: #212529  !important; }
+
+.btn-theme-dashboard    { background-color: var(--theme-dashboard);    border-color: var(--theme-dashboard);    color: #fff; }
+.btn-theme-contexts     { background-color: var(--theme-contexts);     border-color: var(--theme-contexts);     color: #fff; }
+.btn-theme-mindmaps     { background-color: var(--theme-mindmaps);     border-color: var(--theme-mindmaps);     color: #fff; }
+.btn-theme-kanban       { background-color: var(--theme-kanban);       border-color: var(--theme-kanban);       color: #212529; }
+.btn-theme-transcription{ background-color: var(--theme-transcription);border-color: var(--theme-transcription);color: #fff; }
+.btn-theme-snippets     { background-color: var(--theme-snippets);     border-color: var(--theme-snippets);     color: #fff; }
+.btn-theme-patterns     { background-color: var(--theme-patterns);     border-color: var(--theme-patterns);     color: #fff; }
+
+.btn-theme-dashboard:hover, .btn-theme-contexts:hover, .btn-theme-mindmaps:hover,
+.btn-theme-transcription:hover, .btn-theme-snippets:hover, .btn-theme-patterns:hover
+{ filter: brightness(1.12); color: #fff; }
+.btn-theme-kanban:hover { filter: brightness(1.12); color: #212529; }
+
+/* ---------------------------------------------------------------------------
+   9.  h1 colour strip + icon retention
+   --------------------------------------------------------------------------- */
+h1.text-theme-dashboard, h1.text-theme-contexts,  h1.text-theme-mindmaps,
+h1.text-theme-kanban,    h1.text-theme-transcription, h1.text-theme-snippets,
+h1.text-theme-patterns,  h1.text-primary, h1.text-transcription,
+h1.text-success, h1.text-danger {
+    color: var(--bs-body-color) !important;
+}
+
+h1.text-theme-dashboard      i { color: var(--theme-dashboard)     !important; }
+h1.text-theme-contexts       i { color: var(--theme-contexts)      !important; }
+h1.text-theme-mindmaps       i { color: var(--theme-mindmaps)      !important; }
+h1.text-theme-kanban         i { color: var(--theme-kanban)        !important; }
+h1.text-theme-transcription  i,
+h1.text-transcription        i { color: var(--theme-transcription) !important; }
+h1.text-theme-snippets       i { color: var(--theme-snippets)      !important; }
+h1.text-theme-patterns       i { color: var(--theme-patterns)      !important; }
+h1.text-primary              i { color: var(--bs-primary, #0d6efd) !important; }
+h1.text-success              i { color: var(--bs-success, #198754) !important; }
+h1.text-danger               i { color: var(--bs-danger, #dc3545)  !important; }
+
+/* ---------------------------------------------------------------------------
+   10. Card utilities
+   --------------------------------------------------------------------------- */
+.card-header {
+    background-color: rgba(0,0,0,0.03);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+}
+.card-footer {
+    border-top: 1px solid var(--border-color);
+    background-color: rgba(0,0,0,0.03);
+}
+
+/* ---------------------------------------------------------------------------
+   11. Form controls
+   --------------------------------------------------------------------------- */
+[data-bs-theme="light"] .form-control,
+[data-bs-theme="light"] .form-select {
+    background-color: #f8f9fc;
+    border-color: var(--border-color);
+    color: #212529;
+}
+[data-bs-theme="light"] .form-control:focus,
+[data-bs-theme="light"] .form-select:focus {
+    background-color: #f8f9fc;
+    border-color: var(--theme-contexts);
+    color: #212529;
+    box-shadow: 0 0 0 0.2rem rgba(102, 41, 217, 0.18);
+}
+
+/* ---------------------------------------------------------------------------
+   12. Misc global helpers
+   --------------------------------------------------------------------------- */
+/* Monaco editor dark border */
+[data-bs-theme="dark"] .monaco-editor { border-color: #334155 !important; }
+
+/* Toast container – used by showToast() helper */
+.toast-container-fixed {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 9999;
+}

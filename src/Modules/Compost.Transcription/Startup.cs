@@ -25,7 +25,7 @@ public class Startup : StartupBase
         services.AddScoped<ITranscriptionService, TranscriptionService>();
         services.AddSingleton<ITranscriptLocalizationService, TranscriptLocalizationService>();
         services.AddScoped<ITranscriptContextExtractor, TranscriptContextExtractor>();
-        services.AddHttpClient<IaiIntegrationService, AiIntegrationService>();
+        services.AddHttpClient<IAiIntegrationService, AiIntegrationService>();
         services.AddSignalR();
         services.AddScoped<IContentPartDisplayDriver, MeetingPartDisplayDriver>();
         services.AddScoped<IContentPartHandler, MeetingPartHandler>();

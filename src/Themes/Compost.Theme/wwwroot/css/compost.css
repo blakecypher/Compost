@@ -31,7 +31,7 @@
     --theme-mindmaps: #ff6b35;        /* Orange */
     --theme-kanban: #ffc107;          /* Warning Yellow */
     --theme-transcription: #6366f1;    /* Pastel Indigo Blue */
-    --theme-snippets: #6c757d;        /* Secondary Grey */
+    --theme-snippets: #dc2626;        /* Red */
     --theme-patterns: #7c3aed;        /* Electric Violet - Highly Vibrant */
     
     /* Border Colors - stronger for clear element separation */
@@ -103,7 +103,7 @@
         --theme-mindmaps: #ff6b35;        /* Orange */
         --theme-kanban: #ffc107;          /* Warning Yellow */
         --theme-transcription: #818cf8;    /* Pastel Indigo Blue - Lighter for Dark Mode */
-        --theme-snippets: #9ca3af;        /* Light Slate */
+        --theme-snippets: #ef4444;        /* Light Red (Dark Mode) */
         --theme-patterns: #8b5cf6;        /* Primary Purple - Vibrant for Dark Mode */
         
         --border-light: #334155;
@@ -149,7 +149,7 @@
     --theme-mindmaps: #ff6b35;        /* Orange */
     --theme-kanban: #ffc107;          /* Warning Yellow */
     --theme-transcription: #818cf8;    /* Pastel Indigo Blue */
-    --theme-snippets: #9ca3af;        /* Light Slate */
+    --theme-snippets: #ef4444;        /* Light Red (Dark Mode) */
     --theme-patterns: #8b5cf6;        /* Primary Purple - Vibrant for Dark Mode */
     
     --border-light: #334155;
@@ -538,6 +538,21 @@ a:hover {
 :not([data-bs-theme="dark"]) .bg-light {
     background-color: var(--bg-card) !important;
     color: #111827 !important;
+}
+
+/* Dark mode: override .bg-white and .bg-light to use dark theme colors */
+[data-bs-theme="dark"] .bg-white,
+[data-bs-theme="dark"] .bg-light {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-bs-theme="light"]) .bg-white,
+    :root:not([data-bs-theme="light"]) .bg-light {
+        background-color: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+    }
 }
 
 /* Buttons */

@@ -1,0 +1,67 @@
+@* _SidebarNav.cshtml - Shared sidebar navigation for all Compost modules *@
+@* Include via: @await Html.PartialAsync("~/Views/Shared/_SidebarNav.cshtml") *@
+@{
+    var path = Context.Request.Path.ToString();
+}
+
+<nav id="sidebar" class="sidebar flex-shrink-0 pt-3 collapsed">
+    <script>
+        (function () {
+            var s = document.getElementById('sidebar');
+            if (s && localStorage.getItem('sidebarCollapsed') !== 'true') {
+                s.classList.remove('collapsed');
+            }
+        })();
+    </script>
+    <div class="sidebar-sticky">
+        <ul class="nav flex-column">
+            <li class="nav-item mb-1">
+                <a class="nav-link @(path == "/" ? "active bg-theme-dashboard text-on-theme-dashboard rounded" : "text-dark")" href="~/">
+                    <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item"><span class="menu-section">Workflow</span></li>
+            <li class="nav-item mb-1">
+                <a class="nav-link @(path.Contains("/Projects") ? "active bg-theme-contexts text-on-theme-contexts rounded" : "text-dark")" href="/Projects/List">
+                    <i class="fas fa-folder-open"></i><span>Projects</span>
+                </a>
+            </li>
+            <li class="nav-item mb-1">
+                <a class="nav-link @(path.Contains("/Transcription") ? "active bg-theme-transcription text-on-theme-transcription rounded" : "text-dark")" href="/Transcription">
+                    <i class="fas fa-microphone"></i><span>Transcription</span>
+                </a>
+            </li>
+            <li class="nav-item mb-1">
+                <a class="nav-link @(path.Contains("/MindMap") ? "active bg-theme-mindmaps text-on-theme-mindmaps rounded" : "text-dark")" href="/MindMap">
+                    <i class="fas fa-brain"></i><span>Mind Maps</span>
+                </a>
+            </li>
+            <li class="nav-item mb-1">
+                <a class="nav-link @(path.StartsWith("/Kanban") ? "active bg-theme-kanban text-on-theme-kanban rounded" : "text-dark")" href="/Kanban">
+                    <i class="fas fa-columns"></i><span>Kanban Board</span>
+                </a>
+            </li>
+            <li class="nav-item mb-1">
+                <a class="nav-link @(path.Contains("/GitDashboard") ? "active bg-primary text-white rounded" : "text-dark")" href="/Projects/GitDashboard">
+                    <i class="fab fa-git-alt"></i><span>Git</span>
+                </a>
+            </li>
+            <li class="nav-item"><span class="menu-section">Library</span></li>
+            <li class="nav-item mb-1">
+                <a class="nav-link @(path.Contains("/Snippets") ? "active bg-theme-snippets text-on-theme-snippets rounded" : "text-dark")" href="/Snippets">
+                    <i class="fas fa-code"></i><span>Snippets</span>
+                </a>
+            </li>
+            <li class="nav-item mb-1">
+                <a class="nav-link @(path.Contains("/Patterns") ? "active bg-theme-patterns text-on-theme-patterns rounded" : "text-dark")" href="/Patterns">
+                    <i class="fas fa-project-diagram"></i><span>Patterns</span>
+                </a>
+            </li>
+        </ul>
+
+        @* Optional stats widget - only renders if the view component is registered *@
+        <div class="context-stats-widget px-3 mt-4">
+            @try { @await Component.InvokeAsync("ContextStats") } catch { }
+        </div>
+    </div>
+</nav>

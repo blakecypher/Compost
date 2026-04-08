@@ -29,7 +29,7 @@ public class TranscriptionService(
     IHubContext<TranscriptionHub> hubContext,
     IContentManager contentManager,
     Config configuration,
-    IaiIntegrationService aiIntegrationService,
+    IAiIntegrationService aiIntegrationService,
     ITranscriptContextExtractor contextExtractor,
     IServiceScopeFactory serviceScopeFactory)
     : ITranscriptionService

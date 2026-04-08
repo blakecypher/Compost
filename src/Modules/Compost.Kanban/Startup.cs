@@ -29,7 +29,7 @@ public class Startup : StartupBase
 
         // Register services
         services.AddScoped<IDecompositionEngine, DecompositionEngine>();
-        services.AddHttpClient<IaiIntegrationService, AiIntegrationService>();
+        services.AddHttpClient<IAiIntegrationService, AiIntegrationService>();
 
         // Register Migrations
         services.AddScoped<IDataMigration, Migrations>();

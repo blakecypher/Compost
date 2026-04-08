@@ -1487,8 +1487,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add context menu for node styling
         if (mindMap.cy) {
             mindMap.cy.on('cxttap', (event) => {
-                const node = event.target;
-                if (node.isNode()) {
+                const target = event.target;
+                // Check if target is a node (not the core/background)
+                if (target !== mindMap.cy && target.isNode && target.isNode()) {
                     // Create context menu
                     const contextMenu = document.createElement('div');
                     contextMenu.className = 'dropdown-menu show';
@@ -1517,19 +1518,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         switch (action) {
                             case 'style':
-                                mindMap.showNodeStyleDialog(node.id());
+                                mindMap.showNodeStyleDialog(target.id());
                                 break;
                             case 'edit':
                                 // Trigger edit functionality
-                                node.trigger('doubletap');
+                                target.trigger('doubletap');
                                 break;
                             case 'promote':
                                 // Trigger promotion
-                                mindMap.promoteNode(node.id());
+                                mindMap.promoteNode(target.id());
                                 break;
                             case 'delete':
                                 // Trigger delete
-                                mindMap.deleteNode(node.id());
+                                mindMap.deleteNode(target.id());
                                 break;
                         }
 

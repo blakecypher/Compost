@@ -1,5 +1,6 @@
 using Compost.Contexts.Services;
 using Compost.Contexts.ViewModels;
+using Compost.Core.Extensions;
 using Compost.Core.Interfaces;
 using Compost.Core.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ namespace Compost.Contexts.Controllers;
 public class ProjectController(IProjectManager projectManager, ITimeTrackingService timeTrackingService, IGitService gitService)
     : Controller
 {
-    public async Task<IActionResult> Index()
+    public IActionResult Index()
     {
         return RedirectToAction(nameof(GitDashboard));
     }
@@ -54,7 +55,7 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             return View("../Context/Create", model);
         }
 
-        var tags = model.Tags?.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? [];
+        var tags = model.Tags.ParseTags();
         
         var project = await projectManager.CreateProjectAsync(
             model.Name, 
@@ -111,8 +112,6 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
         // Populate ViewBag for parent project dropdown
         ViewBag.AllContexts = await projectManager.GetAllProjectsAsync();
 
-        Console.WriteLine($"[DEBUG] Edit GET - ViewModel: RepoName='{viewModel.RepositoryName}', Tags='{viewModel.Tags}'");
-
         return View("../Context/Edit", viewModel);
     }
 
@@ -133,15 +132,12 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
             return NotFound();
         }
 
-        // Debug logging
-        Console.WriteLine($"[DEBUG] Edit POST - Model received: Name='{model.Name}', RepoName='{model.RepositoryName}', RepoUrl='{model.RepositoryUrl}', Branch='{model.CurrentBranch}', Tags='{model.Tags}'");
-
         context.Name = model.Name;
         context.Description = string.IsNullOrWhiteSpace(model.Description) ? null : model.Description;
         context.RepositoryName = string.IsNullOrWhiteSpace(model.RepositoryName) ? null : model.RepositoryName;
         context.RepositoryUrl = string.IsNullOrWhiteSpace(model.RepositoryUrl) ? null : model.RepositoryUrl;
         context.CurrentBranch = string.IsNullOrWhiteSpace(model.CurrentBranch) ? null : model.CurrentBranch;
-        context.Tags = string.IsNullOrWhiteSpace(model.Tags) ? null : model.Tags.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToList();
+        context.Tags = model.Tags.ParseTags();
         context.ParentProjectId = string.IsNullOrWhiteSpace(model.ParentContextId) ? null : model.ParentContextId;
         context.DisplayOrder = model.DisplayOrder;
         context.Status = model.Status;
@@ -149,8 +145,6 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
         context.GitLocalPath = model.GitLocalPath;
         context.IsGitActive = model.IsGitActive;
         
-        Console.WriteLine($"[DEBUG] Edit POST - Project before save: RepoName='{context.RepositoryName}', Tags='{string.Join(",", context.Tags ?? [])}'");
-
         await projectManager.UpdateProjectAsync(context);
         
         TempData["SuccessMessage"] = $"Project '{model.Name}' updated successfully.";

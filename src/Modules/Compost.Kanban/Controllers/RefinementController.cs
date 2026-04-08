@@ -17,7 +17,7 @@ public class RefinementFormData
 public class RefinementController(
     IContentManager contentManager,
     IDecompositionEngine decompositionEngine,
-    IaiIntegrationService aiService) : Controller
+    IAiIntegrationService aiService) : Controller
 {
     public async Task<IActionResult> Index(string id)
     {

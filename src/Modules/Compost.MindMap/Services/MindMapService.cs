@@ -20,10 +20,10 @@ public interface IMindMapService
     Task SaveMindMapAsync(MindMapCollection mindMap);
     Task UpdateMindMapAsync(MindMapCollection mindMap);
     Task DeleteMindMapAsync(string id);
-    Task UpdateNodeAsync(string mapId, Models.MindMapNode node);
-    Task<Models.MindMapNode?> AddOrUpdateNodeAsync(string mapId, Models.MindMapNode node);
+    Task UpdateNodeAsync(string mapId, MindMapNode node);
+    Task<MindMapNode?> AddOrUpdateNodeAsync(string mapId, MindMapNode node);
     Task RemoveNodeAsync(string mapId, string nodeId);
-    Task AddNodeAsync(string mapId, Models.MindMapNode node);
+    Task AddNodeAsync(string mapId, MindMapNode node);
     Task DeleteNodeAsync(string mapId, string nodeId);
     Task BulkDeleteNodesAsync(string mapId, string[] nodeIds);
     Task<string> PromoteNodeAsync(string mapId, string nodeId);
@@ -78,7 +78,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         }
     }
 
-    public async Task UpdateNodeAsync(string mapId, Models.MindMapNode node)
+    public async Task UpdateNodeAsync(string mapId, MindMapNode node)
     {
         _logger.LogInformation("UpdateNodeAsync called for Map: {MapId}, Node: {NodeId}", mapId, node.Id);
         if (MindMaps.TryGetValue(mapId, out var mindMap))
@@ -110,10 +110,10 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         await Task.CompletedTask;
     }
 
-    public async Task<Models.MindMapNode?> AddOrUpdateNodeAsync(string mapId, Models.MindMapNode node)
+    public async Task<MindMapNode?> AddOrUpdateNodeAsync(string mapId, MindMapNode node)
     {
         if (!MindMaps.TryGetValue(mapId, out var mindMap))
-            return await Task.FromResult<Models.MindMapNode?>(null);
+            return await Task.FromResult<MindMapNode?>(null);
         var existing = mindMap.Nodes.FirstOrDefault(n => n.Id == node.Id);
         if (existing != null)
         {
@@ -288,13 +288,13 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
     
     // ========== Parsing Logic ==========
     
-    private List<Models.MindMapNode> ParseTextToNodes(string text)
+    private List<MindMapNode> ParseTextToNodes(string text)
     {
-        var nodes = new List<Models.MindMapNode>();
+        var nodes = new List<MindMapNode>();
         var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         
         // Create root node at center
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Text = "Main Topic",
             NodeType = "Root",
@@ -320,7 +320,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
             var x = 400 + radius * Math.Cos(angle);
             var y = 300 + radius * Math.Sin(angle);
             
-            var node = new Models.MindMapNode
+            var node = new MindMapNode
             {
                 Text = nodeText,
                 NodeType = nodeType,
@@ -358,14 +358,14 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         return nodes;
     }
     
-    private List<Models.MindMapNode> ParseTranscriptToNodes(string transcript)
+    private List<MindMapNode> ParseTranscriptToNodes(string transcript)
     {
-        var nodes = new List<Models.MindMapNode>();
+        var nodes = new List<MindMapNode>();
         
         // Extract key segments from transcript
         var segments = ExtractSegments(transcript);
         
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Text = "Meeting Summary",
             NodeType = "Root",
@@ -384,7 +384,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
             var segment = segments[i];
             var angle = i * angleStep;
             
-            var node = new Models.MindMapNode
+            var node = new MindMapNode
             {
                 Text = segment.Text.Length > 50 ? segment.Text[..50] + "..." : segment.Text,
                 NodeType = segment.SegmentType,
@@ -406,15 +406,15 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         return nodes;
     }
     
-    private List<Models.MindMapNode> ParseRequirementsToNodes(string requirements)
+    private List<MindMapNode> ParseRequirementsToNodes(string requirements)
     {
-        var nodes = new List<Models.MindMapNode>();
+        var nodes = new List<MindMapNode>();
         
         // Parse numbered or bulleted requirements
         var pattern = @"(?:^|\n)(?:\d+[.)]\s*|[-•]\s*|\[\s*(\d+)\s*\]\s*)(.+?)(?=\n(?:\d+[.)]\s*|[-•]\s*|\[\s*\d+\s*\]\s*)|$)";
         var matches = Regex.Matches(requirements, pattern, RegexOptions.Singleline);
         
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Text = "Requirements",
             NodeType = "Root",
@@ -439,7 +439,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
             
             var angle = i * angleStep;
             
-            var node = new Models.MindMapNode
+            var node = new MindMapNode
             {
                 Text = nodeText.Length > 60 ? nodeText[..60] + "..." : nodeText,
                 NodeType = nodeType,
@@ -634,7 +634,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         return markdown.ToString();
     }
 
-    private static async Task ExportNodeToMarkdown(StringBuilder markdown, Models.MindMapNode node, List<Models.MindMapNode> allNodes, int level)
+    private static async Task ExportNodeToMarkdown(StringBuilder markdown, MindMapNode node, List<MindMapNode> allNodes, int level)
     {
         var indent = new string(' ', level * 2);
         var marker = level == 0 ? "#" : "-";
@@ -751,7 +751,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
     }
 
     // Wrapper methods for controller compatibility
-    public async Task AddNodeAsync(string mapId, Models.MindMapNode node)
+    public async Task AddNodeAsync(string mapId, MindMapNode node)
     {
         await AddOrUpdateNodeAsync(mapId, node);
     }
@@ -840,7 +840,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 
     private void CreateProjectPlanningTemplate(MindMapCollection mindMap)
     {
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = mindMap.Name,
@@ -867,7 +867,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
             var (text, type) = branches[i];
             var angle = i * angleStep;
             
-            var node = new Models.MindMapNode
+            var node = new MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = text,
@@ -885,7 +885,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 
     private void CreateBrainstormingTemplate(MindMapCollection mindMap)
     {
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = mindMap.Name,
@@ -905,7 +905,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
             var x = 400 + (int)(200 * Math.Cos(angle));
             var y = 300 + (int)(200 * Math.Sin(angle));
 
-            var node = new Models.MindMapNode
+            var node = new MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = ideas[i],
@@ -922,7 +922,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 
     private void CreateDecisionTreeTemplate(MindMapCollection mindMap)
     {
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = "Decision: " + mindMap.Name,
@@ -938,7 +938,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 
         foreach (var option in options)
         {
-            var node = new Models.MindMapNode
+            var node = new MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = option,
@@ -952,7 +952,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
             root.ChildIds.Add(node.Id);
 
             // Add pros and cons
-            var pros = new Models.MindMapNode
+            var pros = new MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = "Pros",
@@ -965,7 +965,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
             mindMap.Nodes.Add(pros);
             node.ChildIds.Add(pros.Id);
 
-            var cons = new Models.MindMapNode
+            var cons = new MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = "Cons",
@@ -984,7 +984,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 
     private void CreateMeetingNotesTemplate(MindMapCollection mindMap)
     {
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = mindMap.Name,
@@ -1006,7 +1006,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 
         foreach (var (text, type, x, y) in sections)
         {
-            var node = new Models.MindMapNode
+            var node = new MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = text,
@@ -1023,7 +1023,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 
     private void CreateResearchTemplate(MindMapCollection mindMap)
     {
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = "Research: " + mindMap.Name,
@@ -1045,7 +1045,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
 
         foreach (var (text, type, x, y) in branches)
         {
-            var node = new Models.MindMapNode
+            var node = new MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = text,
@@ -1060,9 +1060,9 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         }
     }
     
-    private List<Models.MindMapNode> ConvertMeetingNodesToMindMapNodes(List<MindMapNode>? meetingNodes, string? meetingId)
+    private List<MindMapNode> ConvertMeetingNodesToMindMapNodes(List<MindMapNode>? meetingNodes, string? meetingId)
     {
-        var mindMapNodes = new List<Models.MindMapNode>();
+        var mindMapNodes = new List<MindMapNode>();
         
         if (meetingNodes is not { Count: not 0 })
         {
@@ -1070,7 +1070,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         }
         
         // Create root node
-        var root = new Models.MindMapNode
+        var root = new MindMapNode
         {
             Id = Guid.NewGuid().ToString(),
             Text = "Meeting Insights",
@@ -1092,7 +1092,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         foreach (var group in nodeGroups)
         {
             // Create category node
-            var categoryNode = new Models.MindMapNode
+            var categoryNode = new MindMapNode
             {
                 Id = Guid.NewGuid().ToString(),
                 Text = GetCategoryName(group.Key),
@@ -1117,7 +1117,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
                 
                 foreach (var meetingNode in groupList)
                 {
-                    var node = new Models.MindMapNode
+                    var node = new MindMapNode
                     {
                         Id = Guid.NewGuid().ToString(),
                         Text = meetingNode.Title,
@@ -1144,8 +1144,9 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         return mindMapNodes;
     }
     
-    private string GetCategoryName(MindMapNodeType nodeType)
+    private string GetCategoryName(string nodeTypeStr)
     {
+        _ = Enum.TryParse<MindMapNodeType>(nodeTypeStr, true, out var nodeType);
         return nodeType switch
         {
             MindMapNodeType.Idea => "Ideas & Concepts",
@@ -1159,8 +1160,9 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         };
     }
     
-    private string GetMindMapNodeTypeName(MindMapNodeType nodeType)
+    private string GetMindMapNodeTypeName(string nodeTypeStr)
     {
+        _ = Enum.TryParse<MindMapNodeType>(nodeTypeStr, true, out var nodeType);
         return nodeType switch
         {
             MindMapNodeType.Idea => "Idea",
