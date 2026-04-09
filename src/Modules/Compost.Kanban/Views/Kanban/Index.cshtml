@@ -254,20 +254,14 @@
         }
     </div>
     <div class="d-flex gap-2 align-items-center">
-        <select id="contextSelector" class="form-select form-select-sm"
-                onchange="window.location.href = this.value ? '?projectId=' + this.value : '/Kanban'">
-            <option value="" selected="@(string.IsNullOrEmpty(Model.SelectedContextId))">All Projects</option>
-            @foreach (var context in Model.Contexts)
-            {
-                <option value="@context.Id" selected="@(context.Id == Model.SelectedContextId)">@context.Name</option>
-            }
-        </select>
-        <a href="/Admin/Contents/ContentTypes/KanbanCard/Create" class="btn btn-outline-success whitespace-nowrap flex-shrink-0">
+        <a href="/Admin/Contents/ContentTypes/KanbanCard/Create" class="btn btn-theme-kanban whitespace-nowrap flex-shrink-0">
             <i class="fas fa-plus me-1"></i> Add Card
-        </a>
-        <button class="btn btn-outline-primary" onclick="publishAllCards()" title="Publish all draft cards">
-            <i class="fas fa-upload me-1"></i> Publish All
-        </button>
+     
+        
+            </a>
+        @* <button class="btn btn-outline-primary" onclick="publishAllCards()" title="Publish all draft cards"> *@
+        @*     <i class="fas fa-upload me-1"></i> Publish All *@
+        @* </button> *@
     </div>
 </div>
 
@@ -275,7 +269,17 @@
 <div class="card mb-4">
     <div class="card-body py-3">
         <div class="row g-3 align-items-end">
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <label class="form-label">Project</label>
+                <select id="contextSelector" class="form-select" onchange="window.location.href = this.value ? '?projectId=' + this.value : '/Kanban'">
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.SelectedContextId))">All Projects</option>
+                    @foreach (var context in Model.Contexts)
+                    {
+                        <option value="@context.Id" selected="@(context.Id == Model.SelectedContextId)">@context.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-5">
                 <label class="form-label">Search Cards</label>
                 <div class="input-group">
                     <span class="input-group-text">
