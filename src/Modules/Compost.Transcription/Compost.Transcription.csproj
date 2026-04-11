@@ -13,6 +13,7 @@
     <PackageReference Include="OrchardCore.ResourceManagement" Version="1.8.2" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="10.0.5" />
     <ProjectReference Include="..\..\Compost.Core\Compost.Core.csproj" />
     <ProjectReference Include="..\Compost.MindMap\Compost.MindMap.csproj" />
   </ItemGroup>
