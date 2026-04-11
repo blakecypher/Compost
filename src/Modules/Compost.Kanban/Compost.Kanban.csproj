@@ -11,6 +11,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="YesSql.Core" Version="5.4.7" />
     <ProjectReference Include="..\..\Compost.Core\Compost.Core.csproj" />
   </ItemGroup>
 </Project>
