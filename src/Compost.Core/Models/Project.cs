@@ -81,12 +81,6 @@ public class Project
     public bool IsActive { get; set; }
 
     /// <summary>
-    /// Cosmos DB partition key
-    /// </summary>
-    [JsonProperty("partitionKey")]
-    public string PartitionKey => "project";
-
-    /// <summary>
     /// Tags for categorization
     /// </summary>
     public List<string>? Tags { get; set; } = [];

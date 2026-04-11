@@ -392,14 +392,18 @@
         }
 
         function deleteCard(cardId) {
-            if (confirm('Are you sure you want to delete this card?')) {
-                const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
-                if (cardElement) {
-                    cardElement.remove();
-                    updateCardCounts();
+            window.compostTheme?.confirmDelete(
+                'Delete Card',
+                'Are you sure you want to delete this card?',
+                () => {
+                    const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
+                    if (cardElement) {
+                        cardElement.remove();
+                        updateCardCounts();
+                    }
+                    console.log('Deleting card:', cardId);
                 }
-                console.log('Deleting card:', cardId);
-            }
+            );
         }
     </script>
 

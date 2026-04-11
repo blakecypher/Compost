@@ -31,7 +31,8 @@ public class TranscriptionService(
     Config configuration,
     IAiIntegrationService aiIntegrationService,
     ITranscriptContextExtractor contextExtractor,
-    IServiceScopeFactory serviceScopeFactory)
+    IServiceScopeFactory serviceScopeFactory,
+    TranscriptionBackgroundService backgroundService)
     : ITranscriptionService
 {
     private readonly Dictionary<string, SpeechRecognizer> _activeRecognizers = new();
@@ -39,9 +40,7 @@ public class TranscriptionService(
     private readonly string _azureSpeechKey = configuration["Compost:AzureSpeech:SubscriptionKey"];
     private readonly string _azureSpeechRegion = configuration["Compost:AzureSpeech:Region"];
     private readonly bool _forceMock = configuration.GetValue<bool>("Compost:Transcription:ForceMock");
-    
-    // In-memory storage for active recordings (performance optimization)
-    private static readonly Dictionary<string, Meeting> ActiveMeetingsMemory = new();
+    private readonly TranscriptionBackgroundService _backgroundService = backgroundService;
 
     private static readonly string[] MockSentences =
     [
@@ -115,16 +114,24 @@ public class TranscriptionService(
             // Continue without creating the content item for now
         }
         
-        // Initialize active meeting storage
-        ActiveMeetingsMemory[meeting.Id] = meeting;
+        // Register meeting with background service for persistence
+        _backgroundService.RegisterMeeting(meeting);
         
         // Notify clients about recording status
         await hubContext.Clients.Group($"meeting_{meeting.Id}").SendAsync("ReceiveRecordingStatus", "recording", "Recording started");
         
-        // Start real-time transcription and periodic persistence in background
-        var cts = new CancellationTokenSource();
-        _ = Task.Run(async () => await StartRealtimeTranscriptionAsync(meeting.Id));
-        _ = Task.Run(async () => await StartPeriodicPersistenceAsync(meeting.Id, cts.Token));
+        // Start real-time transcription
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await StartRealtimeTranscriptionAsync(meeting.Id);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error in real-time transcription for meeting {MeetingId}", meeting.Id);
+            }
+        });
         
         logger.LogInformation("Started recording meeting: {Title} ({Id})", title, meeting.Id);
         return meeting;
@@ -135,7 +142,7 @@ public class TranscriptionService(
         logger.LogInformation("[STOP] StopRecordingAsync called for meeting {MeetingId}", meetingId);
         
         // First, check what's in active memory
-        if (ActiveMeetingsMemory.TryGetValue(meetingId, out var checkActiveMeeting))
+        if (_backgroundService.TryGetMeeting(meetingId, out var checkActiveMeeting))
         {
             logger.LogInformation("[STOP] Active memory has meeting {MeetingId} with {Count} transcript segments", 
                 meetingId, checkActiveMeeting.Transcript.Count);
@@ -156,7 +163,7 @@ public class TranscriptionService(
             meeting.DurationSeconds = (int)(meeting.EndedAt.Value - meeting.StartedAt).TotalSeconds;
             
             // CRITICAL: Copy transcript from active memory (where browser sent it) to the DB meeting
-            if (ActiveMeetingsMemory.TryGetValue(meetingId, out var activeMeetingForSync))
+            if (_backgroundService.TryGetMeeting(meetingId, out var activeMeetingForSync))
             {
                 logger.LogInformation("[STOP] Syncing {Count} segments from active memory to DB meeting {MeetingId}", 
                     activeMeetingForSync.Transcript.Count, meetingId);
@@ -176,6 +183,10 @@ public class TranscriptionService(
             await UpdateMeetingAsync(meeting);
             logger.LogInformation("[STOP] UpdateMeetingAsync completed for {MeetingId}", meetingId);
 
+            // Unregister from background service (cancels persistence loop)
+            _backgroundService.UnregisterMeeting(meetingId);
+            logger.LogInformation("Unregistered meeting {MeetingId} from background service", meetingId);
+            
             // Clean up Azure Speech resources if active
             if (_activeStreams.TryGetValue(meetingId, out var pushStream))
             {
@@ -202,7 +213,7 @@ public class TranscriptionService(
         else
         {
             // If meeting not found in database, still trigger processing if we have active transcript
-            if (ActiveMeetingsMemory.TryGetValue(meetingId, out _))
+            if (_backgroundService.TryGetMeeting(meetingId, out _))
             {
                 logger.LogWarning("Meeting not found in database, but active transcript exists. Triggering processing for {MeetingId}", meetingId);
                 
@@ -230,7 +241,7 @@ public class TranscriptionService(
     {
         try
         {
-            if (!ActiveMeetingsMemory.TryGetValue(meetingId, out _))
+            if (!_backgroundService.TryGetMeeting(meetingId, out _))
             {
                 return Task.CompletedTask;
             }
@@ -260,10 +271,9 @@ public class TranscriptionService(
     {
         try
         {
-            if (ActiveMeetingsMemory.TryGetValue(meetingId, out var meeting))
+            if (_backgroundService.TryAddSegment(meetingId, segment))
             {
-                meeting.Transcript.Add(segment);
-                logger.LogInformation("[SEGMENT] Added transcript segment to meeting {MeetingId}: '{Text}' (Total: {Count})", meetingId, segment.Text, meeting.Transcript.Count);
+                // Success - segment was added
             }
             else
             {
@@ -278,93 +288,6 @@ public class TranscriptionService(
         }
     }
 
-    private async Task PersistMeetingTranscriptAsync(string meetingId)
-    {
-        try
-        {
-            // Create a new scope to avoid disposed session issues in background tasks
-            using var scope = serviceScopeFactory.CreateScope();
-            var session = scope.ServiceProvider.GetRequiredService<ISession>();
-            var manager = scope.ServiceProvider.GetRequiredService<IContentManager>();
-            
-            if (!ActiveMeetingsMemory.TryGetValue(meetingId, out var meeting)) 
-            {
-                logger.LogWarning("Cannot periodically persist meeting {MeetingId} - not found in active memory", meetingId);
-                return;
-            }
-            
-            // Use direct ID lookup which is now reliable since we synced domain ID with ContentItemId
-            var contentItem = await manager.GetAsync(meetingId, VersionOptions.Latest);
-            
-            // Fallback to title query only if ID lookup failed (e.g. for legacy records)
-            if (contentItem == null)
-            {
-                contentItem = await session.Query<ContentItem, ContentItemIndex>()
-                    .Where(ci => ci.ContentType == nameof(Meeting) && ci.DisplayText == meeting.Title)
-                    .FirstOrDefaultAsync();
-            }
-            
-            if (contentItem != null)
-            {
-                var meetingPart = contentItem.As<MeetingPart>();
-                if (meetingPart != null)
-                {
-                    // Sync all properties
-                    meetingPart.MeetingId = meeting.Id;
-                    meetingPart.Title = meeting.Title;
-                    meetingPart.WorkContextId = meeting.WorkContextId;
-                    meetingPart.Status = meeting.Status.ToString();
-                    meetingPart.StartedAt = meeting.StartedAt;
-                    meetingPart.EndedAt = meeting.EndedAt;
-                    meetingPart.DurationSeconds = meeting.DurationSeconds;
-                    
-                    if (meeting.Transcript.Count > 0)
-                    {
-                        meetingPart.Transcript = meeting.Transcript;
-                        meetingPart.TranscriptText = string.Join("\n", meeting.Transcript.Select(t => t.Text));
-                    }
-                    
-                    meetingPart.ActionItems = meeting.ActionItems;
-                    meetingPart.ExtractedNodes = meeting.ExtractedNodes;
-                    meetingPart.TranscriptionCompletedAt = meeting.TranscriptionCompletedAt;
-                    meetingPart.IsProcessed = meeting.IsProcessed;
-
-                    contentItem.Apply(meetingPart);
-                    await manager.UpdateAsync(contentItem);
-                    await manager.PublishAsync(contentItem);
-                    await session.SaveChangesAsync(); // CRITICAL: Commit the transaction in background task
-                    
-                    logger.LogInformation("Persisted transcript for meeting {MeetingId} with {Count} segments", meetingId, meeting.Transcript.Count);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to persist meeting transcript for {MeetingId}", meetingId);
-        }
-    }
-
-    private async Task StartPeriodicPersistenceAsync(string meetingId, CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested && ActiveMeetingsMemory.TryGetValue(meetingId, out var meeting) && meeting.Status == MeetingStatus.Recording)
-        {
-            try
-            {
-                await Task.Delay(10000, cancellationToken); // Persist every 10 seconds
-                if (meeting.Status != MeetingStatus.Recording) break;
-                
-                await PersistMeetingTranscriptAsync(meetingId);
-            }
-            catch (TaskCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error in periodic persistence for meeting {MeetingId}", meetingId);
-            }
-        }
-    }
 
     public async Task ProcessAudioSegmentAsync(string meetingId, byte[] segment)
     {
@@ -417,10 +340,7 @@ public class TranscriptionService(
                             IsInterim = false
                         };
                         
-                        if (ActiveMeetingsMemory.TryGetValue(meetingId, out var meeting))
-                        {
-                            meeting.Transcript.Add(transcriptSegment);
-                        }
+                        _backgroundService.TryAddSegment(meetingId, transcriptSegment);
                         
                         await hubContext.Clients.Group($"meeting_{meetingId}").SendAsync("ReceiveTranscriptSegment", transcriptSegment);
                     }
@@ -440,7 +360,7 @@ public class TranscriptionService(
     public async IAsyncEnumerable<TranscriptSegment> GetRealtimeTranscriptAsync(string meetingId)
     {
         // For active recordings, return from memory storage
-        if (ActiveMeetingsMemory.TryGetValue(meetingId, out var activeMeeting))
+        if (_backgroundService.TryGetMeeting(meetingId, out var activeMeeting))
         {
             foreach (var segment in activeMeeting.Transcript)
             {
@@ -551,7 +471,7 @@ public class TranscriptionService(
         if (meeting == null)
         {
             // If not found in database, check active meeting memory
-            if (ActiveMeetingsMemory.TryGetValue(meetingId, out meeting))
+            if (_backgroundService.TryGetMeeting(meetingId, out meeting))
             {
                 logger.LogInformation("Meeting {MeetingId} found in active storage for ProcessRecordingAsync", meetingId);
             }
@@ -581,7 +501,7 @@ public class TranscriptionService(
             await hubContext.Clients.Group($"meeting_{meetingId}").SendAsync("ReceiveRecordingStatus", "processing", "Processing transcription...");
             
             // Ensure we have the latest transcript from active memory
-            if (ActiveMeetingsMemory.TryGetValue(meetingId, out var activeMeeting))
+            if (_backgroundService.TryGetMeeting(meetingId, out var activeMeeting))
             {
                 meeting.Transcript = activeMeeting.Transcript;
                 logger.LogInformation("Found {Count} transcript segments in active storage for meeting {MeetingId}", meeting.Transcript.Count, meetingId);
@@ -603,6 +523,16 @@ public class TranscriptionService(
             var mindMapNodes = await ExtractMindMapNodesAsync(meetingId);
             meeting.ExtractedNodes = mindMapNodes;
             
+            // Automatically create Orchard Core MindMapNode content items if enabled
+            var autoCreateContentItems = configuration.GetValue<bool>("Compost:Transcription:AutoCreateMindMapContentItems", true);
+            if (autoCreateContentItems && mindMapNodes.Count > 0)
+            {
+                logger.LogInformation("Auto-creating MindMapNode content items for meeting {MeetingId}", meetingId);
+                var createdNodeIds = await CreateMindMapNodeContentItemsAsync(meetingId);
+                logger.LogInformation("Created {Count} MindMapNode content items for meeting {MeetingId}", 
+                    createdNodeIds.Count, meetingId);
+            }
+            
             meeting.Status = MeetingStatus.Completed;
             meeting.TranscriptionCompletedAt = DateTime.UtcNow;
             meeting.IsProcessed = true;
@@ -612,10 +542,7 @@ public class TranscriptionService(
             
             logger.LogInformation("Sending 'completed' status to SignalR group for meeting {MeetingId}", meetingId);
             await hubContext.Clients.Group("meeting_" + meetingId).SendAsync("ReceiveRecordingStatus", "completed", "Processing completed!");
-            
-            // Final persistence to ensure everything (transcript, action items, mind map) is saved to Orchard Core
-            await PersistMeetingTranscriptAsync(meetingId);
-            
+
             logger.LogInformation("Completed processing meeting: {MeetingId} with {ActionItemCount} action items and {MindMapNodeCount} mind map nodes", 
                 meetingId, actionItems.Count, mindMapNodes.Count);
             
@@ -623,7 +550,7 @@ public class TranscriptionService(
             _ = Task.Run(async () =>
             {
                 await Task.Delay(TimeSpan.FromMinutes(5)); // Keep for 5 minutes
-                if (ActiveMeetingsMemory.Remove(meetingId))
+                if (_backgroundService.UnregisterMeeting(meetingId))
                 {
                     logger.LogInformation("Cleaned up active meeting storage for meeting {MeetingId} after delay", meetingId);
                 }
@@ -732,7 +659,7 @@ public class TranscriptionService(
         if (meeting == null)
         {
             // If meeting not found in database, try to use the one from active meeting storage
-            if (ActiveMeetingsMemory.TryGetValue(meetingId, out meeting))
+            if (_backgroundService.TryGetMeeting(meetingId, out meeting))
             {
                 logger.LogWarning("Meeting not found in database, using from active storage for ProcessAudioAsync {MeetingId}", meetingId);
             }
@@ -934,7 +861,7 @@ public class TranscriptionService(
             
             // If the active meeting in memory is a different reference, update it too
             // though GetMeetingByIdAsync usually returns the one from _activeMeetingsMemory
-            if (ActiveMeetingsMemory.TryGetValue(meetingId, out var activeMeeting) && activeMeeting != meeting)
+            if (_backgroundService.TryGetMeeting(meetingId, out var activeMeeting) && activeMeeting != meeting)
             {
                 activeMeeting.Transcript.Clear();
                 activeMeeting.Transcript.AddRange(finalSegments);
@@ -977,7 +904,7 @@ public class TranscriptionService(
 
         await Task.Delay(2000); // Simulate processing time
         
-        if (ActiveMeetingsMemory.TryGetValue(meetingId, out var meeting))
+        if (_backgroundService.TryGetMeeting(meetingId, out var meeting))
         {
             // Only add mock data if there's no real transcript - never overwrite real data
             if (meeting.Transcript.Count == 0)
@@ -1045,8 +972,9 @@ public class TranscriptionService(
         meeting.ActionItems = actionItems;
         
         // Update active storage if exists
-        if (ActiveMeetingsMemory.ContainsKey(meetingId))
+        if (_backgroundService.TryGetMeeting(meetingId, out var activeMeetingForActionItems))
         {
+            activeMeetingForActionItems.ActionItems = actionItems;
             logger.LogInformation("Updated meeting {MeetingId} with {ActionItemCount} action items", meetingId, actionItems.Count);
         }
         
@@ -1074,9 +1002,9 @@ public class TranscriptionService(
         meeting.ExtractedNodes = mindMapNodes;
 
         // Update active storage if exists
-        if (ActiveMeetingsMemory.ContainsKey(meetingId))
+        if (_backgroundService.TryGetMeeting(meetingId, out var activeMeetingForNodes))
         {
-            ActiveMeetingsMemory[meetingId].ExtractedNodes = mindMapNodes;
+            activeMeetingForNodes.ExtractedNodes = mindMapNodes;
             logger.LogInformation("Updated meeting {MeetingId} with {MindMapNodeCount} mind map nodes from {SegmentCount} segments using {Method}",
                 meetingId, mindMapNodes.Count, contextResult.Metadata.TotalSegments, contextResult.Metadata.ExtractionMethod);
         }
@@ -1084,12 +1012,111 @@ public class TranscriptionService(
         return mindMapNodes;
     }
 
+    /// <summary>
+    /// Creates proper Orchard Core MindMapNode content items from meeting-extracted nodes.
+    /// This bridges the gap between meeting transcription and the decomposition engine pipeline.
+    /// </summary>
+    public async Task<List<string>> CreateMindMapNodeContentItemsAsync(string meetingId)
+    {
+        var meeting = await GetMeetingByIdAsync(meetingId);
+        if (meeting?.ExtractedNodes == null || meeting.ExtractedNodes.Count == 0)
+        {
+            logger.LogWarning("No extracted nodes found for meeting {MeetingId}", meetingId);
+            return [];
+        }
+
+        var createdNodeIds = new List<string>();
+
+        foreach (var node in meeting.ExtractedNodes)
+        {
+            try
+            {
+                // Create a proper Orchard Core MindMapNode content item
+                var contentItem = await contentManager.NewAsync(nameof(MindMapNode));
+                contentItem.DisplayText = node.Title ?? node.Text ?? "Untitled Node";
+
+                var mindMapPart = contentItem.As<MindMapNodePart>();
+                if (mindMapPart == null)
+                {
+                    logger.LogWarning("MindMapNodePart not found, welding to content item");
+                    contentItem.Weld<MindMapNodePart>();
+                    mindMapPart = contentItem.As<MindMapNodePart>();
+                }
+
+                if (mindMapPart != null)
+                {
+                    mindMapPart.WorkContextId = meeting.WorkContextId;
+                    mindMapPart.NodeType = node.NodeType ?? "Idea";
+                    mindMapPart.Color = node.Color ?? GetColorForNodeType(node.NodeType);
+                    mindMapPart.PositionX = node.PositionX;
+                    mindMapPart.PositionY = node.PositionY;
+                    mindMapPart.Tags = node.Tags ?? [];
+                    mindMapPart.IsPromotedToTree = false;
+
+                    // Store the source meeting reference
+                    mindMapPart.SourceReferenceId = meetingId;
+                    mindMapPart.SourceType = "Meeting";
+
+                    contentItem.Apply(mindMapPart);
+                }
+
+                // Set content in MarkdownBodyPart if available
+                if (contentItem.Content.MarkdownBodyPart != null)
+                {
+                    contentItem.Content.MarkdownBodyPart.Markdown = node.Content ?? node.Notes ?? "";
+                }
+
+                await contentManager.CreateAsync(contentItem);
+                await contentManager.PublishAsync(contentItem);
+
+                createdNodeIds.Add(contentItem.ContentItemId);
+                logger.LogInformation("Created MindMapNode content item {NodeId} from meeting {MeetingId}", 
+                    contentItem.ContentItemId, meetingId);
+
+                // Update the node with the content item ID for future reference
+                node.Id = contentItem.ContentItemId;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to create MindMapNode content item for meeting {MeetingId}", meetingId);
+            }
+        }
+
+        // Update the meeting with the updated node IDs
+        if (createdNodeIds.Count > 0)
+        {
+            meeting.ExtractedNodeIds = createdNodeIds;
+            await UpdateMeetingAsync(meeting);
+            logger.LogInformation("Created {Count} MindMapNode content items for meeting {MeetingId}", 
+                createdNodeIds.Count, meetingId);
+        }
+
+        return createdNodeIds;
+    }
+
+    private static string GetColorForNodeType(string nodeType)
+    {
+        return nodeType?.ToLower() switch
+        {
+            "decision" => "#4caf50",
+            "action" => "#9c27b0",
+            "requirement" => "#2196f3",
+            "risk" => "#f44336",
+            "goal" => "#673ab7",
+            "timeline" => "#ff5722",
+            "question" => "#ff9800",
+            "idea" => "#4a7c4b",
+            "technical" => "#00bcd4",
+            _ => "#4a7c4b"
+        };
+    }
+
     public async Task<Meeting> GetMeetingByIdAsync(string meetingId)
     {
         if (string.IsNullOrEmpty(meetingId)) return null;
 
         // First check active memory (no DB query needed)
-        if (ActiveMeetingsMemory.TryGetValue(meetingId, out var activeMeeting))
+        if (_backgroundService.TryGetMeeting(meetingId, out var activeMeeting))
         {
             logger.LogInformation("[GetMeetingById] Found meeting {MeetingId} in active memory with {Count} transcript segments", 
                 meetingId, activeMeeting.Transcript.Count);
@@ -1187,6 +1214,7 @@ public class TranscriptionService(
 
                     meetingPart.ActionItems = meeting.ActionItems;
                     meetingPart.ExtractedNodes = meeting.ExtractedNodes;
+                    meetingPart.ExtractedNodeIds = meeting.ExtractedNodeIds ?? [];
                     meetingPart.TranscriptionCompletedAt = meeting.TranscriptionCompletedAt;
                     meetingPart.IsProcessed = meeting.IsProcessed;
 
@@ -1273,15 +1301,19 @@ public class TranscriptionService(
 
     public List<Meeting> GetActiveMeetings()
     {
-        return ActiveMeetingsMemory.Values.OrderByDescending(m => m.StartedAt).ToList();
+        return _backgroundService.GetActiveMeetings();
     }
 
     public async Task<bool> DeleteMeetingAsync(string meetingId)
     {
         if (string.IsNullOrEmpty(meetingId)) return false;
 
-        // 1. Remove from active memory if it exists
-        var removedFromMemory = ActiveMeetingsMemory.Remove(meetingId);
+        // 1. Unregister from background service if active
+        var wasActive = _backgroundService.TryGetMeeting(meetingId, out _);
+        if (wasActive)
+        {
+            _backgroundService.UnregisterMeeting(meetingId);
+        }
 
         // Create a new scope to avoid disposed session issues
         using var scope = serviceScopeFactory.CreateScope();
@@ -1304,7 +1336,7 @@ public class TranscriptionService(
             break;
         }
 
-        return removedFromMemory || removedFromDb;
+        return wasActive || removedFromDb;
     }
 
     public int GetMaxRecordingDurationSeconds() => 3600; // 1 hour
@@ -1327,6 +1359,7 @@ public class TranscriptionService(
             Transcript = meetingPart.Transcript ?? [],
             ActionItems = meetingPart.ActionItems ?? [],
             ExtractedNodes = meetingPart.ExtractedNodes ?? [],
+            ExtractedNodeIds = meetingPart.ExtractedNodeIds ?? [],
             TranscriptionCompletedAt = meetingPart.TranscriptionCompletedAt,
             IsProcessed = meetingPart.IsProcessed
         };

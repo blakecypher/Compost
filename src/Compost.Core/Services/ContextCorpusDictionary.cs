@@ -1,21 +1,154 @@
+using System.Text.Json;
+using Compost.Core.Configuration;
 using Compost.Core.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Compost.Core.Services;
 
 /// <summary>
 /// Context corpus dictionary for domain-specific term classification
 /// Provides language dictionary lookups for semantic context extraction
+/// 
+/// Loads corpus from corpus.json configuration file at startup.
+/// Falls back to hardcoded dictionary if the file is not found or invalid.
 /// </summary>
 public class ContextCorpusDictionary
 {
     // Domain-specific keyword mappings to semantic types
     private readonly Dictionary<string, Dictionary<string, double>> _domainKeywords;
     private readonly HashSet<string> _stopWords;
+    private readonly ILogger<ContextCorpusDictionary>? _logger;
 
+    /// <summary>
+    /// Creates a new ContextCorpusDictionary with hardcoded default corpus.
+    /// </summary>
     public ContextCorpusDictionary()
     {
-        _domainKeywords = InitializeDomainKeywords();
-        _stopWords = InitializeStopWords();
+        _domainKeywords = InitializeDefaultDomainKeywords();
+        _stopWords = InitializeDefaultStopWords();
+    }
+
+    /// <summary>
+    /// Creates a new ContextCorpusDictionary loading from configuration.
+    /// Falls back to hardcoded corpus if corpus.json is not found or invalid.
+    /// </summary>
+    /// <param name="configuration">Application configuration to read Corpus section from</param>
+    /// <param name="logger">Optional logger for diagnostic messages</param>
+    public ContextCorpusDictionary(IConfiguration configuration, ILogger<ContextCorpusDictionary>? logger = null)
+    {
+        _logger = logger;
+        var corpusConfig = LoadCorpusFromConfiguration(configuration);
+
+        if (corpusConfig != null && corpusConfig.DomainKeywords.Count > 0)
+        {
+            _domainKeywords = corpusConfig.DomainKeywords;
+            _stopWords = new HashSet<string>(corpusConfig.StopWords);
+            _logger?.LogInformation("Loaded NLP corpus from configuration: {DomainCount} domains, {StopWordCount} stop words",
+                corpusConfig.DomainKeywords.Count, corpusConfig.StopWords.Count);
+        }
+        else
+        {
+            _logger?.LogWarning("Failed to load corpus from configuration, using hardcoded fallback");
+            _domainKeywords = InitializeDefaultDomainKeywords();
+            _stopWords = InitializeDefaultStopWords();
+        }
+    }
+
+    /// <summary>
+    /// Creates a new ContextCorpusDictionary from IOptions pattern.
+    /// Falls back to hardcoded corpus if the options are empty or invalid.
+    /// </summary>
+    /// <param name="options">Pre-configured CorpusConfig options</param>
+    /// <param name="logger">Optional logger for diagnostic messages</param>
+    public ContextCorpusDictionary(IOptions<CorpusConfig> options, ILogger<ContextCorpusDictionary>? logger = null)
+    {
+        _logger = logger;
+        var corpusConfig = options.Value;
+
+        if (corpusConfig.DomainKeywords.Count > 0)
+        {
+            _domainKeywords = corpusConfig.DomainKeywords;
+            _stopWords = new HashSet<string>(corpusConfig.StopWords);
+            _logger?.LogInformation("Loaded NLP corpus from IOptions: {DomainCount} domains, {StopWordCount} stop words",
+                corpusConfig.DomainKeywords.Count, corpusConfig.StopWords.Count);
+        }
+        else
+        {
+            _logger?.LogWarning("IOptions<CorpusConfig> is empty, using hardcoded fallback");
+            _domainKeywords = InitializeDefaultDomainKeywords();
+            _stopWords = InitializeDefaultStopWords();
+        }
+    }
+
+    /// <summary>
+    /// Loads corpus configuration from IConfiguration.
+    /// Tries to bind to CorpusConfig section, then attempts to load from corpus.json file directly.
+    /// </summary>
+    private CorpusConfig? LoadCorpusFromConfiguration(IConfiguration configuration)
+    {
+        try
+        {
+            // First try to bind from the "Corpus" configuration section
+            var corpusSection = configuration.GetSection("Corpus");
+            if (corpusSection.Exists())
+            {
+                var config = new CorpusConfig();
+                corpusSection.Bind(config);
+                if (config.DomainKeywords.Count > 0)
+                {
+                    return config;
+                }
+            }
+
+            // Try to load from corpus.json file directly
+            var corpusPath = configuration["Corpus:FilePath"] ?? "corpus.json";
+            if (File.Exists(corpusPath))
+            {
+                var json = File.ReadAllText(corpusPath);
+                var config = JsonSerializer.Deserialize<CorpusConfig>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                if (config?.DomainKeywords.Count > 0)
+                {
+                    return config;
+                }
+            }
+
+            // For content root relative paths, try resolving from base directory
+            var basePath = AppContext.BaseDirectory;
+            var alternativePaths = new[]
+            {
+                Path.Combine(basePath, "corpus.json"),
+                Path.Combine(basePath, "..", "..", "..", "corpus.json"), // Development layout
+                Path.Combine(Directory.GetCurrentDirectory(), "corpus.json")
+            };
+
+            foreach (var path in alternativePaths)
+            {
+                if (File.Exists(path))
+                {
+                    var json = File.ReadAllText(path);
+                    var config = JsonSerializer.Deserialize<CorpusConfig>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (config?.DomainKeywords.Count > 0)
+                    {
+                        _logger?.LogInformation("Loaded corpus from {Path}", path);
+                        return config;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error loading corpus from configuration");
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -89,7 +222,11 @@ public class ContextCorpusDictionary
         }
     }
 
-    private Dictionary<string, Dictionary<string, double>> InitializeDomainKeywords()
+    /// <summary>
+    /// Hardcoded fallback corpus for domain keywords.
+    /// Used when corpus.json is not found or fails to load.
+    /// </summary>
+    private Dictionary<string, Dictionary<string, double>> InitializeDefaultDomainKeywords()
     {
         var corpus = new Dictionary<string, Dictionary<string, double>>
         {
@@ -550,7 +687,11 @@ public class ContextCorpusDictionary
         return corpus;
     }
 
-    private HashSet<string> InitializeStopWords()
+    /// <summary>
+    /// Hardcoded fallback stop words.
+    /// Used when corpus.json is not found or fails to load.
+    /// </summary>
+    private HashSet<string> InitializeDefaultStopWords()
     {
         return
         [

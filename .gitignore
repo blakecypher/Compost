@@ -10,3 +10,7 @@ src/Compost.Web/App_Data/Sites/Default/yessql.db
 src/Compost.Web/App_Data/tenants.json
 
 src/Compost.Web/App_Data/Sites/Default/DataProtection-Keys/
+
+src/Compost.Web/App_Data/logs/internal-nlog.txt
+
+Compost.sln.DotSettings.user

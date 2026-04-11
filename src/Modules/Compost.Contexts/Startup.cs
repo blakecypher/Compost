@@ -39,6 +39,7 @@ public class Startup : StartupBase
         services.AddScoped<ITemplateService, TemplateService>();
         services.AddScoped<IGitService, GitService>();
         services.AddScoped<IGitCredentialProvider, GitCredentialProvider>();
+        services.AddSingleton<IGitSecretStore, GitSecretStore>();
 
         // Register migrations
         services.AddScoped<IDataMigration, ContextMigrations>();

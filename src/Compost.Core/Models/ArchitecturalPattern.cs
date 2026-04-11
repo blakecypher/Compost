@@ -89,12 +89,6 @@ public class ArchitecturalPattern
     /// Success score for AI pattern recognition (0.0 to 1.0)
     /// </summary>
     public float SuccessScore { get; init; } = 0.0f;
-
-    /// <summary>
-    /// Cosmos DB partition key
-    /// </summary>
-    [JsonProperty("partitionKey")]
-    public string PartitionKey => "pattern";
 }
 
 public class ProjectReference

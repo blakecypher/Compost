@@ -244,6 +244,92 @@ public class TranscriptionController(
             return StatusCode(500, ex.Message);
         }
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetSpeakers(string meetingId)
+    {
+        try
+        {
+            _logger.LogInformation("GetSpeakers called for meeting {MeetingId}", meetingId);
+            
+            var meeting = await transcriptionService.GetMeetingByIdAsync(meetingId);
+            if (meeting == null)
+            {
+                return NotFound(new { message = "Meeting not found" });
+            }
+
+            // Get distinct speakers from transcript segments
+            var speakers = meeting.Transcript
+                .Where(s => !string.IsNullOrEmpty(s.SpeakerId))
+                .Select(s => new { s.SpeakerId, Name = s.Context.TryGetValue("SpeakerName", out var name) ? name : $"Speaker {s.SpeakerId}" })
+                .Distinct()
+                .ToList();
+
+            // Also get speaker profiles from service
+            var profiles = await transcriptionService.GetSpeakerProfilesAsync();
+            
+            return Ok(new { speakers, profiles });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting speakers for meeting {MeetingId}", meetingId);
+            return StatusCode(500, "Error getting speakers");
+        }
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> UpdateSegmentSpeaker([FromBody] UpdateSegmentSpeakerRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("UpdateSegmentSpeaker called for meeting {MeetingId}, segment {SegmentId}, speaker {SpeakerId}", 
+                request.MeetingId, request.SegmentId, request.SpeakerId);
+            
+            await transcriptionService.UpdateSegmentSpeakerAsync(request.MeetingId, request.SegmentId, request.SpeakerId);
+            
+            return Ok(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating segment speaker");
+            return StatusCode(500, "Error updating segment speaker");
+        }
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> CreateSpeakerProfile([FromBody] CreateSpeakerProfileRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("CreateSpeakerProfile called for speaker {SpeakerName}", request.Name);
+            
+            // Create speaker without audio sample for now
+            using var emptyStream = new MemoryStream();
+            var speaker = await transcriptionService.CreateSpeakerProfileAsync(request.Name, request.Role, emptyStream);
+            
+            return Ok(new { speakerId = speaker.Id, name = speaker.Name, role = speaker.Role });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating speaker profile");
+            return StatusCode(500, "Error creating speaker profile");
+        }
+    }
+}
+
+public class UpdateSegmentSpeakerRequest
+{
+    public string MeetingId { get; set; } = string.Empty;
+    public string SegmentId { get; set; } = string.Empty;
+    public string SpeakerId { get; set; } = string.Empty;
+}
+
+public class CreateSpeakerProfileRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Role { get; set; }
 }
 
 public class PromoteToKanbanRequest

@@ -954,10 +954,16 @@
 
     // Function to delete a card
     async function deleteCard(cardId) {
-        if (!confirm('Are you sure you want to delete this card? This action cannot be undone.')) {
-            return;
-        }
+        window.compostTheme?.confirmDelete(
+            'Delete Card',
+            'Are you sure you want to delete this card? This action cannot be undone.',
+            async () => {
+                await executeDeleteCard(cardId);
+            }
+        );
+    }
 
+    async function executeDeleteCard(cardId) {
         try {
             const response = await fetch('/Kanban/DeleteCard', {
                 method: 'POST',

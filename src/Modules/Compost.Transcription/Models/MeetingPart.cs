@@ -72,6 +72,12 @@ public class MeetingPart : ContentPart
     
     public List<MindMapNode> ExtractedNodes { get; set; } = [];
     
+    /// <summary>
+    /// IDs of Orchard Core MindMapNode content items created from this meeting.
+    /// These can be promoted through the decomposition pipeline.
+    /// </summary>
+    public List<string> ExtractedNodeIds { get; set; } = [];
+    
     public string AudioFilePath { get; set; }
     
     public string Notes { get; set; }

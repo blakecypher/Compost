@@ -17,6 +17,67 @@ class CompostTheme {
         this.initNotifications();
         this.initAccessibility();
         this.initActiveNavigation();
+        this.initDeleteConfirmation();
+    }
+
+    /**
+     * Delete Confirmation Modal
+     */
+    initDeleteConfirmation() {
+        const modal = document.getElementById('deleteConfirmModal');
+        if (!modal) return;
+
+        this.deleteModal = new bootstrap.Modal(modal);
+        this.deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+        this.deleteModalTitle = document.getElementById('deleteModalTitle');
+        this.deleteModalMessage = document.getElementById('deleteModalMessage');
+        this.pendingDeleteCallback = null;
+        this.pendingDeleteForm = null;
+
+        this.deleteConfirmBtn?.addEventListener('click', () => {
+            if (this.pendingDeleteCallback) {
+                this.pendingDeleteCallback();
+                this.pendingDeleteCallback = null;
+            } else if (this.pendingDeleteForm) {
+                this.pendingDeleteForm.submit();
+                this.pendingDeleteForm = null;
+            }
+            this.deleteModal?.hide();
+        });
+
+        // Handle data-delete-trigger elements
+        document.querySelectorAll('[data-delete-confirm]').forEach(element => {
+            element.addEventListener('click', (e) => {
+                e.preventDefault();
+                const title = element.dataset.deleteTitle || 'Confirm Delete';
+                const message = element.dataset.deleteMessage || 'Are you sure you want to delete this item?';
+                const formSelector = element.dataset.deleteForm;
+
+                this.showDeleteModal(title, message, formSelector);
+            });
+        });
+    }
+
+    showDeleteModal(title, message, formSelectorOrCallback) {
+        if (this.deleteModalTitle) this.deleteModalTitle.textContent = title;
+        if (this.deleteModalMessage) this.deleteModalMessage.textContent = message;
+
+        if (typeof formSelectorOrCallback === 'function') {
+            this.pendingDeleteCallback = formSelectorOrCallback;
+            this.pendingDeleteForm = null;
+        } else if (typeof formSelectorOrCallback === 'string') {
+            this.pendingDeleteForm = document.querySelector(formSelectorOrCallback);
+            this.pendingDeleteCallback = null;
+        } else {
+            this.pendingDeleteCallback = null;
+            this.pendingDeleteForm = null;
+        }
+
+        this.deleteModal?.show();
+    }
+
+    confirmDelete(title, message, callback) {
+        this.showDeleteModal(title, message, callback);
     }
 
     /**

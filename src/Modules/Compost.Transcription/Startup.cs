@@ -35,6 +35,10 @@ public class Startup : StartupBase
         
         // Register migrations
         services.AddDataMigration<MeetingMigrations>();
+        
+        // Register background service for transcription persistence
+        services.AddSingleton<TranscriptionBackgroundService>();
+        services.AddHostedService(provider => provider.GetRequiredService<TranscriptionBackgroundService>());
     }
 
     public override void Configure(IApplicationBuilder builder, IEndpointRouteBuilder routes, IServiceProvider serviceProvider)

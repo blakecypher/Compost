@@ -100,9 +100,23 @@
                         var speakerLabel = segment.Context.TryGetValue("SpeakerLabel", out var label) 
                             ? label 
                             : Localizer.GetString("Transcript.Speaker.Unknown", culture);
-                        <div class="mb-3 p-3 bg-white shadow-sm rounded border-start border-4 transcript-segment @(segment.SpeakerId == "1" ? "border-primary" : "border-info")">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="fw-bold">@(segment.Context.TryGetValue("SpeakerName", out var name) ? name : speakerLabel)</span>
+                        <div class="mb-3 p-3 bg-white shadow-sm rounded border-start border-4 transcript-segment @(segment.SpeakerId == "1" ? "border-primary" : "border-info")" data-segment-id="@segment.Id">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold speaker-display" data-speaker-id="@segment.SpeakerId">@(segment.Context.TryGetValue("SpeakerName", out var name) ? name : speakerLabel)</span>
+                                    <select class="form-select form-select-sm speaker-selector d-none" style="width: auto; min-width: 120px;" data-segment-id="@segment.Id">
+                                        <option value="">Select speaker...</option>
+                                    </select>
+                                    <button class="btn btn-link btn-sm text-muted p-0 edit-speaker-btn" title="Change speaker">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                    <button class="btn btn-link btn-sm text-success p-0 d-none save-speaker-btn" title="Save" data-segment-id="@segment.Id">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-link btn-sm text-danger p-0 d-none cancel-speaker-btn" title="Cancel">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
                                 <small class="text-muted">@segment.StartTime.ToString(@"hh\:mm\:ss")</small>
                             </div>
                             <div class="markdown-content">@segment.Text</div>
@@ -171,7 +185,7 @@
             </div>
         </div>
 
-        <div class="card transcription-enhanced-card">
+        <div class="card transcription-enhanced-card mb-4">
             <div class="card-header transcription-header-background">
                 <i class="fas fa-brain"></i> Mind Map Links
             </div>
@@ -187,6 +201,29 @@
                 {
                     <p class="text-muted small mb-0">No mind map nodes extracted yet.</p>
                 }
+            </div>
+        </div>
+
+        <div class="card transcription-enhanced-card">
+            <div class="card-header transcription-header-background d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-users"></i> Speakers</span>
+                <button class="btn btn-sm btn-outline-transcription" id="add-speaker-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="card-body" id="speakers-container">
+                <div id="speaker-list" class="mb-2">
+                    <p class="text-muted small mb-0">Loading speakers...</p>
+                </div>
+                <div id="add-speaker-form" class="d-none">
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="new-speaker-name" class="form-control" placeholder="Name" />
+                        <input type="text" id="new-speaker-role" class="form-control" placeholder="Role (optional)" />
+                        <button class="btn btn-transcription" id="save-speaker-btn">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -532,5 +569,236 @@
     
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Speaker Management
+    let speakers = [];
+    let speakerProfiles = [];
+    const meetingId = '@Model.Id';
+
+    // Load speakers on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadSpeakers();
+        setupSpeakerControls();
+    });
+
+    async function loadSpeakers() {
+        try {
+            const response = await fetch(`/Transcription/GetSpeakers?meetingId=${meetingId}`);
+            if (response.ok) {
+                const data = await response.json();
+                speakers = data.speakers || [];
+                speakerProfiles = data.profiles || [];
+                renderSpeakerList();
+                updateSpeakerSelectors();
+            }
+        } catch (error) {
+            console.error('Error loading speakers:', error);
+            document.getElementById('speaker-list').innerHTML = '<p class="text-muted small mb-0">Unable to load speakers</p>';
+        }
+    }
+
+    function renderSpeakerList() {
+        const container = document.getElementById('speaker-list');
+        if (speakers.length === 0 && speakerProfiles.length === 0) {
+            container.innerHTML = '<p class="text-muted small mb-0">No speakers identified yet. Click + to add speakers.</p>';
+            return;
+        }
+
+        let html = '<div class="d-flex flex-wrap gap-1">';
+        
+        // Add speakers from transcript
+        speakers.forEach(speaker => {
+            const color = getSpeakerColor(speaker.speakerId);
+            html += `<span class="badge" style="background-color: ${color}; color: white;">${speaker.name}</span>`;
+        });
+
+        // Add profiles
+        speakerProfiles.forEach(profile => {
+            html += `<span class="badge bg-secondary">${profile.name}</span>`;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function getSpeakerColor(speakerId) {
+        const colors = ['#2196f3', '#4caf50', '#ff9800', '#9c27b0', '#f44336', '#00bcd4', '#795548'];
+        const index = parseInt(speakerId) % colors.length;
+        return colors[index] || '#6c757d';
+    }
+
+    function updateSpeakerSelectors() {
+        const selectors = document.querySelectorAll('.speaker-selector');
+        selectors.forEach(selector => {
+            // Keep first option, remove others
+            while (selector.options.length > 1) {
+                selector.remove(1);
+            }
+            
+            // Add speaker options
+            speakers.forEach(speaker => {
+                const option = document.createElement('option');
+                option.value = speaker.speakerId;
+                option.textContent = speaker.name;
+                selector.appendChild(option);
+            });
+
+            // Add profile options
+            speakerProfiles.forEach(profile => {
+                const option = document.createElement('option');
+                option.value = profile.id;
+                option.textContent = profile.name;
+                selector.appendChild(option);
+            });
+
+            // Add "New speaker" option
+            const newOption = document.createElement('option');
+            newOption.value = 'new';
+            newOption.textContent = '+ New speaker...';
+            selector.appendChild(newOption);
+        });
+    }
+
+    function setupSpeakerControls() {
+        // Add speaker button
+        document.getElementById('add-speaker-btn')?.addEventListener('click', function() {
+            const form = document.getElementById('add-speaker-form');
+            form.classList.toggle('d-none');
+            if (!form.classList.contains('d-none')) {
+                document.getElementById('new-speaker-name').focus();
+            }
+        });
+
+        // Save speaker button
+        document.getElementById('save-speaker-btn')?.addEventListener('click', async function() {
+            const name = document.getElementById('new-speaker-name').value.trim();
+            const role = document.getElementById('new-speaker-role').value.trim();
+            
+            if (!name) {
+                alert('Please enter a speaker name');
+                return;
+            }
+
+            try {
+                const response = await fetch('/Transcription/CreateSpeakerProfile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, role })
+                });
+
+                if (response.ok) {
+                    const speaker = await response.json();
+                    speakerProfiles.push(speaker);
+                    renderSpeakerList();
+                    updateSpeakerSelectors();
+                    
+                    // Clear and hide form
+                    document.getElementById('new-speaker-name').value = '';
+                    document.getElementById('new-speaker-role').value = '';
+                    document.getElementById('add-speaker-form').classList.add('d-none');
+                }
+            } catch (error) {
+                console.error('Error creating speaker:', error);
+                alert('Failed to create speaker profile');
+            }
+        });
+
+        // Edit speaker buttons
+        document.querySelectorAll('.edit-speaker-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const segment = this.closest('.transcript-segment');
+                const display = segment.querySelector('.speaker-display');
+                const selector = segment.querySelector('.speaker-selector');
+                const saveBtn = segment.querySelector('.save-speaker-btn');
+                const cancelBtn = segment.querySelector('.cancel-speaker-btn');
+                
+                display.classList.add('d-none');
+                this.classList.add('d-none');
+                selector.classList.remove('d-none');
+                saveBtn.classList.remove('d-none');
+                cancelBtn.classList.remove('d-none');
+                
+                // Set current selection
+                const currentSpeakerId = display.dataset.speakerId;
+                selector.value = currentSpeakerId || '';
+            });
+        });
+
+        // Cancel speaker edit
+        document.querySelectorAll('.cancel-speaker-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const segment = this.closest('.transcript-segment');
+                resetSpeakerEdit(segment);
+            });
+        });
+
+        // Save speaker selection
+        document.querySelectorAll('.save-speaker-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const segment = this.closest('.transcript-segment');
+                const segmentId = this.dataset.segmentId;
+                const selector = segment.querySelector('.speaker-selector');
+                const speakerId = selector.value;
+                const display = segment.querySelector('.speaker-display');
+                
+                if (!speakerId) {
+                    alert('Please select a speaker');
+                    return;
+                }
+
+                if (speakerId === 'new') {
+                    // Show add speaker form
+                    document.getElementById('add-speaker-form').classList.remove('d-none');
+                    document.getElementById('new-speaker-name').focus();
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/Transcription/UpdateSegmentSpeaker', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ meetingId, segmentId, speakerId })
+                    });
+
+                    if (response.ok) {
+                        // Get speaker name
+                        const speaker = speakers.find(s => s.speakerId === speakerId) || 
+                                       speakerProfiles.find(p => p.id === speakerId);
+                        const speakerName = speaker ? (speaker.name || speaker.speakerId) : speakerId;
+                        
+                        // Update display
+                        display.textContent = speakerName;
+                        display.dataset.speakerId = speakerId;
+                        
+                        // Update border color
+                        segment.className = segment.className.replace(/border-\w+/, '');
+                        segment.classList.add(speakerId === '1' ? 'border-primary' : 'border-info');
+                        
+                        resetSpeakerEdit(segment);
+                        
+                        // Reload speakers to ensure consistency
+                        await loadSpeakers();
+                    }
+                } catch (error) {
+                    console.error('Error updating speaker:', error);
+                    alert('Failed to update speaker');
+                }
+            });
+        });
+    }
+
+    function resetSpeakerEdit(segment) {
+        const display = segment.querySelector('.speaker-display');
+        const selector = segment.querySelector('.speaker-selector');
+        const editBtn = segment.querySelector('.edit-speaker-btn');
+        const saveBtn = segment.querySelector('.save-speaker-btn');
+        const cancelBtn = segment.querySelector('.cancel-speaker-btn');
+        
+        display.classList.remove('d-none');
+        editBtn.classList.remove('d-none');
+        selector.classList.add('d-none');
+        saveBtn.classList.add('d-none');
+        cancelBtn.classList.add('d-none');
     }
 </script>

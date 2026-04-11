@@ -106,13 +106,16 @@
                                     Cancel
                                 </a>
                             </div>
-                            <form asp-action="DeleteNode" asp-route-id="@Model.MindMapId" method="post" 
-                                  onsubmit="return confirm('Are you sure you want to delete this node?');" class="d-inline">
+                            <form id="delete-node-form" asp-action="DeleteNode" asp-route-id="@Model.MindMapId" method="post" class="d-inline">
                                 <input type="hidden" name="nodeId" value="@Model.NodeId" />
-                                <button type="submit" class="btn btn-outline-danger">
-                                    <i class="fas fa-trash me-1"></i>Delete Node
-                                </button>
                             </form>
+                            <button type="button" class="btn btn-outline-danger"
+                                    data-delete-confirm
+                                    data-delete-title="Delete Node"
+                                    data-delete-message="Are you sure you want to delete this node?"
+                                    data-delete-form="#delete-node-form">
+                                <i class="fas fa-trash me-1"></i>Delete Node
+                            </button>
                         </div>
                     </form>
                 </div>

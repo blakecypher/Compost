@@ -76,7 +76,16 @@
                                 <li><a asp-action="Edit" asp-route-id="@item.ContentItemId" class="dropdown-item"><i class="fas fa-edit me-2"></i>Edit</a></li>
                                 <li><a asp-action="Detail" asp-route-id="@item.ContentItemId" class="dropdown-item"><i class="fas fa-book-open me-2"></i>View Details</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a asp-action="Delete" asp-route-id="@item.ContentItemId" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this pattern?');"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                <li>
+                                    <a asp-action="Delete" asp-route-id="@item.ContentItemId" class="dropdown-item text-danger"
+                                       data-delete-confirm
+                                       data-delete-title="Delete Pattern"
+                                       data-delete-message="Are you sure you want to delete this pattern?"
+                                       data-delete-form="#delete-form-@item.ContentItemId">
+                                        <i class="fas fa-trash me-2"></i>Delete
+                                    </a>
+                                    <form id="delete-form-@item.ContentItemId" asp-action="Delete" asp-route-id="@item.ContentItemId" method="post" class="d-none">@Html.AntiForgeryToken()</form>
+                                </li>
                             </ul>
                         </div>
                     </div>

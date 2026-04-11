@@ -9,7 +9,10 @@ using YesSql;
 
 namespace Compost.Contexts.Services;
 
-public class GitCredentialProvider(IContentManager contentManager, ISession session) : IGitCredentialProvider
+public class GitCredentialProvider(
+    IContentManager contentManager,
+    ISession session,
+    IGitSecretStore secretStore) : IGitCredentialProvider
 {
     public async Task<GitCredential> GetDefaultCredentialAsync()
     {
@@ -23,9 +26,12 @@ public class GitCredentialProvider(IContentManager contentManager, ISession sess
         var part = settingsItem.As<GitSettingsPart>();
         if (part == null) return new GitCredential();
 
+        // Retrieve the encrypted token from secure store (outside YesSql)
+        var token = await secretStore.GetTokenAsync();
+
         return new GitCredential
         {
-            PersonalAccessToken = part.PersonalAccessToken ?? string.Empty,
+            PersonalAccessToken = token ?? string.Empty,
             AuthorName = part.AuthorName,
             AuthorEmail = part.AuthorEmail
         };

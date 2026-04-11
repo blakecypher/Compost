@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    target-branch: "master"
+    labels:
+      - "dependencies"
+      - "nuget"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    groups:
+      orchardcore:
+        patterns:
+          - "OrchardCore*"
+      azure:
+        patterns:
+          - "Azure*"
+      microsoft:
+        patterns:
+          - "Microsoft*"

@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Compost.Contexts.Models;
+using Compost.Contexts.Services;
 using Compost.Contexts.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Html;
@@ -14,7 +15,11 @@ using YesSql;
 namespace Compost.Contexts.Controllers;
 
 [Authorize]
-public class GitSettingsController(IContentManager contentManager, ISession session, INotifier notifier) : Controller
+public class GitSettingsController(
+    IContentManager contentManager,
+    ISession session,
+    INotifier notifier,
+    IGitSecretStore secretStore) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Edit()
@@ -22,9 +27,12 @@ public class GitSettingsController(IContentManager contentManager, ISession sess
         var settingsItem = await GetSettingsItemAsync();
         var part = settingsItem.As<GitSettingsPart>() ?? new GitSettingsPart();
 
+        // Retrieve the encrypted token from secure store (not from the content part)
+        var token = await secretStore.GetTokenAsync();
+
         var model = new GitSettingsViewModel
         {
-            PersonalAccessToken = part.PersonalAccessToken ?? string.Empty,
+            PersonalAccessToken = token ?? string.Empty,
             AuthorName = part.AuthorName,
             AuthorEmail = part.AuthorEmail
         };
@@ -43,11 +51,13 @@ public class GitSettingsController(IContentManager contentManager, ISession sess
 
         var settingsItem = await GetSettingsItemAsync();
         bool isNew = string.IsNullOrEmpty(settingsItem.ContentItemId);
-        
-        // Ensure part is attached and up to date
+
+        // Store sensitive token in secure store (encrypted, outside YesSql)
+        await secretStore.SetTokenAsync(model.PersonalAccessToken);
+
+        // Store non-sensitive data in the content part (serialized to YesSql)
         settingsItem.Alter<GitSettingsPart>(part =>
         {
-            part.PersonalAccessToken = model.PersonalAccessToken;
             part.AuthorName = model.AuthorName;
             part.AuthorEmail = model.AuthorEmail;
         });
@@ -74,7 +84,7 @@ public class GitSettingsController(IContentManager contentManager, ISession sess
             .ListAsync();
 
         var item = contentItems.FirstOrDefault();
-        
+
         if (item == null)
         {
             item = await contentManager.NewAsync("GitSettings");

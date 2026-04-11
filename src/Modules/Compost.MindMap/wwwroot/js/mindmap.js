@@ -706,11 +706,6 @@ class CompostMindMap {
         }
 
         const nodeData = node.data();
-        
-        // Confirm deletion
-        if (!confirm(`Are you sure you want to delete "${nodeData.label}"? This action cannot be undone.`)) {
-            return;
-        }
 
         // Don't allow deletion of root nodes
         if (nodeData.type === 'Root') {
@@ -718,7 +713,21 @@ class CompostMindMap {
             return;
         }
 
-        this.deleteNodeAsync(nodeId);
+        // Confirm deletion via themed modal
+        if (window.compostTheme) {
+            window.compostTheme.confirmDelete(
+                'Delete Node',
+                `Are you sure you want to delete "${nodeData.label}"? This action cannot be undone.`,
+                () => {
+                    this.deleteNodeAsync(nodeId);
+                }
+            );
+        } else {
+            // Fallback to browser confirm if theme not loaded
+            if (confirm(`Are you sure you want to delete "${nodeData.label}"? This action cannot be undone.`)) {
+                this.deleteNodeAsync(nodeId);
+            }
+        }
     }
 
     async deleteNodeAsync(nodeId) {
@@ -755,19 +764,29 @@ class CompostMindMap {
 
         const sourceNode = edge.source();
         const targetNode = edge.target();
-        
-        // Confirm deletion
-        if (!confirm(`Are you sure you want to remove the connection from "${sourceNode.data('label')}" to "${targetNode.data('label')}"?`)) {
-            return;
-        }
+        const message = `Are you sure you want to remove the connection from "${sourceNode.data('label')}" to "${targetNode.data('label')}"?`;
 
-        // Remove edge from Cytoscape
-        edge.remove();
-        
-        // Hide node details panel
-        this.hideNodeDetails();
-        
-        this.showNotification('Connection removed successfully', 'success');
+        // Confirm deletion via themed modal
+        if (window.compostTheme) {
+            window.compostTheme.confirmDelete(
+                'Remove Connection',
+                message,
+                () => {
+                    // Remove edge from Cytoscape
+                    edge.remove();
+                    // Hide node details panel
+                    this.hideNodeDetails();
+                    this.showNotification('Connection removed successfully', 'success');
+                }
+            );
+        } else {
+            // Fallback to browser confirm if theme not loaded
+            if (confirm(message)) {
+                edge.remove();
+                this.hideNodeDetails();
+                this.showNotification('Connection removed successfully', 'success');
+            }
+        }
     }
 
     async promoteNode(nodeId) {

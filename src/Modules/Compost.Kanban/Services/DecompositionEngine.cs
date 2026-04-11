@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Compost.Core.Interfaces;
 using Compost.Core.Models;
-using Compost.Core.Services;
 using Compost.Kanban.Models;
 using Microsoft.Extensions.Logging;
 using OrchardCore.ContentManagement;
@@ -17,60 +16,142 @@ public class DecompositionEngine(
     IContentManager contentManager,
     ISession session,
     ILogger<DecompositionEngine> logger,
-    AiIntegrationService aiService,
+    IAiIntegrationService aiService,
     ITranscriptionService transcriptionService,
     IMindMapService mindMapService) : IDecompositionEngine
 {
-    private readonly AiIntegrationService _aiService = aiService;
+    private readonly IAiIntegrationService _aiService = aiService;
     private readonly ITranscriptionService _transcriptionService = transcriptionService;
     private readonly IMindMapService _mindMapService = mindMapService;
 
     // ========== Mind Map Operations (Simplified for now) ==========
 
-    public Task<MindMapNode> CreateMindMapNodeAsync(string projectId, string title, string content, string parentNodeId = null)
+    public async Task<MindMapNode> CreateMindMapNodeAsync(string projectId, string title, string content, string parentNodeId = null)
     {
-        // For now, return a mock or implement if we migrate MindMap to Content Items
-        var node = new MindMapNode
+        var item = await contentManager.NewAsync(nameof(MindMapNode));
+        item.DisplayText = title;
+
+        var part = item.As<MindMapNodePart>();
+        part.WorkContextId = projectId;
+        part.ParentNodeId = parentNodeId;
+        part.NodeType = "Idea";
+        part.PositionX = 400;
+        part.PositionY = 300;
+        part.Color = "#4a7c4b";
+        part.Tags = [];
+
+        // Handle content - standard Orchard MarkdownBodyPart might be used
+        if (item.Content.MarkdownBodyPart != null)
         {
-            WorkContextId = projectId,
-            Title = title
-        };
-        return Task.FromResult(node);
+            item.Content.MarkdownBodyPart.Markdown = content;
+        }
+
+        item.Apply(part);
+        await contentManager.CreateAsync(item);
+        await contentManager.PublishAsync(item);
+
+        return MapToMindMapNode(item);
     }
 
-    public Task UpdateMindMapNodeAsync(MindMapNode node) => Task.CompletedTask;
-    public Task DeleteMindMapNodeAsync(string nodeId) => Task.CompletedTask;
-    public Task<List<MindMapNode>> GetMindMapNodesByContextAsync(string projectId) => Task.FromResult(new List<MindMapNode>());
+    public async Task UpdateMindMapNodeAsync(MindMapNode node)
+    {
+        var item = await contentManager.GetAsync(node.Id);
+        if (item == null) return;
+
+        item.DisplayText = node.Title;
+        var part = item.As<MindMapNodePart>();
+        part.PositionX = node.PositionX;
+        part.PositionY = node.PositionY;
+        part.Color = node.Color;
+        part.NodeType = node.NodeType;
+        part.ParentNodeId = node.ParentNodeId;
+
+        // Handle content from node
+        if (item.Content.MarkdownBodyPart != null)
+        {
+            item.Content.MarkdownBodyPart.Markdown = node.Content;
+        }
+
+        item.Apply(part);
+        await contentManager.UpdateAsync(item);
+        await contentManager.PublishAsync(item);
+    }
+    public async Task DeleteMindMapNodeAsync(string nodeId)
+    {
+        var item = await contentManager.GetAsync(nodeId);
+        if (item != null)
+        {
+            await contentManager.RemoveAsync(item);
+        }
+    }
+    public async Task<List<MindMapNode>> GetMindMapNodesByContextAsync(string projectId)
+    {
+        var items = await session.Query<ContentItem, ContentItemIndex>()
+            .Where(x => x.ContentType == nameof(MindMapNode) && x.Latest && x.Published)
+            .ListAsync();
+
+        var results = new List<MindMapNode>();
+        foreach (var item in items)
+        {
+            var part = item.As<MindMapNodePart>();
+            if (part?.WorkContextId == projectId)
+            {
+                results.Add(MapToMindMapNode(item));
+            }
+        }
+        return results;
+    }
 
     public async Task<TreeNode> PromoteMindMapToTreeAsync(string mindMapNodeId)
     {
-        // Search all mind maps for the node
-        var allMaps = await _mindMapService.GetAllMindMapsAsync();
-        const string title = "New Tree Node (Promoted)";
-
-        foreach (var mapSummary in allMaps)
+        // First, try to get the MindMapNode from YesSql/ContentManager
+        var mindMapItem = await contentManager.GetAsync(mindMapNodeId);
+        if (mindMapItem == null)
         {
-            // We need to get the full map to access nodes
-            // Since IMindMapService in Core only has Summaries, 
-            // we might need to handle this differently if we can't find the node.
-            // For now, we'll try to find a map that matches the node if possible
-            // OR use the project ID from the map summary if the map is relevant.
+            throw new ArgumentException($"Mind map node with ID '{mindMapNodeId}' not found");
         }
 
-        // Fallback: If we can't find the node via the Core interface safely, 
-        // we'll rely on the controller passing the data to CreateTreeNodeAsync,
-        // which it already does. This method is mainly for direct API calls.
-        
+        var mindMapPart = mindMapItem.As<MindMapNodePart>();
+        var title = mindMapItem.DisplayText ?? "New Tree Node (Promoted)";
+        var projectId = mindMapPart?.WorkContextId ?? "default";
+
+        // Get content from MarkdownBodyPart if available
+        var description = string.Empty;
+        if (mindMapItem.Content.MarkdownBodyPart != null)
+        {
+            description = mindMapItem.Content.MarkdownBodyPart.Markdown ?? string.Empty;
+        }
+
+        // Create the tree node
         var treeNodeItem = await contentManager.NewAsync(nameof(TreeNode));
-        var part = treeNodeItem.As<TreeNodePart>();
-        
+        var treePart = treeNodeItem.As<TreeNodePart>();
+
         treeNodeItem.DisplayText = title;
-        part.SourceMindMapNodeId = mindMapNodeId;
-        part.WorkContextId = "default";
-        
-        treeNodeItem.Apply(part);
+        treePart.SourceMindMapNodeId = mindMapNodeId;
+        treePart.WorkContextId = projectId;
+
+        // Handle description
+        if (treeNodeItem.Content.MarkdownBodyPart != null)
+        {
+            treeNodeItem.Content.MarkdownBodyPart.Markdown = description;
+        }
+
+        treeNodeItem.Apply(treePart);
         await contentManager.CreateAsync(treeNodeItem);
         await contentManager.PublishAsync(treeNodeItem);
+
+        // Mark the mind map node as promoted
+        if (mindMapPart != null)
+        {
+            mindMapPart.IsPromotedToTree = true;
+            mindMapPart.TreeNodeId = treeNodeItem.ContentItemId;
+            mindMapItem.Apply(mindMapPart);
+            await contentManager.UpdateAsync(mindMapItem);
+            await contentManager.PublishAsync(mindMapItem);
+        }
+
+        logger.LogInformation("Promoted mind map node {MindMapNodeId} to tree node {TreeNodeId}",
+            mindMapNodeId, treeNodeItem.ContentItemId);
 
         return MapToTreeNode(treeNodeItem);
     }
@@ -554,5 +635,32 @@ public class DecompositionEngine(
             TimeSpentSeconds = part.TimeSpentSeconds
         };
         return card;
+    }
+
+    private MindMapNode MapToMindMapNode(ContentItem item)
+    {
+        var part = item.As<MindMapNodePart>();
+        var node = new MindMapNode
+        {
+            Id = item.ContentItemId,
+            Title = item.DisplayText,
+            WorkContextId = part?.WorkContextId ?? string.Empty,
+            ParentNodeId = part?.ParentNodeId,
+            PositionX = part?.PositionX ?? 0,
+            PositionY = part?.PositionY ?? 0,
+            Color = part?.Color,
+            NodeType = part?.NodeType ?? "Idea",
+            IsPromotedToTree = part?.IsPromotedToTree ?? false,
+            TreeNodeId = part?.TreeNodeId,
+            Tags = part?.Tags ?? []
+        };
+
+        // Get content from MarkdownBodyPart if available
+        if (item.Content.MarkdownBodyPart != null)
+        {
+            node.Content = item.Content.MarkdownBodyPart.Markdown ?? string.Empty;
+        }
+
+        return node;
     }
 }

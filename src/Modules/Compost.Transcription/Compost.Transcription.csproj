@@ -14,5 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Compost.Core\Compost.Core.csproj" />
+    <ProjectReference Include="..\Compost.MindMap\Compost.MindMap.csproj" />
   </ItemGroup>
 </Project>

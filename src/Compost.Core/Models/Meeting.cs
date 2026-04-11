@@ -94,12 +94,6 @@ public class Meeting
     /// When transcription processing completed
     /// </summary>
     public DateTime? TranscriptionCompletedAt { get; set; }
-
-    /// <summary>
-    /// Cosmos DB partition key
-    /// </summary>
-    [JsonProperty("partitionKey")]
-    public string PartitionKey => WorkContextId;
 }
 
 public class TranscriptSegment

@@ -1,4 +1,4 @@
-@model List<Compost.MindMap.Models.MindMapCollection>
+@model List<Compost.Core.Models.MindMapCollection>
 
 @{
     ViewBag.Title = "Mind Maps";
@@ -227,12 +227,14 @@ else
                                         <i class="fas fa-clone"></i>
                                     </button>
                                 </form>
-                                <form asp-action="Delete" asp-route-id="@mindMap.Id" method="post" onsubmit="return confirm('Delete this mind map?');">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                <form id="delete-mindmap-@mindMap.Id" asp-action="Delete" asp-route-id="@mindMap.Id" method="post" class="d-inline">@Html.AntiForgeryToken()</form>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        data-delete-confirm
+                                        data-delete-title="Delete Mind Map"
+                                        data-delete-message="Are you sure you want to delete this mind map?"
+                                        data-delete-form="#delete-mindmap-@mindMap.Id">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </div>
                     </div>

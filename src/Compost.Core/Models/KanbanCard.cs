@@ -124,12 +124,6 @@ public class KanbanCard
     /// When this card was last modified
     /// </summary>
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// Cosmos DB partition key
-    /// </summary>
-    [JsonProperty("partitionKey")]
-    public string PartitionKey => WorkContextId;
 }
 
 public class ChecklistItem

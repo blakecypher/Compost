@@ -38,7 +38,7 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
     {
         _logger = logger;
         _httpClient = httpClient;
-        _corpus = new ContextCorpusDictionary();
+        _corpus = new ContextCorpusDictionary(configuration, null);
         _geminiApiKey = configuration["Compost:Gemini:ApiKey"];
         _geminiModel = configuration["Compost:Gemini:Model"] ?? "gemini-2.0-flash";
         

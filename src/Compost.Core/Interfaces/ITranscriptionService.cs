@@ -63,6 +63,12 @@ public interface ITranscriptionService
     Task<List<MindMapNode>> ExtractMindMapNodesAsync(string meetingId);
 
     /// <summary>
+    /// Creates proper Orchard Core MindMapNode content items from meeting-extracted nodes.
+    /// This bridges the gap between meeting transcription and the decomposition engine pipeline.
+    /// </summary>
+    Task<List<string>> CreateMindMapNodeContentItemsAsync(string meetingId);
+
+    /// <summary>
     /// Get a meeting by ID
     /// </summary>
     Task<Meeting?> GetMeetingByIdAsync(string meetingId);

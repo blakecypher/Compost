@@ -649,40 +649,77 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         var projectId = mindMap?.WorkContextId ?? "default";
         logger.LogInformation("Promoting mind map node '{NodeText}' (ID: {NodeId}) to project context: '{ProjectId}'", node.Text, nodeId, projectId);
         
-        var treeNode = await decompositionEngine.CreateTreeNodeAsync(projectId, node.Text, node.Notes ?? "", node.Id, node.SourceReference, node.SourceText);
-        
-        // Create Kanban card with transcript excerpt
-        string? kanbanCardId = null;
+        // Check if this node already exists as an Orchard Core MindMapNode content item
+        TreeNode treeNode;
         try
         {
-            var kanbanCard = await CreateKanbanCardFromNode(node, projectId);
-            if (kanbanCard != null)
-            {
-                kanbanCardId = kanbanCard.ContentItemId;
-            }
+            // Try to use the proper promotion pipeline if the node is an Orchard Core content item
+            treeNode = await decompositionEngine.PromoteMindMapToTreeAsync(nodeId);
+            logger.LogInformation("Successfully promoted MindMapNode {NodeId} to TreeNode {TreeNodeId} using proper pipeline", 
+                nodeId, treeNode.Id);
+        }
+        catch (ArgumentException)
+        {
+            // Node is not an Orchard Core content item, create tree node directly
+            logger.LogWarning("MindMapNode {NodeId} not found as Orchard Core content item, creating TreeNode directly", nodeId);
+            treeNode = await decompositionEngine.CreateTreeNodeAsync(projectId, node.Text, node.Notes ?? "", node.Id, node.SourceReference, node.SourceText);
+        }
+        
+        // Promote tree node to Kanban cards using proper pipeline
+        List<KanbanCard> kanbanCards = [];
+        try
+        {
+            kanbanCards = await decompositionEngine.PromoteTreeToKanbanAsync(treeNode.Id);
+            logger.LogInformation("Successfully promoted TreeNode {TreeNodeId} to {CardCount} Kanban cards", 
+                treeNode.Id, kanbanCards.Count);
         }
         catch (Exception ex)
         {
             // Log error but don't fail the promotion
-            Debug.WriteLine($"Failed to create Kanban card: {ex.Message}");
+            logger.LogError(ex, "Failed to promote TreeNode {TreeNodeId} to Kanban, falling back to direct card creation", treeNode.Id);
+            
+            // Fallback: Create Kanban card directly
+            var kanbanCard = await CreateKanbanCardFromNode(node, projectId);
+            if (kanbanCard != null)
+            {
+                kanbanCards.Add(MapToKanbanCard(kanbanCard));
+            }
         }
         
         node.IsPromoted = true;
-        node.PromotedToId = treeNode.Id; // Store tree node ID as primary reference
-        
-        // Store Kanban card ID in Notes field (reuse existing field for Kanban card reference)
-        if (!string.IsNullOrEmpty(kanbanCardId))
-        {
-            node.Notes = $"KanbanCard:{kanbanCardId}" + (string.IsNullOrEmpty(node.Notes) ? "" : $"\n\n{node.Notes}");
-        }
+        node.PromotedToId = treeNode.Id;
         node.Status = "Approved";
+        
+        // Store Kanban card IDs in Notes field
+        var kanbanCardIds = kanbanCards.Select(c => c.Id).ToList();
+        if (kanbanCardIds.Count > 0)
+        {
+            var kanbanIdPrefix = string.Join(",", kanbanCardIds.Select(id => $"KanbanCard:{id}"));
+            node.Notes = kanbanIdPrefix + (string.IsNullOrEmpty(node.Notes) ? "" : $"\n\n{node.Notes}");
+        }
+        
         await mindMapService.UpdateNodeAsync(mapId, node);
+        
         var refinementUrl = Url.Action(nameof(Index), "Refinement", new { area = "Compost.Kanban", id = treeNode.Id });
         return Json(new { 
             treeNodeId = treeNode.Id, 
             url = refinementUrl ?? $"/Kanban/Refinement/{treeNode.Id}",
-            kanbanCardId = kanbanCardId
+            kanbanCardIds = kanbanCardIds,
+            kanbanCardCount = kanbanCards.Count
         });
+    }
+
+    private static KanbanCard MapToKanbanCard(ContentItem cardItem)
+    {
+        var part = cardItem.As<KanbanCardPart>();
+        return new KanbanCard
+        {
+            Id = cardItem.ContentItemId,
+            Title = cardItem.DisplayText ?? "",
+            Status = part?.Status ?? KanbanStatus.Backlog,
+            StoryPoints = part?.StoryPoints ?? 0,
+            SourceTreeNodeId = part?.SourceTreeNodeId
+        };
     }
 
     /// <summary>POST /MindMap/ApiPromoteToStructure - Promote mind map node to structure. Query: mapId, nodeId.</summary>
@@ -781,6 +818,69 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         catch (Exception ex)
         {
             return BadRequest(new { error = "Promotion failed", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// POST /MindMap/ApiCreateMeetingNodes - Creates proper Orchard Core MindMapNode content items from meeting-extracted nodes.
+    /// This bridges meeting transcription to the full decomposition pipeline.
+    /// Query: meetingId
+    /// </summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> ApiCreateMeetingNodes([FromQuery] string meetingId)
+    {
+        if (string.IsNullOrEmpty(meetingId))
+            return BadRequest(new { error = "Meeting ID is required" });
+
+        try
+        {
+            // First, ensure mind map nodes are extracted from the meeting
+            var meeting = await transcriptionService.GetMeetingByIdAsync(meetingId);
+            if (meeting == null)
+                return NotFound(new { error = "Meeting not found" });
+
+            // Extract nodes if not already done
+            if (meeting.ExtractedNodes == null || meeting.ExtractedNodes.Count == 0)
+            {
+                logger.LogInformation("No extracted nodes found for meeting {MeetingId}, extracting now...", meetingId);
+                await transcriptionService.ExtractMindMapNodesAsync(meetingId);
+                meeting = await transcriptionService.GetMeetingByIdAsync(meetingId); // Refresh
+            }
+
+            // Create proper Orchard Core MindMapNode content items
+            var createdNodeIds = await transcriptionService.CreateMindMapNodeContentItemsAsync(meetingId);
+            
+            if (createdNodeIds.Count == 0)
+            {
+                return BadRequest(new { error = "No nodes could be created from meeting. Ensure the meeting has transcript segments." });
+            }
+
+            logger.LogInformation("Created {Count} MindMapNode content items from meeting {MeetingId}", 
+                createdNodeIds.Count, meetingId);
+
+            // Also create a mind map collection for visualization
+            var mindMap = await mindMapService.CreateMindMapFromMeetingNodesAsync(
+                meeting.ExtractedNodes, 
+                $"Meeting: {meeting.Title}", 
+                meeting.WorkContextId, 
+                meetingId);
+
+            return Json(new
+            {
+                success = true,
+                meetingId = meetingId,
+                mindMapId = mindMap.Id,
+                mindMapUrl = Url.Action(nameof(ViewMap), new { id = mindMap.Id }),
+                createdNodeCount = createdNodeIds.Count,
+                createdNodeIds = createdNodeIds,
+                message = $"Created {createdNodeIds.Count} MindMapNode content items from meeting. Use these IDs with PromoteMindMapToTreeAsync."
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error creating mind map nodes from meeting {MeetingId}", meetingId);
+            return StatusCode(500, new { error = "Failed to create nodes", details = ex.Message });
         }
     }
 
