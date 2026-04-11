@@ -170,7 +170,7 @@ html.no-transitions .menu-section {
 
 /* Sticky inner container */
 .sidebar-sticky {
-    padding-top: .5rem;
+    padding-top: .2rem;
     overflow-x: hidden;
     overflow-y: auto;
     max-height: 100%;
