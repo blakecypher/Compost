@@ -75,18 +75,75 @@
         z-index: 10;
     }
 
-    /* Dynamic height for desktop - 100px shorter than viewport */
+    /* Dynamic height for desktop - calculated via JS based on page position */
     @@media (min-width: 992px) {
-        #mind-map-container {
-            height: calc(100vh - 100px) !important;
-            min-height: calc(100vh - 100px) !important;
-        }
-        #node-details-panel .card-body {
-            max-height: calc(100vh - 150px) !important;
-        }
         .mindmap-editor-row {
-            min-height: calc(100vh - 100px) !important;
+            min-height: 400px;
         }
+    }
+
+    /* Legend badges - equal width grid */
+    .legend-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+    }
+
+    .legend-grid .badge {
+        width: 100%;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Custom scrollbar for node details - orange theme */
+    .node-details-scroll::-webkit-scrollbar {
+        width: 8px;
+    }
+    .node-details-scroll::-webkit-scrollbar-track {
+        background: var(--bg-secondary, #2d2d2d);
+        border-radius: 4px;
+    }
+    .node-details-scroll::-webkit-scrollbar-thumb {
+        background: #ff6b35;
+        border-radius: 4px;
+    }
+    .node-details-scroll::-webkit-scrollbar-thumb:hover {
+        background: #ff8555;
+    }
+
+    /* Sticky actions bar at bottom of node details - match card background */
+    .node-actions {
+        position: sticky;
+        bottom: 0;
+        background: var(--bs-card-bg, var(--bs-body-bg, #1a1a2e));
+        z-index: 10;
+    }
+
+    /* Sticky header for node details - match card background */
+    .node-details-header {
+        position: sticky;
+        top: 0;
+        background: var(--bs-card-bg, var(--bs-body-bg, #1a1a2e));
+        z-index: 10;
+        border-bottom: 1px solid var(--bs-border-color, #444);
+    }
+
+    /* Truncate node title to one line */
+    .node-details-header h6 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Scrollable source text area - subtle border to match theme */
+    .source-text-scroll {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid var(--bs-border-color, #444);
+        border-radius: 4px;
+        padding: 8px;
     }
 </style>
 
@@ -97,68 +154,75 @@
         </h1>
         <p class="text-muted mb-0 small">@Model.Description — Double-click to add nodes; right-click for styling and promotion options.</p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-        <button type="button" class="btn btn-outline-theme-mindmaps" id="fit-view-btn">
-            <i class="fas fa-compress-arrows-alt"></i> Fit View
-        </button>
-        <button type="button" class="btn btn-outline-theme-mindmaps" id="spread-nodes-btn">
-            <i class="fas fa-expand-arrows-alt"></i> Spread
-        </button>
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-outline-theme-mindmaps dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-sitemap"></i> Layout
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow">
-                <li><a class="dropdown-item layout-btn" href="#" data-layout="radial"><i class="fas fa-circle-notch text-primary me-2"></i> Radial</a></li>
-                <li><a class="dropdown-item layout-btn" href="#" data-layout="grid"><i class="fas fa-th text-info me-2"></i> Grid</a></li>
-                <li><a class="dropdown-item layout-btn" href="#" data-layout="hierarchical"><i class="fas fa-sitemap text-warning me-2"></i> Hierarchical</a></li>
-                <li><a class="dropdown-item layout-btn" href="#" data-layout="circular"><i class="fas fa-circle text-success me-2"></i> Circular</a></li>
-                <li><a class="dropdown-item layout-btn" href="#" data-layout="force"><i class="fas fa-project-diagram text-danger me-2"></i> Force</a></li>
-            </ul>
-        </div>
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-outline-theme-mindmaps dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-download"></i> Export
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow">
-                <li><button type="button" class="dropdown-item" id="export-image-btn"><i class="fas fa-image text-primary me-2"></i> PNG Image</button></li>
-                <li><button type="button" class="dropdown-item" id="export-json-btn"><i class="fas fa-file-code text-info me-2"></i> JSON</button></li>
-                <li><a class="dropdown-item" href="/MindMap/Export/@Model.Id/markdown"><i class="fas fa-file-alt text-warning me-2"></i> Markdown</a></li>
-            </ul>
-        </div>
-        <button type="button" class="btn btn-outline-theme-mindmaps" id="import-btn">
-            <i class="fas fa-upload"></i> Import
-        </button>
-        <a asp-action="Index" class="btn btn-outline-theme-mindmaps">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-    </div>
+    <a asp-action="Index" class="btn btn-outline-theme-mindmaps">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
 </div>
 
-<!-- Legend and Node Management -->
-<div class="card border-theme-mindmaps shadow-sm mb-4">
-    <div class="card-body py-2">
-        <div class="row align-items-center">
-            <div class="col-md-9">
-                <div class="d-flex align-items-center flex-wrap gap-2">
-                    <small class="text-muted"><strong>Nodes:</strong></small>
-                    <span class="badge bg-theme-mindmaps text-on-theme-mindmaps"><i class="fas fa-dot-circle"></i> Root</span>
-                    <span class="badge bg-secondary"><i class="fas fa-lightbulb"></i> Idea</span>
-                    <span class="badge bg-info"><i class="fas fa-list-check"></i> Reqs</span>
-                    <span class="badge bg-warning text-dark"><i class="fas fa-question"></i> Question</span>
-                    <span class="badge bg-primary"><i class="fas fa-play"></i> Action</span>
-                    <span class="badge bg-success"><i class="fas fa-check"></i> Decision</span>
-                    <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Risk</span>
-                    <span class="badge bg-dark"><i class="fas fa-sticky-note"></i> Note</span>
+<!-- Interactive Mind Map Layout -->
+<div class="row g-4 mindmap-editor-row" style="min-height: 650px;">
+    <!-- Mind Map Container (80%) -->
+    <div class="col-md-9">
+        <div class="card h-100 border-theme-mindmaps shadow-sm overflow-hidden">
+            <div class="card-body p-0 h-100">
+                <div id="mind-map-container"
+                     class="h-100 w-100"
+                     data-map-id="@Model.Id"
+                     data-work-context-id="@(Model.WorkContextId ?? "")"
+                     data-api-base="@Url.Content("~/MindMap")">
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="d-flex gap-2 justify-content-end">
+        </div>
+    </div>
+
+    <!-- Sidebar with controls and node details (20%) -->
+    <div class="col-md-3">
+        <!-- Controls Card -->
+        <div class="card border-theme-mindmaps shadow-sm mb-3" id="controls-panel">
+            <div class="card-header bg-theme-mindmaps text-on-theme-mindmaps border-0">
+                <h6 class="mb-0"><i class="fas fa-sliders-h me-1"></i> Controls</h6>
+            </div>
+            <div class="card-body p-3">
+                <!-- View Controls -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-theme-mindmaps" id="fit-view-btn">
+                        <i class="fas fa-compress-arrows-alt"></i> Fit
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-theme-mindmaps" id="spread-nodes-btn">
+                        <i class="fas fa-expand-arrows-alt"></i> Spread
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-theme-mindmaps dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-sitemap"></i> Layout
+                        </button>
+                        <ul class="dropdown-menu shadow">
+                            <li><a class="dropdown-item layout-btn" href="#" data-layout="grid"><i class="fas fa-th text-info me-2"></i> Grid</a></li>
+                            <li><a class="dropdown-item layout-btn" href="#" data-layout="hierarchical"><i class="fas fa-sitemap text-warning me-2"></i> Hierarchical</a></li>
+                            <li><a class="dropdown-item layout-btn" href="#" data-layout="circular"><i class="fas fa-circle text-success me-2"></i> Circular</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Legend -->
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-2"><strong>Node Types:</strong></small>
+                    <div class="legend-grid">
+                        <span class="badge bg-theme-mindmaps text-on-theme-mindmaps"><i class="fas fa-dot-circle"></i> Root</span>
+                        <span class="badge bg-secondary"><i class="fas fa-lightbulb"></i> Idea</span>
+                        <span class="badge bg-info"><i class="fas fa-list-check"></i> Reqs</span>
+                        <span class="badge bg-warning text-dark"><i class="fas fa-question"></i> Question</span>
+                        <span class="badge bg-primary"><i class="fas fa-play"></i> Action</span>
+                        <span class="badge bg-success"><i class="fas fa-check"></i> Decision</span>
+                        <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Risk</span>
+                        <span class="badge bg-dark"><i class="fas fa-sticky-note"></i> Note</span>
+                    </div>
+                </div>
+                <!-- Action Buttons -->
+                <div class="d-flex flex-wrap gap-2">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-theme-mindmaps dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-plus"></i> Add
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <ul class="dropdown-menu shadow">
                             <li><a class="dropdown-item" href="#" data-template="concept"><i class="fas fa-lightbulb text-success me-2"></i> Concept</a></li>
                             <li><a class="dropdown-item" href="#" data-template="feature"><i class="fas fa-rocket text-primary me-2"></i> Feature</a></li>
                             <li><a class="dropdown-item" href="#" data-template="task"><i class="fas fa-check text-warning me-2"></i> Task</a></li>
@@ -180,37 +244,18 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Interactive Mind Map Layout -->
-<div class="row g-4 mindmap-editor-row" style="min-height: 650px;">
-    <!-- Mind Map Container (80%) -->
-    <div class="col-md-9">
-        <div class="card h-100 border-theme-mindmaps shadow-sm overflow-hidden">
-            <div class="card-body p-0 h-100">
-                <div id="mind-map-container"
-                     class="h-100 w-100"
-                     data-map-id="@Model.Id"
-                     data-work-context-id="@(Model.WorkContextId ?? "")"
-                     data-api-base="@Url.Content("~/MindMap")">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Node details sidebar (20%) -->
-    <div class="col-md-3">
-        <div class="card h-100 border-theme-mindmaps shadow-sm" id="node-details-panel">
+        <!-- Node details panel -->
+        <div class="card border-theme-mindmaps shadow-sm" id="node-details-panel">
             <div class="card-header bg-theme-mindmaps text-on-theme-mindmaps border-0">
                 <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> Node Details</h6>
             </div>
-            <div class="card-body p-3" style="overflow-y: auto; max-height: 550px;">
-                <div class="text-center py-5 text-muted" id="select-node-placeholder">
+            <div class="card-body p-0 d-flex flex-column" style="overflow: hidden; max-height: 400px;">
+                <div class="text-center py-5 text-muted p-3" id="select-node-placeholder">
                     <i class="fas fa-mouse-pointer mb-3 fa-2x"></i>
                     <p>Select a node to view details</p>
                 </div>
-                <div id="node-details-content">
+                <div id="node-details-content" class="node-details-scroll flex-fill" style="overflow-y: auto; min-height: 0;">
                     <!-- Filled by mindmap.js showNodeDetails() -->
                 </div>
             </div>
@@ -222,24 +267,95 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
     <script src="~/Compost.MindMap/js/mindmap.js" asp-append-version="true"></script>
     <script>
-        // Add event listeners for layout buttons
-        document.addEventListener('DOMContentLoaded', () => {
-            // Layout button handlers
-            document.querySelectorAll('.layout-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const layoutType = e.target.dataset.layout;
-                    if (window.compostMindMap) {
-                        window.compostMindMap.applyLayout(layoutType);
-                    }
+        // Dynamic height adjustment for desktop
+        function adjustMindmapHeight() {
+            const isDesktop = window.innerWidth >= 992;
+            const container = document.getElementById('mind-map-container');
+            const row = document.querySelector('.mindmap-editor-row');
+            const panelBody = document.querySelector('#node-details-panel .card-body');
+            const controlsPanel = document.getElementById('controls-panel');
+
+            if (isDesktop && row) {
+                // Calculate available height based on row position from top of page
+                const rowRect = row.getBoundingClientRect();
+                const rowOffsetTop = rowRect.top + window.scrollY;
+                const availableHeight = Math.max(300, window.innerHeight - rowOffsetTop - 50); // 50px bottom padding, min 300px
+
+                // Set height on all relevant elements
+                if (container) {
+                    container.style.height = availableHeight + 'px';
+                    container.style.minHeight = availableHeight + 'px';
+                }
+                row.style.height = availableHeight + 'px';
+                row.style.minHeight = availableHeight + 'px';
+
+                // Update panel body max-height (account for controls panel)
+                if (panelBody && controlsPanel) {
+                    const controlsHeight = controlsPanel.offsetHeight;
+                    const gapSpace = 16; // gap between cards
+                    const panelHeaderHeight = 45; // approximate header height
+                    const panelMaxHeight = Math.max(150, availableHeight - controlsHeight - gapSpace - panelHeaderHeight);
+                    panelBody.style.maxHeight = panelMaxHeight + 'px';
+                }
+
+                // Notify Cytoscape of resize if initialized
+                if (window.compostMindMap && window.compostMindMap.cy) {
+                    window.compostMindMap.cy.resize();
+                }
+            } else if (row) {
+                // Clear inline styles when not desktop to allow CSS to take over
+                row.style.height = '';
+                row.style.minHeight = '';
+                if (container) {
+                    container.style.height = '';
+                    container.style.minHeight = '';
+                }
+                if (panelBody) {
+                    panelBody.style.maxHeight = '';
+                }
+            }
+        }
+
+        // Run immediately if DOM is already loaded, otherwise wait
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                // Use requestAnimationFrame to ensure layout is complete
+                requestAnimationFrame(() => {
+                    adjustMindmapHeight();
+                    // Second adjustment after a short delay to catch any late layout changes
+                    setTimeout(adjustMindmapHeight, 50);
                 });
             });
+        } else {
+            // DOM already loaded, run immediately
+            requestAnimationFrame(() => {
+                adjustMindmapHeight();
+                setTimeout(adjustMindmapHeight, 50);
+            });
+        }
 
-            // Prevent dropdown menus from closing on internal clicks
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                menu.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
+        // Also adjust on window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(adjustMindmapHeight, 100);
+        });
+
+        // Layout button handlers
+        document.querySelectorAll('.layout-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const layoutType = e.target.dataset.layout;
+                if (window.compostMindMap) {
+                    window.compostMindMap.applyLayout(layoutType);
+                }
+            });
+        });
+
+        // Prevent dropdown menus from closing on internal clicks
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
         });
     </script>

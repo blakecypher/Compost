@@ -139,18 +139,18 @@ class CompostMindMap {
                 style: {
                     'background-color': 'data(color)',
                     'label': 'data(label)',
-                    'width': '80px',
-                    'height': '80px',
+                    'width': '100px',
+                    'height': '100px',
                     'text-valign': 'center',
                     'text-halign': 'center',
-                    'font-size': '12px',
-                    'font-weight': '600',
+                    'font-size': '9px',
+                    'font-weight': '500',
                     'font-family': 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
                     'color': nodeText,
                     'text-outline-color': outlineColor,
-                    'text-outline-width': 2,
+                    'text-outline-width': 1,
                     'text-wrap': 'wrap',
-                    'text-max-width': '100px',
+                    'text-max-width': '90px',
                     'border-width': 2,
                     'border-color': primaryColor,
                     'border-opacity': 0.8,
@@ -181,8 +181,8 @@ class CompostMindMap {
                 style: {
                     'width': '100px',
                     'height': '100px',
-                    'font-size': '14px',
-                    'font-weight': '700',
+                    'font-size': '11px',
+                    'font-weight': '600',
                     'border-width': 3,
                     'border-color': primaryColor,
                     'shadow-blur': isDark ? 30 : 15,
@@ -431,66 +431,58 @@ class CompostMindMap {
         const data = node.data();
         
         content.innerHTML = `
-            <div class="mb-4">
-                <h5 class="text-theme-mindmaps mb-3">
+            <div class="node-details-header p-3 pb-2">
+                <h6 class="text-theme-mindmaps mb-2">
                     <i class="fas ${data.icon || 'fas fa-circle'}"></i> ${data.label}
-                </h5>
-                
-                <table class="table table-sm mb-0">
-                    <tr>
-                        <td class="text-muted" style="width: 40%;"><strong>Type:</strong></td>
-                        <td><span class="badge border border-theme-mindmaps text-theme-mindmaps">${data.type || 'Unknown'}</span></td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted"><strong>Level:</strong></td>
-                        <td><span class="badge bg-secondary">${data.level || 1}</span></td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted"><strong>Status:</strong></td>
-                        <td><span class="badge bg-success">${data.status || 'Active'}</span></td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted"><strong>Source:</strong></td>
-                        <td><span class="badge bg-info text-dark">${data.sourceType || 'Manual'}</span></td>
-                    </tr>
-                </table>
+                </h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <small class="text-muted"><strong>Type:</strong> <span class="badge border border-theme-mindmaps text-theme-mindmaps">${data.type || 'Unknown'}</span></small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted"><strong>Level:</strong> <span class="badge bg-secondary">${data.level || 1}</span></small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted"><strong>Status:</strong> <span class="badge bg-success">${data.status || 'Active'}</span></small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted"><strong>Source:</strong> <span class="badge bg-secondary">${data.sourceType || 'Manual'}</span></small>
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-4">
-                <h6 class="text-muted mb-2 small fw-bold">SOURCE TEXT</h6>
-                <div class="card bg-light border-0" style="max-height: 200px; overflow-y: auto;">
-                    <div class="card-body p-2">
+            <div class="p-3">
+                <div class="mb-3">
+                    <div class="source-text-scroll">
                         <small class="text-muted" style="line-height: 1.4; display: block;">
                             ${data.sourceText || data.label || 'No source text available'}
                         </small>
                     </div>
                 </div>
-            </div>
 
-            ${data.notes ? `
-                <div class="mb-4">
-                    <h6 class="text-muted mb-2 small fw-bold">NOTES</h6>
-                    <div class="card bg-light border-0" style="max-height: 150px; overflow-y: auto;">
-                        <div class="card-body p-2">
+                ${data.notes ? `
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1 fw-bold">NOTES</small>
+                        <div class="source-text-scroll">
                             <small style="line-height: 1.4; display: block;">${data.notes}</small>
                         </div>
                     </div>
-                </div>
-            ` : ''}
+                ` : ''}
+            </div>
 
-            <div class="mt-auto pt-3 border-top border-secondary">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-sm btn-outline-theme-mindmaps" onclick="window.compostMindMap.editNode('${data.id}')">
-                        <i class="fas fa-edit"></i> Edit Node
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="window.compostMindMap.deleteNode('${data.id}')">
-                        <i class="fas fa-trash"></i> Delete
+            <div class="node-actions p-3 pt-2 border-top">
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-theme-mindmaps" style="flex: 1;" onclick="window.compostMindMap.editNode('${data.id}')">
+                        <i class="fas fa-edit"></i> Edit
                     </button>
                     ${data.type !== 'Root' ? `
-                        <button class="btn btn-sm btn-theme-mindmaps" onclick="window.compostMindMap.promoteNode('${data.id}')">
+                        <button class="btn btn-sm btn-theme-mindmaps" style="flex: 1;" onclick="window.compostMindMap.promoteNode('${data.id}')">
                             <i class="fas fa-arrow-up"></i> Promote
                         </button>
                     ` : ''}
+                    <button class="btn btn-sm btn-outline-danger" style="flex: 1;" onclick="window.compostMindMap.deleteNode('${data.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -976,23 +968,28 @@ class CompostMindMap {
         // TODO: Implement edge delete functionality
     }
 
-    // Spread nodes to prevent overlapping
+    // Spread nodes using hierarchical layout
     spreadNodes() {
+        this.applyLayout('hierarchical');
+    }
+
+    // Legacy circular spread - kept for reference but unused
+    _spreadNodesCircular() {
         if (!this.cy) {
             console.error('Cytoscape instance not initialized');
             return;
         }
-        
+
         const nodes = this.cy.nodes();
         const nodeCount = nodes.length;
-        
+
         if (nodeCount === 0) return;
-        
+
         // Get canvas dimensions
         const container = document.getElementById(this.containerId);
         const width = container.clientWidth;
         const height = container.clientHeight;
-        
+
         // Calculate center and radius
         const centerX = width / 2;
         const centerY = height / 2;
@@ -1470,11 +1467,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Existing event handlers
         document.getElementById('fit-view-btn')?.addEventListener('click', () => mindMap.fitToView());
         document.getElementById('spread-nodes-btn')?.addEventListener('click', () => mindMap.spreadNodes());
-        document.getElementById('export-image-btn')?.addEventListener('click', () => mindMap.exportAsImage());
-
-        // New event handlers
-        document.getElementById('export-json-btn')?.addEventListener('click', () => mindMap.exportAsJson());
-        document.getElementById('import-btn')?.addEventListener('click', () => mindMap.showImportDialog());
 
         // Layout buttons
         document.getElementById('layout-radial-btn')?.addEventListener('click', () => mindMap.applyLayout('radial'));
