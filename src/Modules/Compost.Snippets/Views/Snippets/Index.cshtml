@@ -190,13 +190,42 @@ else
 
 <!-- Include Prism for syntax highlighting in the list view with theme support -->
 <script>
-    // Determine which Prism theme to load based on current theme
-    const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    const prismTheme = isDarkMode ? 'prism-tomorrow.min.css' : 'prism.min.css';
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/' + prismTheme;
-    document.head.appendChild(link);
+    // Prism theme management
+    let prismThemeLink = null;
+    
+    function updatePrismTheme() {
+        const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const prismTheme = isDarkMode ? 'prism-tomorrow.min.css' : 'prism.min.css';
+        const prismUrl = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/' + prismTheme;
+        
+        if (!prismThemeLink) {
+            prismThemeLink = document.querySelector('link[href*="prism"][href*="themes"]');
+        }
+        if (prismThemeLink) {
+            prismThemeLink.href = prismUrl;
+        } else {
+            prismThemeLink = document.createElement('link');
+            prismThemeLink.rel = 'stylesheet';
+            prismThemeLink.href = prismUrl;
+            document.head.appendChild(prismThemeLink);
+        }
+    }
+    
+    // Initial theme setup
+    updatePrismTheme();
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                updatePrismTheme();
+            }
+        });
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    
+    // Also listen for custom theme event
+    window.addEventListener('monacoThemeUpdate', updatePrismTheme);
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-csharp.min.js"></script>

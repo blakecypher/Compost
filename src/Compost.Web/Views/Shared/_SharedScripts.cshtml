@@ -34,6 +34,8 @@
                 html.setAttribute('data-bs-theme', next);
                 localStorage.setItem('theme', next);
                 updateToggleIcon(next);
+                // Dispatch event for Monaco editor to update theme
+                window.dispatchEvent(new CustomEvent('monacoThemeUpdate'));
             });
         }
 

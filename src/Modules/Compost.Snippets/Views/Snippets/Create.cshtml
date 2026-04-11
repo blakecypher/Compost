@@ -115,13 +115,17 @@
                     <span class="fw-bold">Actions</span>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button type="button" onclick="submitSnippetForm()" class="btn btn-theme-snippets" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
-                            <i class="fas fa-save me-2"></i> Create Snippet
-                        </button>
-                        <a asp-action="Index" class="btn btn-outline-theme-snippets">
-                            <i class="fas fa-times me-2"></i> Cancel
-                        </a>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button type="button" onclick="submitSnippetForm()" class="btn btn-theme-snippets w-100" style="background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important;">
+                                <i class="fas fa-save me-2"></i> Create
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <a asp-action="Index" class="btn btn-outline-theme-snippets w-100">
+                                <i class="fas fa-times me-2"></i> Cancel
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -249,6 +253,13 @@
             observer.observe(document.documentElement, {
                 attributes: true,
                 attributeFilter: ['data-bs-theme']
+            });
+            
+            // Listen for custom theme change event as backup
+            window.addEventListener('monacoThemeUpdate', function() {
+                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                const newTheme = isDark ? 'vs-dark' : 'vs';
+                monaco.editor.setTheme(newTheme);
             });
             
             // Sync content to hidden input

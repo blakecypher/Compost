@@ -348,19 +348,51 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-json.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-markup.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Change background to white in light mode
+    // Prism theme CSS link element
+    let prismThemeLink = null;
+    
+    function updatePrismTheme() {
         const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        if (!isDarkMode) {
-            const codeContainer = document.querySelector('.snippet-code-container .card-body');
-            const preElement = document.querySelector('.snippet-code-container pre');
-            if (codeContainer) {
-                codeContainer.style.background = 'white';
-            }
-            if (preElement) {
-                preElement.style.background = 'white';
-            }
+        const prismTheme = isDarkMode ? 'prism-tomorrow.min.css' : 'prism.min.css';
+        const prismUrl = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/' + prismTheme;
+        
+        // Update or create Prism theme link
+        if (!prismThemeLink) {
+            prismThemeLink = document.querySelector('link[href*="prism"][href*="themes"]');
         }
+        if (prismThemeLink) {
+            prismThemeLink.href = prismUrl;
+        } else {
+            prismThemeLink = document.createElement('link');
+            prismThemeLink.rel = 'stylesheet';
+            prismThemeLink.href = prismUrl;
+            document.head.appendChild(prismThemeLink);
+        }
+        
+        // Update code container background
+        const codeContainer = document.querySelector('.snippet-code-container .card-body');
+        const preElement = document.querySelector('.snippet-code-container pre');
+        const bgColor = isDarkMode ? '#1e1e1e' : 'white';
+        if (codeContainer) codeContainer.style.background = bgColor;
+        if (preElement) preElement.style.background = bgColor;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial theme setup
+        updatePrismTheme();
+        
+        // Listen for theme changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                    updatePrismTheme();
+                }
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+        
+        // Also listen for custom theme event
+        window.addEventListener('monacoThemeUpdate', updatePrismTheme);
         
         if (typeof Prism !== 'undefined') Prism.highlightAll();
 

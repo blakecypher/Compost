@@ -28,7 +28,7 @@
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                 <!-- Basic Information Card -->
-                <div class="card project-enhanced-card mb-4">
+                <div class="card project-enhanced-card mb-3">
                     <div class="card-header d-flex align-items-center project-header-background">
                         <div class="project-icon me-2">
                             <i class="fas fa-info text-theme-contexts"></i>
@@ -68,7 +68,7 @@
                 </div>
 
                 <!-- Repository Information Card -->
-                <div class="card project-enhanced-card mb-4">
+                <div class="card project-enhanced-card mb-3">
                     <div class="card-header d-flex align-items-center project-header-background">
                         <div class="project-icon me-2">
                             <i class="fab fa-github text-theme-contexts"></i>
@@ -96,7 +96,7 @@
                 </div>
 
                 <!-- Hierarchy Card -->
-                <div class="card project-enhanced-card mb-4">
+                <div class="card project-enhanced-card mb-3">
                     <div class="card-header d-flex align-items-center project-header-background">
                         <div class="project-icon me-2">
                             <i class="fas fa-sitemap text-theme-contexts"></i>
@@ -129,7 +129,7 @@
         <!-- Actions Sidebar -->
         <div class="col-md-4">
             <!-- Actions Card -->
-            <div class="card project-enhanced-card mb-4">
+            <div class="card project-enhanced-card mb-3">
                 <div class="card-header d-flex align-items-center project-header-background">
                     <div class="project-icon me-2">
                         <i class="fas fa-cog text-theme-contexts"></i>
@@ -137,13 +137,17 @@
                     <span class="fw-bold">Actions</span>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button type="submit" form="createProjectForm" class="btn btn-theme-contexts">
-                            <i class="fas fa-save me-2"></i>Create Project
-                        </button>
-                        <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-theme-contexts">
-                            <i class="fas fa-times me-2"></i>Cancel
-                        </a>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button type="submit" form="createProjectForm" class="btn btn-theme-contexts w-100">
+                                <i class="fas fa-save me-2"></i>Create
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <a asp-action="TreeView" asp-controller="Project" class="btn btn-outline-theme-contexts w-100">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
