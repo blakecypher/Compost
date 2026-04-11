@@ -773,6 +773,14 @@ a:hover {
         padding: var(--spacing-md) var(--spacing-lg);
         font-size: 1rem;
     }
+    
+    /* Mobile nav - always visible */
+    #mobile-menu-toggle { display: none !important; }
+    #mobile-nav { display: block !important; }
+    #mobile-nav > div { flex-direction: row !important; flex-wrap: wrap; justify-content: center; gap: 0.5rem !important; margin-top: 0.5rem !important; }
+    #mobile-nav .nav-link { display: inline-flex !important; padding: 0.5rem !important; min-width: 44px; min-height: 44px; }
+    #mobile-nav .nav-link span { display: none !important; }
+    #mobile-nav .nav-link i { font-size: 1.25rem; margin: 0 !important; }
 }
 
 /* Samsung Fold Z6 Optimization */
@@ -806,6 +814,14 @@ a:hover {
     h1 { font-size: 1.5rem; }
     h2 { font-size: 1.25rem; }
     h3 { font-size: 1.125rem; }
+    
+    /* Mobile nav - always visible on Fold cover screen */
+    #mobile-menu-toggle { display: none !important; }
+    #mobile-nav { display: block !important; }
+    #mobile-nav > div { flex-direction: row !important; flex-wrap: wrap; justify-content: center; gap: 0.25rem !important; margin-top: 0.25rem !important; }
+    #mobile-nav .nav-link { display: inline-flex !important; padding: 0.25rem !important; min-width: 36px; min-height: 36px; }
+    #mobile-nav .nav-link span { display: none !important; }
+    #mobile-nav .nav-link i { font-size: 1rem; margin: 0 !important; }
 }
 
 /* Main screen styles */
@@ -817,6 +833,14 @@ a:hover {
     .col {
         padding: 0 var(--spacing-sm);
     }
+    
+    /* Mobile nav - always visible on narrow screens */
+    #mobile-menu-toggle { display: none !important; }
+    #mobile-nav { display: block !important; }
+    #mobile-nav > div { flex-direction: row !important; flex-wrap: wrap; justify-content: center; gap: 0.5rem !important; margin-top: 0.5rem !important; }
+    #mobile-nav .nav-link { display: inline-flex !important; padding: 0.5rem !important; min-width: 44px; min-height: 44px; }
+    #mobile-nav .nav-link span { display: none !important; }
+    #mobile-nav .nav-link i { font-size: 1.25rem; margin: 0 !important; }
 }
 
 /* Utility Classes */
@@ -1490,6 +1514,74 @@ main, .main-content {
 [data-bs-theme="dark"] .sidebar .nav-link.active {
     background-color: #334155 !important;
     color: #f8fafc !important;
+}
+
+/* Mobile Navigation - Default visible on mobile */
+.mobile-nav {
+    display: block;
+}
+
+/* Mobile Navigation - Horizontal top row with icons only */
+@media (max-width: 767.98px) {
+    /* Hide mobile hamburger toggle */
+    #mobile-menu-toggle {
+        display: none !important;
+    }
+    
+    /* Show mobile nav always as second row */
+    .mobile-nav,
+    #mobile-nav.mobile-nav,
+    #mobile-nav {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: static !important;
+        height: auto !important;
+        overflow: visible !important;
+        clip: auto !important;
+        margin-top: 0.5rem !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px solid rgba(255,255,255,0.1) !important;
+        width: 100% !important;
+    }
+    
+    /* The inner container with flex column - change to row */
+    .mobile-nav > div,
+    #mobile-nav > div,
+    .mobile-nav .d-flex,
+    #mobile-nav .d-flex {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Mobile nav links - horizontal with icons only */
+    .mobile-nav .nav-link,
+    #mobile-nav .nav-link {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem !important;
+        min-width: 44px;
+        min-height: 44px;
+        border-radius: 8px;
+    }
+    
+    /* Hide text, show only icons */
+    .mobile-nav .nav-link span,
+    #mobile-nav .nav-link span {
+        display: none !important;
+    }
+    
+    /* Make icons larger for touch targets */
+    .mobile-nav .nav-link i,
+    #mobile-nav .nav-link i {
+        font-size: 1.25rem;
+        margin: 0 !important;
+    }
 }
 
 /* Print Styles */

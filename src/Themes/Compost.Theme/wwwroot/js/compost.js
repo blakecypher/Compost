@@ -81,6 +81,11 @@ class CompostTheme {
         const mobileToggle = document.getElementById('mobile-menu-toggle');
         const mobileNav = document.getElementById('mobile-nav');
 
+        // Skip if on narrow mobile (nav is always visible via CSS)
+        if (window.innerWidth < 768) {
+            mobileNav?.classList.add('show');
+        }
+
         mobileToggle?.addEventListener('click', () => {
             const isExpanded = mobileToggle.getAttribute('aria-expanded') === 'true';
             
@@ -94,9 +99,9 @@ class CompostTheme {
             }
         });
 
-        // Close mobile nav when clicking outside
+        // Close mobile nav when clicking outside (only on larger screens)
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.navbar') && mobileNav?.classList.contains('show')) {
+            if (window.innerWidth >= 768 && !e.target.closest('.navbar') && mobileNav?.classList.contains('show')) {
                 mobileNav.classList.remove('show');
                 mobileToggle?.setAttribute('aria-expanded', 'false');
                 const icon = mobileToggle?.querySelector('i');
@@ -104,10 +109,14 @@ class CompostTheme {
             }
         });
 
-        // Close mobile nav on window resize
+        // Handle resize - show nav on mobile, hide on desktop
         window.addEventListener('resize', () => {
-            if (window.innerWidth >= 768 && mobileNav?.classList.contains('show')) {
-                mobileNav.classList.remove('show');
+            if (window.innerWidth < 768) {
+                // Mobile: always show nav
+                mobileNav?.classList.add('show');
+            } else {
+                // Desktop: hide mobile nav
+                mobileNav?.classList.remove('show');
                 mobileToggle?.setAttribute('aria-expanded', 'false');
                 const icon = mobileToggle?.querySelector('i');
                 if (icon) icon.className = 'fas fa-bars';

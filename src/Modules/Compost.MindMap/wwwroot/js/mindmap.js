@@ -788,84 +788,71 @@ class CompostMindMap {
     }
 
     showPromotionDialog(node) {
-        // Create modal overlay
-        const modalOverlay = document.createElement('div');
-        modalOverlay.className = 'promote-modal-overlay';
-        modalOverlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        `;
-
-        // Create modal content with AI agent on the right
-        const modalContent = document.createElement('div');
-        modalContent.className = 'promote-modal-content';
-        modalContent.style.cssText = `
-            border-radius: 8px;
-            width: 90%;
-            max-width: 1200px;
-            height: 80vh;
-            display: flex;
-            overflow: hidden;
-        `;
-
-        modalContent.innerHTML = `
-            <div class="promote-modal-left" style="flex: 1; padding: 2rem; overflow-y: auto;">
-                <h3 class="promote-modal-title" style="margin-bottom: 1.5rem;">
-                    <i class="fas fa-arrow-up"></i> Promote Node
-                </h3>
-                <div class="promote-modal-node-info" style="padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <h4 class="promote-modal-node-title" style="margin-bottom: 0.75rem; font-weight: 600;">${node.data('label')}</h4>
-                    <p class="promote-modal-node-text" style="font-size: 0.95rem; line-height: 1.5; margin-bottom: 0;">${node.data('sourceText') || 'No source text'}</p>
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label class="promote-modal-label" style="display: block; margin-bottom: 0.5rem;">Promotion Type:</label>
-                    <select id="promotion-type" class="promote-modal-select" style="width: 100%; padding: 0.5rem; border-radius: 4px;">
-                        <option value="tree">Tree Node (Kanban)</option>
-                        <option value="structure">Structure (if has children)</option>
-                    </select>
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label class="promote-modal-label" style="display: block; margin-bottom: 0.5rem;">Notes (optional):</label>
-                    <textarea id="promotion-notes" class="promote-modal-textarea" style="width: 100%; height: 100px; padding: 0.5rem; border-radius: 4px; resize: vertical;" placeholder="Add any notes for the promotion..."></textarea>
-                </div>
-                <div style="display: flex; gap: 1rem;">
-                    <button id="confirm-promote" class="btn btn-primary" style="flex: 1; padding: 0.75rem; font-weight: 600;">
-                        <i class="fas fa-check"></i> Promote
-                    </button>
-                    <button id="cancel-promote" class="btn btn-secondary" style="flex: 1; padding: 0.75rem;">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                </div>
-            </div>
-            <div class="promote-modal-right" style="width: 400px; padding: 2rem;">
-                <h3 class="promote-modal-title" style="margin-bottom: 1rem;">
-                    <i class="fas fa-robot"></i> AI Assistant
-                </h3>
-                <div id="ai-chat" class="promote-modal-ai-chat" style="height: calc(100% - 3rem); overflow-y: auto;">
-                    <div class="promote-modal-ai-message" style="padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-                        <p style="margin: 0;">I'm analyzing this node for promotion...</p>
+        // Create Bootstrap modal (like other working modals in this file)
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'promote-modal';
+        modal.setAttribute('data-bs-backdrop', 'static');
+        modal.innerHTML = `
+            <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1000px;">
+                <div class="modal-content card border-theme-mindmaps">
+                    <div class="modal-header bg-theme-mindmaps text-on-theme-mindmaps border-0">
+                        <h5 class="modal-title"><i class="fas fa-arrow-up me-2"></i>Promote Node</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-7">
+                                <div class="alert alert-info mb-3">
+                                    <h6 class="fw-bold mb-2">${node.data('label')}</h6>
+                                    <p class="mb-0 small">${node.data('sourceText') || 'No source text'}</p>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">PROMOTION TYPE</label>
+                                    <select id="promotion-type" class="form-select border-theme-mindmaps">
+                                        <option value="tree">Tree Node (Kanban)</option>
+                                        <option value="structure">Structure (if has children)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">NOTES (OPTIONAL)</label>
+                                    <textarea id="promotion-notes" class="form-control border-theme-mindmaps" rows="3" placeholder="Add any notes for the promotion..."></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-5 border-start">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-robot me-2"></i>AI Assistant</h6>
+                                <div id="ai-chat" class="border rounded p-2" style="height: 350px; overflow-y: auto; background: rgba(0,0,0,0.03);">
+                                    <div class="alert alert-secondary py-2 px-3 mb-2">
+                                        <p class="mb-0 small">I'm analyzing this node for promotion...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-theme-mindmaps" id="confirm-promote">
+                            <i class="fas fa-check me-1"></i>Promote
+                        </button>
                     </div>
                 </div>
             </div>
         `;
 
-        modalOverlay.appendChild(modalContent);
-        document.body.appendChild(modalOverlay);
+        document.body.appendChild(modal);
+
+        // Initialize Bootstrap modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
 
         // Add event listeners
         document.getElementById('confirm-promote').addEventListener('click', () => {
-            this.executePromotion(node, modalOverlay);
+            this.executePromotion(node, bsModal);
         });
 
-        document.getElementById('cancel-promote').addEventListener('click', () => {
-            modalOverlay.remove();
+        // Cleanup on hide
+        modal.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modal);
         });
 
         // Simulate AI analysis
@@ -886,7 +873,7 @@ class CompostMindMap {
             setTimeout(() => {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'promote-modal-ai-message';
-                messageDiv.style.cssText = 'padding: 1rem; border-radius: 4px; margin-bottom: 1rem;';
+                messageDiv.style.cssText = 'padding: 1rem; border-radius: 4px; margin-bottom: 1rem; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1);';
                 messageDiv.innerHTML = `<p style="margin: 0;">${message}</p>`;
                 aiChat.appendChild(messageDiv);
                 aiChat.scrollTop = aiChat.scrollHeight;
@@ -894,7 +881,7 @@ class CompostMindMap {
         });
     }
 
-    async executePromotion(node, modalOverlay) {
+    async executePromotion(node, bsModal) {
         const promotionType = document.getElementById('promotion-type').value;
         const notes = document.getElementById('promotion-notes').value;
 
@@ -916,7 +903,7 @@ class CompostMindMap {
 
             if (response.ok) {
                 const data = await response.json();
-                modalOverlay.remove();
+                bsModal.hide();
                 this.showNotification('Node promoted successfully!', 'success');
                 
                 // Update node data
