@@ -74,6 +74,20 @@
         font-weight: bold;
         z-index: 10;
     }
+
+    /* Dynamic height for desktop - 100px shorter than viewport */
+    @@media (min-width: 992px) {
+        #mind-map-container {
+            height: calc(100vh - 100px) !important;
+            min-height: calc(100vh - 100px) !important;
+        }
+        #node-details-panel .card-body {
+            max-height: calc(100vh - 150px) !important;
+        }
+        .mindmap-editor-row {
+            min-height: calc(100vh - 100px) !important;
+        }
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -170,14 +184,13 @@
 </div>
 
 <!-- Interactive Mind Map Layout -->
-<div class="row g-4" style="min-height: 650px;">
+<div class="row g-4 mindmap-editor-row" style="min-height: 650px;">
     <!-- Mind Map Container (80%) -->
     <div class="col-md-9">
         <div class="card h-100 border-theme-mindmaps shadow-sm overflow-hidden">
             <div class="card-body p-0 h-100">
                 <div id="mind-map-container"
                      class="h-100 w-100"
-                     style="min-height: 550px;"
                      data-map-id="@Model.Id"
                      data-work-context-id="@(Model.WorkContextId ?? "")"
                      data-api-base="@Url.Content("~/MindMap")">
