@@ -14,3 +14,5 @@ src/Compost.Web/App_Data/Sites/Default/DataProtection-Keys/
 src/Compost.Web/App_Data/logs/internal-nlog.txt
 
 Compost.sln.DotSettings.user
+
+src/Compost.Web/mindmaps.json

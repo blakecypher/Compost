@@ -4,10 +4,10 @@
     var path = Context.Request.Path.ToString();
 }
 
-<nav id="sidebar" class="sidebar flex-shrink-0 pt-3 collapsed">
+<nav id="sidebar" class="sidebar flex-shrink-0 collapsed">
     <script>
         (function () {
-            var s = document.getElementById('sidebar');
+            const s = document.getElementById('sidebar');
             if (s && localStorage.getItem('sidebarCollapsed') !== 'true') {
                 s.classList.remove('collapsed');
             }

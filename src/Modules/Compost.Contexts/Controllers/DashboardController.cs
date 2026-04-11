@@ -18,35 +18,35 @@ public class DashboardController(
     {
         // Get latest projects
         var projects = await projectManager.GetAllProjectsAsync();
-        var latestProjects = projects.OrderByDescending(p => p.LastAccessedAt).Take(5).ToList();
+        var latestProjects = projects.OrderByDescending(p => p.LastAccessedAt).Take(2).ToList();
 
         // Get latest meetings
         var meetings = await transcriptionService.GetAllMeetingsAsync();
-        var latestMeetings = meetings.OrderByDescending(m => m.StartedAt).Take(5).ToList();
+        var latestMeetings = meetings.OrderByDescending(m => m.StartedAt).Take(2).ToList();
 
         // Get latest mindmaps
         var mindMaps = await mindMapService.GetAllMindMapsAsync();
-        var latestMindMaps = mindMaps.OrderByDescending(m => m.UpdatedAt).Take(5).ToList();
+        var latestMindMaps = mindMaps.OrderByDescending(m => m.UpdatedAt).Take(2).ToList();
 
         // Get latest Kanban cards
         var cards = await session.Query<ContentItem, ContentItemIndex>()
             .Where(x => x.ContentType == "KanbanCard" && x.Latest && x.Published)
             .OrderByDescending(x => x.CreatedUtc)
-            .Take(5)
+            .Take(2)
             .ListAsync();
 
         // Get latest snippets
         var snippets = await session.Query<ContentItem, ContentItemIndex>()
             .Where(x => x.ContentType == "CodeSnippet" && x.Latest && x.Published)
             .OrderByDescending(x => x.CreatedUtc)
-            .Take(5)
+            .Take(2)
             .ListAsync();
 
         // Get latest patterns
         var patterns = await session.Query<ContentItem, ContentItemIndex>()
             .Where(x => x.ContentType == "ArchitecturalPattern" && x.Latest && x.Published)
             .OrderByDescending(x => x.CreatedUtc)
-            .Take(5)
+            .Take(2)
             .ListAsync();
 
         // Get module counts

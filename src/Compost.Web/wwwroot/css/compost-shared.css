@@ -140,7 +140,7 @@ html.no-transitions .menu-section {
 
 .sidebar {
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
-    width: 260px;
+    width: 200px;
     z-index: 100;
     background-color: var(--sidebar-bg) !important;
     border-right: 2px solid var(--border-color) !important;
@@ -165,7 +165,6 @@ html.no-transitions .menu-section {
 /* Collapsed text/label fade */
 .sidebar.collapsed .nav-link span,
 .sidebar.collapsed .menu-section { opacity: 0; pointer-events: none; }
-.sidebar.collapsed .nav-link i   { margin-right: 2rem; }
 .sidebar.collapsed .context-stats-widget { display: none !important; }
 
 /* Sticky inner container */
