@@ -58,9 +58,7 @@
         box-shadow: 0 10px 20px rgba(255, 107, 53, 0.2), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
     }
     [data-bs-theme="dark"] .kanban-card:hover {
-        box-shadow: 0 10px 20px rgba(255, 107, 53, 0.2), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-        transform: translateY(-2px) scale(1.1) !important;
-        transition: all 0.2s ease !important;
+        box-shadow: 0 10px 20px rgba(255, 107, 53, 0.2), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
         border-color: #ff6b35 !important;
     }
 
@@ -267,7 +265,7 @@
 <div class="card mb-4">
     <div class="card-body py-3">
         <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-xl col-lg-2 col-md-4 col-sm-6 col-12">
                 <label class="form-label">Project</label>
                 <select id="contextSelector" class="form-select" onchange="window.location.href = this.value ? '?projectId=' + this.value : '/Kanban'">
                     <option value="" selected="@(string.IsNullOrEmpty(Model.SelectedContextId))">All Projects</option>
@@ -277,7 +275,7 @@
                     }
                 </select>
             </div>
-            <div class="col-md-5">
+            <div class="col-xl-3 col-lg col-md-4 col-sm-6 col-12">
                 <label class="form-label">Search Cards</label>
                 <div class="input-group">
                     <span class="input-group-text">
@@ -287,8 +285,8 @@
                            onkeyup="filterCards()">
                 </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Status Filter</label>
+            <div class="col-xl col-lg-2 col-md-4 col-sm-6 col-12">
+                <label class="form-label">Status</label>
                 <select id="statusFilter" class="form-select" onchange="filterCards()">
                     <option value="">All Statuses</option>
                     <option value="Backlog">Backlog</option>
@@ -299,8 +297,8 @@
                     <option value="Done">Done</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Points Filter</label>
+            <div class="col-xl col-lg-2 col-md-4 col-sm-6 col-12">
+                <label class="form-label">Points</label>
                 <select id="pointsFilter" class="form-select" onchange="filterCards()">
                     <option value="">All Points</option>
                     <option value="0">No Points</option>
@@ -313,8 +311,8 @@
                     <option value="21">21 Points</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Priority Filter</label>
+            <div class="col-xl col-lg-2 col-md-4 col-sm-6 col-12">
+                <label class="form-label">Priority</label>
                 <select id="priorityFilter" class="form-select" onchange="filterCards()">
                     <option value="">All Priorities</option>
                     <option value="Low">Low</option>
@@ -365,7 +363,7 @@
                         _ => "#6c757d"
                     };
 
-                    <div class="kanban-card card border-0 shadow-sm rounded-3 overflow-hidden"
+                    <div class="kanban-card card border-0 rounded-3 overflow-hidden"
                          data-id="@card.ContentItemId" data-status="@status" data-priority="@priority">
                         <div class="priority-indicator" style="height: 4px; background: @priorityColor;"></div>
                         <div class="card-body p-3">

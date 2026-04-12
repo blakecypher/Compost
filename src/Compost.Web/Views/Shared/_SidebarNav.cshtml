@@ -16,44 +16,44 @@
     <div class="sidebar-sticky">
         <ul class="nav flex-column">
             <li class="nav-item mb-1">
-                <a class="nav-link @(path == "/" ? "active bg-theme-dashboard text-on-theme-dashboard rounded" : "text-dark")" href="~/">
+                <a class="nav-link @(path == "/" ? "active bg-theme-dashboard text-on-theme-dashboard" : "text-dark")" href="~/">
                     <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
                 </a>
             </li>
             <li class="nav-item"><span class="menu-section">Workflow</span></li>
             <li class="nav-item mb-1">
-                <a class="nav-link @(path.Contains("/Projects") ? "active bg-theme-contexts text-on-theme-contexts rounded" : "text-dark")" href="/Projects/List">
+                <a class="nav-link @(path.Contains("/Projects") ? "active bg-theme-contexts text-on-theme-contexts" : "text-dark")" href="/Projects/List">
                     <i class="fas fa-folder-open"></i><span>Projects</span>
                 </a>
             </li>
             <li class="nav-item mb-1">
-                <a class="nav-link @(path.Contains("/Transcription") ? "active bg-theme-transcription text-on-theme-transcription rounded" : "text-dark")" href="/Transcription">
+                <a class="nav-link @(path.Contains("/Transcription") ? "active bg-theme-transcription text-on-theme-transcription" : "text-dark")" href="/Transcription">
                     <i class="fas fa-microphone"></i><span>Transcription</span>
                 </a>
             </li>
             <li class="nav-item mb-1">
-                <a class="nav-link @(path.Contains("/MindMap") ? "active bg-theme-mindmaps text-on-theme-mindmaps rounded" : "text-dark")" href="/MindMap">
+                <a class="nav-link @(path.Contains("/MindMap") ? "active bg-theme-mindmaps text-on-theme-mindmaps" : "text-dark")" href="/MindMap">
                     <i class="fas fa-brain"></i><span>Mind Maps</span>
                 </a>
             </li>
             <li class="nav-item mb-1">
-                <a class="nav-link @(path.StartsWith("/Kanban") ? "active bg-theme-kanban text-on-theme-kanban rounded" : "text-dark")" href="/Kanban">
+                <a class="nav-link @(path.StartsWith("/Kanban") ? "active bg-theme-kanban text-on-theme-kanban" : "text-dark")" href="/Kanban">
                     <i class="fas fa-columns"></i><span>Kanban Board</span>
                 </a>
             </li>
             <li class="nav-item mb-1">
-                <a class="nav-link @(path.Contains("/GitDashboard") ? "active bg-primary text-white rounded" : "text-dark")" href="/Projects/GitDashboard">
+                <a class="nav-link @(path.Contains("/GitDashboard") ? "active bg-primary text-white" : "text-dark")" href="/Projects/GitDashboard">
                     <i class="fab fa-git-alt"></i><span>Git</span>
                 </a>
             </li>
             <li class="nav-item"><span class="menu-section">Library</span></li>
             <li class="nav-item mb-1">
-                <a class="nav-link @(path.Contains("/Snippets") ? "active bg-theme-snippets text-on-theme-snippets rounded" : "text-dark")" href="/Snippets">
+                <a class="nav-link @(path.Contains("/Snippets") ? "active bg-theme-snippets text-on-theme-snippets" : "text-dark")" href="/Snippets">
                     <i class="fas fa-code"></i><span>Snippets</span>
                 </a>
             </li>
             <li class="nav-item mb-1">
-                <a class="nav-link @(path.Contains("/Patterns") ? "active bg-theme-patterns text-on-theme-patterns rounded" : "text-dark")" href="/Patterns">
+                <a class="nav-link @(path.Contains("/Patterns") ? "active bg-theme-patterns text-on-theme-patterns" : "text-dark")" href="/Patterns">
                     <i class="fas fa-project-diagram"></i><span>Patterns</span>
                 </a>
             </li>

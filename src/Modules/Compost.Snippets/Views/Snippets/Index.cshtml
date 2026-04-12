@@ -6,6 +6,18 @@
     ViewData["Title"] = "Code Snippets";
 }
 
+<style>
+    /* Card header styling to match MindMap */
+    [data-bs-theme="dark"] .snippet-card-header {
+        background-color: #2d2d2d !important;
+        color: #d4d4d8 !important;
+    }
+    [data-bs-theme="light"] .snippet-card-header {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="text-theme-snippets">
@@ -55,7 +67,7 @@
                     
                     <div class="col-md-6 mb-4">
                         <div class="card h-100 enhanced-card snippet-card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="card-header snippet-card-header d-flex justify-content-between align-items-center">
                                 <span class="fw-bold"><i class="fas fa-code me-1"></i> @snippet.Language.ToUpper()</span>
                                 <div class="dropdown">
                                     <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" style="text-decoration: none;">
@@ -96,13 +108,15 @@
                                     <div class="position-absolute bottom-0 start-0 w-100 h-25 snippet-preview-gradient" style="background: linear-gradient(to bottom, transparent, var(--bs-body-bg));"></div>
                                 </div>
                             </div>
-                             <div class="card-footer d-flex justify-content-between align-items-center pb-3">
-                                <small class="text-muted">
-                                    <i class="fas fa-folder me-1"></i> @(snippet.Category ?? "Uncategorized")
-                                </small>
-                                <div class="d-flex gap-1">
-                                    <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="btn btn-sm btn-outline-secondary">View</a>
-                                    <a asp-action="Edit" asp-route-id="@item.ContentItemId" class="btn btn-sm btn-outline-theme-snippets">Edit</a>
+                             <div class="card-footer bg-transparent" style="border-top: 1px solid var(--theme-snippets);">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-folder me-1"></i> @(snippet.Category ?? "Uncategorized")
+                                    </small>
+                                    <div class="d-flex gap-1">
+                                        <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="btn btn-sm btn-outline-secondary">View</a>
+                                        <a asp-action="Edit" asp-route-id="@item.ContentItemId" class="btn btn-sm btn-outline-theme-snippets">Edit</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>

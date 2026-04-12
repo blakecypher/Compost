@@ -56,7 +56,7 @@ body.css-loaded { visibility: visible; }
     --theme-patterns:     #6629d9;
 
     /* Surface & border */
-    --sidebar-bg:         #1e293b;
+    --sidebar-bg:         #2d3a4a;
     --border-color:       #334155;
     --card-bg:            #212529;
     --bg-gradient-card:   var(--bg-card, #212529);
@@ -95,7 +95,6 @@ html[data-bs-theme="dark"] .card-body .bg-light { background-color: var(--card-b
 :not([data-bs-theme="dark"]) .navbar {
     background-color: #2d3a4a !important;
     border-bottom: 2px solid #1e2a38 !important;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.30) !important;
 }
 
 [data-bs-theme="light"] .navbar .navbar-brand,
@@ -152,6 +151,7 @@ html.no-transitions .menu-section {
     border-radius: 0 0 12px 0;
     margin: 0 8px 12px 0;
     padding-bottom: 20px;
+    padding-top: 5px;
     overflow: hidden;
 }
 

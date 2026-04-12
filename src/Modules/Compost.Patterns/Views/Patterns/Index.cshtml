@@ -6,6 +6,18 @@
     ViewData["Title"] = "Architectural Patterns";
 }
 
+<style>
+    /* Card header styling to match MindMap */
+    [data-bs-theme="dark"] .pattern-card-header {
+        background-color: #2d2d2d !important;
+        color: #d4d4d8 !important;
+    }
+    [data-bs-theme="light"] .pattern-card-header {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="text-theme-patterns">
@@ -59,7 +71,7 @@
             
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="card h-100 pattern-card" style="border-top: 5px solid var(--theme-patterns); transition: transform 0.1s, box-shadow 0.2s; background: var(--bg-gradient-card) !important; border-left: 1px solid #8f9fb5; border-right: 1px solid #8f9fb5; border-bottom: 1px solid #8f9fb5; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: transparent; color: var(--bs-body-color); border-bottom: 1px solid var(--theme-patterns);">
+                    <div class="card-header pattern-card-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid var(--theme-patterns);">
                         <div class="d-flex align-items-center">
                             <div class="pattern-icon me-2" style="background-color: rgba(124, 58, 237, 0.1);">
                                 <i class="fas fa-project-diagram" style="color: var(--theme-patterns);"></i>
@@ -160,7 +172,7 @@
                         </div>
                     </div>
                     
-                    <div class="card-footer bg-transparent border-0">
+                    <div class="card-footer bg-transparent" style="border-top: 1px solid var(--theme-patterns);">
                         <div class="d-flex gap-2">
                             <a asp-action="Detail" asp-route-id="@item.ContentItemId" class="btn btn-sm flex-fill btn-outline-theme-patterns">
                                 <i class="fas fa-book-open me-1"></i> View Details
