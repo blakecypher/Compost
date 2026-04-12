@@ -1,6 +1,16 @@
 @model Compost.Core.Models.Project
 
-@if (Model != null)
+@{
+    var isActive = Model?.CurrentSessionStartedAt.HasValue ?? false;
+    var cssClass = isActive ? "active-project-pill" : "active-project-pill no-active";
+    var linkUrl = isActive ? $"/Compost.Contexts/Project/Edit/{Model.Id}" : "/Projects/TreeView";
+    var displayName = isActive ? Model.Name : "No Active Project";
+    var titleText = isActive
+        ? $"Active: {Model.Name} ({Model.Status}) - Session tracking - Click to edit project"
+        : "No active project - Click to activate one";
+}
+
+@if (isActive)
 {
     var totalSeconds = Model.TotalTimeSpentSeconds;
     if (Model.CurrentSessionStartedAt.HasValue)
@@ -9,40 +19,153 @@
     }
     var timeSpan = TimeSpan.FromSeconds(totalSeconds);
     var timeDisplay = timeSpan.TotalHours >= 1 ? $"{timeSpan.Hours}h {timeSpan.Minutes}m" : $"{timeSpan.Minutes}m";
-    
-    <a href="@Url.Content("~/Contexts/TreeView")" class="active-project-indicator" title="Active: @Model.Name - Click to view all projects">
-        <div class="indicator-pulse"></div>
-        <span class="indicator-text">
-            <i class="fas fa-play-circle"></i>
-            <span class="d-none d-lg-inline">@Model.Name</span>
-            @{
-                var gitStatus = ViewData["GitStatus"] as Compost.Core.Interfaces.GitStatus;
-            }
-            @if (gitStatus != null)
-            {
-                <span class="ms-1" style="opacity: 0.8; font-size: 0.85em;">
-                    <i class="fab fa-git-alt mx-1 @(gitStatus.HasUncommittedChanges ? "text-warning" : "")"></i>@gitStatus.Branch
-                    @if (gitStatus.Ahead > 0)
-                    {
-                        <i class="fas fa-arrow-up text-success ms-1"></i>@gitStatus.Ahead
-                    }
-                    @if (gitStatus.Behind > 0)
-                    {
-                        <i class="fas fa-arrow-down text-danger ms-1"></i>@gitStatus.Behind
-                    }
-                </span>
-            }
-            <span class="indicator-time">@timeDisplay</span>
-        </span>
+
+    var gitStatus = ViewData["GitStatus"] as Compost.Core.Interfaces.GitStatus;
+
+    var statusClass = Model.Status switch
+    {
+        "To Do" => "bg-warning text-dark",
+        "In Progress" => "bg-info",
+        "Done" => "bg-success",
+        "Blocked" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    <a href="@linkUrl" class="@cssClass" id="activeProjectLink" data-target-url="@linkUrl" title="@titleText">
+        <span class="pulse-indicator"></span>
+        <span class="project-name">@displayName</span>
+        <span class="project-status-badge @statusClass">@Model.Status</span>
+        @if (gitStatus != null)
+        {
+            <span class="git-info">
+                <i class="fab fa-git-alt"></i>
+                <span class="branch-name">@gitStatus.Branch</span>
+                @if (gitStatus.Ahead > 0)
+                {
+                    <i class="fas fa-arrow-up text-success" title="Ahead by @gitStatus.Ahead commits"></i>
+                }
+                @if (gitStatus.Behind > 0)
+                {
+                    <i class="fas fa-arrow-down text-danger" title="Behind by @gitStatus.Behind commits"></i>
+                }
+            </span>
+        }
+        <span class="session-time">@timeDisplay</span>
     </a>
+
+    <!-- Unsaved Changes Modal -->
+    <div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title text-dark">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Unsaved Changes
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You have unsaved changes on this page. What would you like to do?</p>
+                    <p class="text-muted small">Setting a project as active will start its session and end any other active sessions.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Stay Here
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveAndNavigateBtn">
+                        <i class="fas fa-save me-1"></i>Save & Continue
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="discardAndNavigateBtn">
+                        <i class="fas fa-trash me-1"></i>Discard & Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            let pendingNavigationUrl = null;
+            const activeProjectLink = document.getElementById('activeProjectLink');
+            const modal = document.getElementById('unsavedChangesModal');
+            const bsModal = modal ? new bootstrap.Modal(modal) : null;
+
+            // Function to check for unsaved changes - can be customized per page
+            function hasUnsavedChanges() {
+                // Check for common unsaved change indicators
+                if (window.hasUnsavedChanges && typeof window.hasUnsavedChanges === 'function') {
+                    return window.hasUnsavedChanges();
+                }
+                // Check for modified form inputs
+                const modifiedInputs = document.querySelectorAll('input[data-modified="true"], textarea[data-modified="true"], select[data-modified="true"]');
+                if (modifiedInputs.length > 0) return true;
+                // Check for dirty forms (standard pattern)
+                if (window.formIsDirty) return true;
+                return false;
+            }
+
+            // Function to save changes - can be customized per page
+            function saveChanges() {
+                if (window.saveBeforeNavigate && typeof window.saveBeforeNavigate === 'function') {
+                    return window.saveBeforeNavigate();
+                }
+                // Try to find and submit the main form
+                const mainForm = document.querySelector('form[data-main-form="true"]') || document.querySelector('form:not([data-ignore])');
+                if (mainForm) {
+                    return new Promise((resolve) => {
+                        const formData = new FormData(mainForm);
+                        fetch(mainForm.action, {
+                            method: mainForm.method || 'POST',
+                            body: formData
+                        }).then(() => resolve()).catch(() => resolve());
+                    });
+                }
+                return Promise.resolve();
+            }
+
+            // Handle click on active project link
+            if (activeProjectLink) {
+                activeProjectLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    pendingNavigationUrl = this.getAttribute('data-target-url');
+
+                    if (hasUnsavedChanges()) {
+                        bsModal.show();
+                    } else {
+                        window.location.href = pendingNavigationUrl;
+                    }
+                });
+            }
+
+            // Save and navigate
+            const saveBtn = document.getElementById('saveAndNavigateBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    saveChanges().then(() => {
+                        bsModal.hide();
+                        if (pendingNavigationUrl) {
+                            window.location.href = pendingNavigationUrl;
+                        }
+                    });
+                });
+            }
+
+            // Discard and navigate
+            const discardBtn = document.getElementById('discardAndNavigateBtn');
+            if (discardBtn) {
+                discardBtn.addEventListener('click', function() {
+                    bsModal.hide();
+                    if (pendingNavigationUrl) {
+                        window.location.href = pendingNavigationUrl;
+                    }
+                });
+            }
+        })();
+    </script>
 }
 else
 {
-    <a href="@Url.Content("~/Contexts/TreeView")" class="active-project-indicator inactive" title="No active project - Click to activate one">
-        <div class="indicator-dot"></div>
-        <span class="indicator-text">
-            <i class="fas fa-pause-circle"></i>
-            <span class="d-none d-lg-inline">No Active Project</span>
-        </span>
+    <a href="@linkUrl" class="@cssClass" title="@titleText">
+        <span class="pulse-indicator"></span>
+        <span class="project-name">@displayName</span>
     </a>
 }

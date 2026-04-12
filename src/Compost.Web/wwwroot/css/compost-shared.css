@@ -126,6 +126,161 @@ html[data-bs-theme="dark"] .card-body .bg-light { background-color: var(--card-b
 #sidebarToggle:hover { opacity: 0.8; }
 
 /* ---------------------------------------------------------------------------
+   4b. Active Project Widget (Centered in Navbar)
+   --------------------------------------------------------------------------- */
+.navbar .container-fluid {
+    position: relative;
+}
+
+.navbar-center-widget {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+}
+
+.active-project-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    border-left: 3px solid var(--theme-contexts);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.active-project-pill:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+}
+
+.pulse-indicator {
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.project-name {
+    font-weight: 600;
+    color: #fff !important;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
+.git-info {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    padding-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.session-time {
+    font-size: 0.75em;
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+}
+
+.project-status-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+/* No active project - red alert state */
+.active-project-pill.no-active {
+    border-left-color: #dc2626 !important;
+    background: rgba(220, 38, 38, 0.15) !important;
+    border-color: rgba(220, 38, 38, 0.4) !important;
+    animation: alert-pulse 2s infinite;
+}
+
+.active-project-pill.no-active .pulse-indicator {
+    background: #dc2626;
+    animation: pulse 1.5s infinite;
+}
+
+.active-project-pill.no-active .project-name {
+    color: #fca5a5 !important;
+    font-weight: 600;
+}
+
+.active-project-pill.no-active .session-paused-badge {
+    font-size: 0.65rem;
+    color: #fca5a5;
+    background: rgba(220, 38, 38, 0.3);
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    margin-left: 0.25rem;
+}
+
+@keyframes alert-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2); }
+}
+
+/* Legacy inactive state (kept for compatibility) */
+.active-project-pill.inactive {
+    border-left-color: #6b7280;
+    opacity: 0.8;
+}
+
+.active-project-pill.inactive .pulse-indicator {
+    background: #6b7280;
+    animation: none;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .navbar-center-widget {
+        position: static;
+        transform: none;
+        margin-left: auto;
+        margin-right: 0.5rem;
+    }
+    
+    .project-name {
+        max-width: 100px;
+    }
+    
+    .git-info .branch-name {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-center-widget {
+        display: none;
+    }
+}
+
+/* ---------------------------------------------------------------------------
    5.  Sidebar shell & transitions
    --------------------------------------------------------------------------- */
 
