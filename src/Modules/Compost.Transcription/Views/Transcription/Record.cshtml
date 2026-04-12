@@ -345,7 +345,7 @@
             // Start meeting on server
             const meetingData = {
                 title: document.getElementById('meetingTitle').value,
-                projectId: document.getElementById('projectId').value
+                contextId: document.getElementById('projectId').value
             };
             
             const response = await fetch('/Transcription/StartRecording', {
