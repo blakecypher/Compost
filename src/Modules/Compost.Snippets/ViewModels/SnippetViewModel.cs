@@ -16,9 +16,9 @@ public class SnippetViewModel
     public string RelatedPatternId { get; set; }
 
     [System.ComponentModel.DataAnnotations.Display(Name = "Git Relative Path")]
-    public string? GitRelativePath { get; set; }
+    public string GitRelativePath { get; set; }
 
-    public string? LastCommitHash { get; set; }
+    public string LastCommitHash { get; set; }
     
     // For SelectList in view
     public Dictionary<string, string> AvailablePatterns { get; set; } = new();

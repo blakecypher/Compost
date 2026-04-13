@@ -157,4 +157,10 @@ public class KanbanCardPart : ContentPart
     /// </summary>
     [JsonProperty("blockedReason")]
     public string BlockedReason { get; set; }
+
+    /// <summary>
+    /// When the card was completed (status changed to Done)
+    /// </summary>
+    [JsonProperty("completedDate")]
+    public DateTime? CompletedDate { get; set; }
 }

@@ -5,7 +5,6 @@ using Compost.Core.Interfaces;
 using Compost.Core.Models;
 using Compost.Core.Extensions;
 using Compost.Kanban.Models;
-using Compost.MindMap.Models;
 using Compost.MindMap.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -556,7 +555,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         return View(stats);
     }
 
-    private int CalculateMaxDepth(List<MindMapNodeModel> nodes)
+    private static int CalculateMaxDepth(List<MindMapNodeModel> nodes)
     {
         if (nodes.Count == 0) return 0;
 
@@ -1101,7 +1100,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         return positions;
     }
 
-    private Dictionary<string, NodePositionDto> ApplyGridLayout(List<MindMapNodeModel> nodes)
+    private static Dictionary<string, NodePositionDto> ApplyGridLayout(List<MindMapNodeModel> nodes)
     {
         var positions = new Dictionary<string, NodePositionDto>();
         var cols = Math.Ceiling(Math.Sqrt(nodes.Count));
@@ -1149,7 +1148,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         return positions;
     }
 
-    private Dictionary<string, NodePositionDto> ApplyCircularLayout(List<MindMapNodeModel> nodes,
+    private static Dictionary<string, NodePositionDto> ApplyCircularLayout(List<MindMapNodeModel> nodes,
         MindMapNodeModel root)
     {
         var positions = new Dictionary<string, NodePositionDto>();
@@ -1173,7 +1172,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         return positions;
     }
 
-    private Dictionary<string, NodePositionDto> ApplyForceDirectedLayout(List<MindMapNodeModel> nodes)
+    private static Dictionary<string, NodePositionDto> ApplyForceDirectedLayout(List<MindMapNodeModel> nodes)
     {
         // Simple force-directed layout simulation
         var positions = new Dictionary<string, NodePositionDto>();
@@ -1249,7 +1248,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
         return positions;
     }
 
-    private int GetNodeLevel(MindMapNodeModel node, MindMapNodeModel root, List<MindMapNodeModel> allNodes)
+    private static int GetNodeLevel(MindMapNodeModel node, MindMapNodeModel root, List<MindMapNodeModel> allNodes)
     {
         if (node.Id == root.Id) return 0;
 
@@ -1324,7 +1323,7 @@ Open Questions: {string.Join(", ", context.OpenQuestions.Select(q => q.Question)
     /// <summary>
     /// Generates acceptance criteria based on mind map node type
     /// </summary>
-    private List<string> GenerateAcceptanceCriteria(MindMapNodeModel node)
+    private static List<string> GenerateAcceptanceCriteria(MindMapNodeModel node)
     {
         var criteria = new List<string>();
         

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Compost.Core.Interfaces;
 using Compost.Core.Models;
 using Compost.Kanban.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,7 @@ using YesSql;
 
 namespace Compost.Analytics.Controllers;
 
-public class AnalyticsController(ISession session) : Controller
+public class AnalyticsController(ISession session, IMindMapService mindMapService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -21,15 +22,16 @@ public class AnalyticsController(ISession session) : Controller
             PatternUsageData = await GetPatternUsageDataAsync(),
             ModuleUsageData = await GetModuleUsageDataAsync(),
             ActivityData = await GetActivityDataAsync(),
-            SummaryStats = await GetSummaryStatsAsync()
+            SummaryStats = await GetSummaryStatsAsync(),
+            RecentActivities = await GetRecentActivitiesAsync()
         };
 
         return View(viewModel);
     }
 
-    public async Task<IActionResult> Velocity()
+    public async Task<IActionResult> Velocity(int weeks = 12)
     {
-        var data = await GetVelocityDataAsync();
+        var data = await GetVelocityDataAsync(weeks);
         return Json(data);
     }
 
@@ -51,7 +53,7 @@ public class AnalyticsController(ISession session) : Controller
         return Json(data);
     }
 
-    private async Task<VelocityData> GetVelocityDataAsync()
+    private async Task<VelocityData> GetVelocityDataAsync(int weeks = 12)
     {
         // Get Kanban cards for velocity calculation
         var kanbanCards = await session.Query<ContentItem, ContentItemIndex>()
@@ -62,21 +64,22 @@ public class AnalyticsController(ISession session) : Controller
             .Where(x => x.As<KanbanCardPart>()?.Status == KanbanStatus.Done)
             .ToList();
 
-        // Calculate velocity by week (last 12 weeks)
+        // Calculate velocity by week (last N weeks)
         var velocityByWeek = new List<WeeklyVelocity>();
         var today = DateTime.Today;
+        var thisWeekStart = today.AddDays(-((today.DayOfWeek - DayOfWeek.Monday + 7) % 7));
         
-        for (var i = 11; i >= 0; i--)
+        for (var i = weeks - 1; i >= 0; i--)
         {
-            var weekStart = today.AddDays(-((today.DayOfWeek - DayOfWeek.Monday + 7) % 7) - (i * 7));
-            var weekEnd = weekStart.AddDays(6);
+            var weekStart = thisWeekStart.AddDays(-(i * 7));
+            var weekEnd = weekStart.AddDays(6).AddHours(23).AddMinutes(59).AddSeconds(59);
             
             var weekCards = completedCards.Where(x => 
             {
                 var part = x.As<KanbanCardPart>();
-                // This would need a completion date field in the KanbanCardPart
-                // For now, we'll use a placeholder
-                return true; // TODO: Add completion date tracking
+                return part?.CompletedDate.HasValue == true && 
+                       part.CompletedDate.Value >= weekStart && 
+                       part.CompletedDate.Value <= weekEnd;
             }).ToList();
 
             var totalStoryPoints = weekCards.Sum(x => x.As<KanbanCardPart>()?.StoryPoints ?? 0);
@@ -89,8 +92,12 @@ public class AnalyticsController(ISession session) : Controller
             });
         }
 
-        // Calculate average velocity
-        var avgVelocity = velocityByWeek.Skip(4).Average(x => x.StoryPoints); // Last 8 weeks
+        // Calculate average velocity (last min(8, weeks) weeks with data)
+        var nonZeroWeeks = velocityByWeek.Where(x => x.StoryPoints > 0 || x.CompletedCards > 0).ToList();
+        var avgWindow = Math.Min(8, weeks);
+        var avgVelocity = nonZeroWeeks.Count >= 4 
+            ? nonZeroWeeks.Skip(Math.Max(0, nonZeroWeeks.Count - avgWindow)).Average(x => x.StoryPoints)
+            : velocityByWeek.Average(x => x.StoryPoints);
         
         return new VelocityData
         {
@@ -145,9 +152,15 @@ public class AnalyticsController(ISession session) : Controller
             .ListAsync();
         var contentItemsList = contentItems.ToList();
 
+        // Get mind maps from MindMapService (stored separately from Orchard Core content items)
+        var allMindMaps = mindMapService != null
+            ? await mindMapService.GetAllMindMapsAsync()
+            : [];
+        var mindMapNodeCount = allMindMaps.Sum(m => m.NodeCount);
+
         var moduleStats = new List<ModuleStat>
         {
-            new ModuleStat { ModuleName = "Mind Maps", ContentCount = contentItemsList.Count(x => x.ContentType == "MindMapCollection"), Icon = "fas fa-project-diagram", Color = "#2563eb" },
+            new ModuleStat { ModuleName = "Mind Map Nodes", ContentCount = mindMapNodeCount, Icon = "fas fa-project-diagram", Color = "#2563eb" },
             new ModuleStat { ModuleName = "Kanban", ContentCount = contentItemsList.Count(x => x.ContentType == "KanbanCard"), Icon = "fas fa-columns", Color = "#16a34a" },
             new ModuleStat { ModuleName = "Snippets", ContentCount = contentItemsList.Count(x => x.ContentType == "CodeSnippet"), Icon = "fas fa-code", Color = "#0891b2" },
             new ModuleStat { ModuleName = "Patterns", ContentCount = contentItemsList.Count(x => x.ContentType == "ArchitecturalPattern"), Icon = "fas fa-shapes", Color = "#ea580c" },
@@ -158,41 +171,65 @@ public class AnalyticsController(ISession session) : Controller
         return new ModuleUsageData
         {
             ModuleStats = moduleStats.OrderByDescending(x => x.ContentCount).ToList(),
-            TotalContent = contentItemsList.Count
+            TotalContent = contentItemsList.Count + mindMapNodeCount
         };
     }
 
     private async Task<ActivityData> GetActivityDataAsync()
     {
-        // Get recent activity (last 30 days)
+        // Get recent activity (last 30 days) using CreatedUtc
+        var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+        var today = DateTime.Today;
+
+        // Get Orchard Core content items
         var contentItems = await session.Query<ContentItem, ContentItemIndex>()
-            .Where(x => x.Published)
+            .Where(x => x.Published && x.CreatedUtc >= thirtyDaysAgo)
             .ListAsync();
         var contentItemsList = contentItems.ToList();
 
-        var today = DateTime.Today;
+        // Get mind maps from MindMapService for activity tracking
+        var allMindMaps = mindMapService != null
+            ? await mindMapService.GetAllMindMapsAsync()
+            : [];
+
         var activityByDay = new List<DailyActivity>();
-        
+
         for (var i = 29; i >= 0; i--)
         {
             var date = today.AddDays(-i);
-            // TODO: Add date tracking with created/modified date
-            var dayActivity = contentItemsList.Count;
+            var dayEnd = date.AddDays(1);
+
+            // Count Orchard Core items created on this specific day
+            var dayItems = contentItemsList.Where(x =>
+            {
+                if (x.CreatedUtc == null) return false;
+                var createdDate = x.CreatedUtc.Value;
+                return createdDate >= date && createdDate < dayEnd;
+            }).ToList();
+
+            // Count mind maps created on this specific day (using NodeCount for total nodes)
+            var mindMapNodesInDay = allMindMaps
+                .Where(m => m.CreatedAt >= date && m.CreatedAt < dayEnd)
+                .Sum(m => m.NodeCount);
 
             activityByDay.Add(new DailyActivity
             {
                 Date = date.ToString("MMM dd"),
-                MindMaps = dayActivity / 6, // Simulated distribution
-                KanbanCards = dayActivity / 4,
-                Snippets = dayActivity / 3,
-                Patterns = dayActivity / 8
+                MindMaps = mindMapNodesInDay,
+                KanbanCards = dayItems.Count(x => x.ContentType == "KanbanCard"),
+                Snippets = dayItems.Count(x => x.ContentType == "CodeSnippet"),
+                Patterns = dayItems.Count(x => x.ContentType == "ArchitecturalPattern")
             });
         }
+
+        var totalMindMapNodesInPeriod = allMindMaps
+            .Where(m => m.CreatedAt >= thirtyDaysAgo)
+            .Sum(m => m.NodeCount);
 
         return new ActivityData
         {
             DailyActivities = activityByDay,
-            TotalActivity = contentItemsList.Count
+            TotalActivity = contentItemsList.Count + totalMindMapNodesInPeriod
         };
     }
 
@@ -203,16 +240,86 @@ public class AnalyticsController(ISession session) : Controller
             .ListAsync();
         var contentItemsList = contentItems.ToList();
 
+        // Get mind maps from MindMapService (stored separately from Orchard Core content items)
+        var localMindMapService = mindMapService;
+        var allMindMaps = localMindMapService != null
+            ? await localMindMapService.GetAllMindMapsAsync()
+            : [];
+        var totalMindMaps = allMindMaps.Count;
+        var totalMindMapNodes = allMindMaps.Sum(m => m.NodeCount);
+
         return new SummaryStats
         {
-            TotalMindMaps = contentItemsList.Count(x => x.ContentType == "MindMapCollection"),
+            TotalMindMaps = totalMindMaps,
+            TotalMindMapNodes = totalMindMapNodes,
             TotalKanbanCards = contentItemsList.Count(x => x.ContentType == "KanbanCard"),
             TotalSnippets = contentItemsList.Count(x => x.ContentType == "CodeSnippet"),
             TotalPatterns = contentItemsList.Count(x => x.ContentType == "ArchitecturalPattern"),
             TotalMeetings = contentItemsList.Count(x => x.ContentType == "Meeting"),
             TotalTreeNodes = contentItemsList.Count(x => x.ContentType == "TreeNode"),
-            TotalContent = contentItemsList.Count
+            TotalContent = contentItemsList.Count + totalMindMapNodes
         };
+    }
+
+    private async Task<List<RecentActivity>> GetRecentActivitiesAsync()
+    {
+        var activities = new List<RecentActivity>();
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+        // Get recent content items
+        var contentItems = await session.Query<ContentItem, ContentItemIndex>()
+            .Where(x => x.Published && x.CreatedUtc >= sevenDaysAgo)
+            .OrderByDescending(x => x.CreatedUtc)
+            .Take(10)
+            .ListAsync();
+
+        foreach (var item in contentItems)
+        {
+            var (icon, color, typeName) = item.ContentType switch
+            {
+                "KanbanCard" => ("fa-tasks", "#2563eb", "Kanban Card"),
+                "CodeSnippet" => ("fa-code", "#dc2626", "Snippet"),
+                "ArchitecturalPattern" => ("fa-layer-group", "#7c3aed", "Pattern"),
+                _ => ("fa-file", "#64748b", "Content")
+            };
+
+            activities.Add(new RecentActivity
+            {
+                Title = item.DisplayText ?? $"New {typeName}",
+                Type = typeName,
+                Timestamp = item.CreatedUtc ?? DateTime.UtcNow,
+                Icon = icon,
+                Color = color
+            });
+        }
+
+        // Get recent mind maps
+        if (mindMapService != null)
+        {
+            var mindMaps = await mindMapService.GetAllMindMapsAsync();
+            var recentMindMaps = mindMaps
+                .Where(m => m.CreatedAt >= sevenDaysAgo)
+                .OrderByDescending(m => m.CreatedAt)
+                .Take(5);
+
+            foreach (var mindMap in recentMindMaps)
+            {
+                activities.Add(new RecentActivity
+                {
+                    Title = $"{mindMap.Name} ({mindMap.NodeCount} nodes)",
+                    Type = "Mind Map",
+                    Timestamp = mindMap.CreatedAt,
+                    Icon = "fa-project-diagram",
+                    Color = "#ff6b35"
+                });
+            }
+        }
+
+        // Sort by timestamp and take top 10
+        return activities
+            .OrderByDescending(a => a.Timestamp)
+            .Take(10)
+            .ToList();
     }
 }
 
@@ -224,6 +331,7 @@ public class AnalyticsDashboardViewModel
     public ModuleUsageData ModuleUsageData { get; set; } = new();
     public ActivityData ActivityData { get; set; } = new();
     public SummaryStats SummaryStats { get; set; } = new();
+    public List<RecentActivity> RecentActivities { get; set; } = [];
 }
 
 public class VelocityData
@@ -287,10 +395,20 @@ public class DailyActivity
 public class SummaryStats
 {
     public int TotalMindMaps { get; set; }
+    public int TotalMindMapNodes { get; set; }
     public int TotalKanbanCards { get; set; }
     public int TotalSnippets { get; set; }
     public int TotalPatterns { get; set; }
     public int TotalMeetings { get; set; }
     public int TotalTreeNodes { get; set; }
     public int TotalContent { get; set; }
+}
+
+public class RecentActivity
+{
+    public string Title { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
+    public string Icon { get; set; } = string.Empty;
+    public string Color { get; set; } = string.Empty;
 }

@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Compost.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,7 +37,7 @@ public class GitSyncBackgroundTask : IBackgroundTask
             {
                 logger.LogInformation("Syncing project: {ProjectName} at {LocalPath}", project.Name, project.GitLocalPath);
 
-                if (!gitService.IsRepositoryValid(project.GitLocalPath))
+                if (project.GitLocalPath != null && !gitService.IsRepositoryValid(project.GitLocalPath))
                 {
                     if (!string.IsNullOrEmpty(project.RepositoryUrl))
                     {
@@ -57,7 +53,7 @@ public class GitSyncBackgroundTask : IBackgroundTask
                 else
                 {
                     logger.LogInformation("Updating project: {ProjectName}", project.Name);
-                    await gitService.PullAsync(project.GitLocalPath);
+                    if (project.GitLocalPath != null) await gitService.PullAsync(project.GitLocalPath);
                 }
 
                 // Update last sync time

@@ -154,7 +154,7 @@ public class TemplateService(
             .ToList();
     }
 
-    private List<ContextTemplate> GetBuiltInTemplates()
+    private static List<ContextTemplate> GetBuiltInTemplates()
     {
         var template = new ContextTemplate
         {

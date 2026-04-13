@@ -329,7 +329,7 @@ public class UpdateSegmentSpeakerRequest
 public class CreateSpeakerProfileRequest
 {
     public string Name { get; set; } = string.Empty;
-    public string? Role { get; set; }
+    public string Role { get; set; }
 }
 
 public class PromoteToKanbanRequest

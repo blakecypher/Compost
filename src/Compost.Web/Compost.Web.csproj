@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Modules\Compost.Kanban\Compost.Kanban.csproj" />
     <ProjectReference Include="..\Modules\Compost.Snippets\Compost.Snippets.csproj" />
     <ProjectReference Include="..\Modules\Compost.Patterns\Compost.Patterns.csproj" />
+    <ProjectReference Include="..\Modules\Compost.Analytics\Compost.Analytics.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -170,7 +170,7 @@ public class AiIntegrationService(
         return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text ?? string.Empty;
     }
 
-    private string BuildStoryPointPrompt(string requirement, string? context)
+    private static string BuildStoryPointPrompt(string requirement, string? context)
     {
         var contextInfo = string.IsNullOrEmpty(context) ? "" : $"Project: {context}\n";
         return $"""
@@ -188,7 +188,7 @@ public class AiIntegrationService(
             """;
     }
 
-    private string BuildPatternRecognitionPrompt(string code, string language)
+    private static string BuildPatternRecognitionPrompt(string code, string language)
     {
         return $"Analyze this {language} code and identify any architectural patterns present.\n\n" +
                $"Code:\n```{language}\n{code}\n```\n\n" +
@@ -215,7 +215,7 @@ public class AiIntegrationService(
                "}";
     }
 
-    private string BuildCodeSuggestionPrompt(string requirement, string language, string? context)
+    private static string BuildCodeSuggestionPrompt(string requirement, string language, string? context)
     {
         var contextInfo = string.IsNullOrEmpty(context) ? "" : $"Project: {context}\n";
         return $"""
@@ -228,7 +228,7 @@ public class AiIntegrationService(
             """;
     }
 
-    private string BuildActionItemExtractionPrompt(string text, string? context)
+    private static string BuildActionItemExtractionPrompt(string text, string? context)
     {
         var contextInfo = string.IsNullOrEmpty(context) ? "" : $"Project: {context}\n";
         return $"{contextInfo}Extract action items from this transcript of a meeting. Look for tasks, commitments, responsibilities, or next steps.\n\n" +
@@ -246,7 +246,7 @@ public class AiIntegrationService(
                "}";
     }
 
-    private string BuildMindMapNodeExtractionPrompt(string text, string? context)
+    private static string BuildMindMapNodeExtractionPrompt(string text, string? context)
     {
         var contextInfo = string.IsNullOrEmpty(context) ? "" : $"Project: {context}\n";
         return $"{contextInfo}Extract significant, cohesive statements and verbatim quotes from this meeting transcript. These will be used to build a mind map. Capture complete thoughts exactly as they appear.\n\n" +
@@ -265,7 +265,7 @@ public class AiIntegrationService(
                "}";
     }
 
-    private int ParseStoryPointsFromResponse(string response)
+    private static int ParseStoryPointsFromResponse(string response)
     {
         var cleanResponse = response.Trim();
         
@@ -284,7 +284,7 @@ public class AiIntegrationService(
         return 3;
     }
 
-    private List<ArchitecturalPattern> ParsePatternsFromResponse(string response)
+    private static List<ArchitecturalPattern> ParsePatternsFromResponse(string response)
     {
         try
         {
@@ -388,7 +388,7 @@ public class AiIntegrationService(
     }
 
     // Fallback methods when AI is not available
-    private int GetFallbackStoryPointEstimate(string requirement)
+    private static int GetFallbackStoryPointEstimate(string requirement)
     {
         // Simple keyword-based estimation
         var keywords = new Dictionary<string, int>
@@ -460,7 +460,7 @@ public class AiIntegrationService(
         return patterns;
     }
 
-    private List<ActionItem> GetFallbackActionItemExtraction(string text)
+    private static List<ActionItem> GetFallbackActionItemExtraction(string text)
     {
         var actionItems = new List<ActionItem>();
         var sentences = text.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
@@ -495,7 +495,7 @@ public class AiIntegrationService(
         return actionItems;
     }
 
-    private string GetFallbackCodeSuggestion(string requirement, string language)
+    private static string GetFallbackCodeSuggestion(string requirement, string language)
     {
         return $"// Code suggestion for {requirement}\n// TODO: Implement {requirement} in {language}\n// This is a placeholder suggestion since AI is not configured.";
     }

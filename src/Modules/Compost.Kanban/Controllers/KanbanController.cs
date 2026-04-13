@@ -121,6 +121,17 @@ public class KanbanController(
         var part = contentItem.As<KanbanCardPart>();
         if (part == null) return BadRequest();
 
+        // Track completion date when moving to Done
+        if (newStatus == KanbanStatus.Done && part.Status != KanbanStatus.Done)
+        {
+            part.CompletedDate = DateTime.UtcNow;
+        }
+        // Clear completion date if moving away from Done
+        else if (newStatus != KanbanStatus.Done && part.Status == KanbanStatus.Done)
+        {
+            part.CompletedDate = null;
+        }
+
         part.Status = newStatus;
         part.OrderInColumn = newOrder;
         
@@ -201,7 +212,8 @@ public class KanbanController(
                 status = part.Status.ToString(),
                 isBlocked = part.IsBlocked,
                 blockedReason = part.BlockedReason ?? "",
-                sourceTranscriptExcerpt = part.SourceTranscriptExcerpt ?? ""
+                sourceTranscriptExcerpt = part.SourceTranscriptExcerpt ?? "",
+                completedDate = part.CompletedDate?.ToString("yyyy-MM-ddTHH:mm:ssZ") ?? ""
             };
 
             logger.LogInformation("Successfully loaded card: {CardId}, Title: {Title}", id, response.title);
@@ -248,6 +260,16 @@ public class KanbanController(
         part.Assignee = request.Assignee;
         if (Enum.TryParse<KanbanStatus>(request.Status, out var status))
         {
+            // Track completion date when moving to Done
+            if (status == KanbanStatus.Done && part.Status != KanbanStatus.Done)
+            {
+                part.CompletedDate = DateTime.UtcNow;
+            }
+            // Clear completion date if moving away from Done
+            else if (status != KanbanStatus.Done && part.Status == KanbanStatus.Done)
+            {
+                part.CompletedDate = null;
+            }
             part.Status = status;
         }
         part.IsBlocked = request.IsBlocked;
@@ -282,7 +304,7 @@ public class KanbanController(
         }
     }
 
-    private async Task<ContentItem?> GetCardContentItemAsync(string id)
+    private async Task<ContentItem> GetCardContentItemAsync(string id)
     {
         return await contentManager.GetAsync(id, VersionOptions.Latest)
                ?? await contentManager.GetAsync(id, VersionOptions.Published);

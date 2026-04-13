@@ -595,7 +595,7 @@ public class DecompositionEngine(
 
     // ========== Mapping Helpers ==========
 
-    private TreeNode MapToTreeNode(ContentItem item)
+    private static TreeNode MapToTreeNode(ContentItem item)
     {
         var part = item.As<TreeNodePart>();
         var node = new TreeNode
@@ -616,7 +616,7 @@ public class DecompositionEngine(
         return node;
     }
 
-    private KanbanCard MapToKanbanCard(ContentItem item)
+    private static KanbanCard MapToKanbanCard(ContentItem item)
     {
         var part = item.As<KanbanCardPart>();
         var card = new KanbanCard
@@ -637,7 +637,7 @@ public class DecompositionEngine(
         return card;
     }
 
-    private MindMapNode MapToMindMapNode(ContentItem item)
+    private static MindMapNode MapToMindMapNode(ContentItem item)
     {
         var part = item.As<MindMapNodePart>();
         var node = new MindMapNode

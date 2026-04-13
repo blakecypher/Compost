@@ -1341,7 +1341,7 @@ public class TranscriptionService(
 
     public int GetMaxRecordingDurationSeconds() => 3600; // 1 hour
 
-    private Meeting Map(ContentItem contentItem, MeetingPart meetingPart)
+    private static Meeting Map(ContentItem contentItem, MeetingPart meetingPart)
     {
         if (meetingPart == null) return null;
         

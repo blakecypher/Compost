@@ -1,5 +1,4 @@
 using Compost.Core.Models;
-using Compost.MindMap.Models;
 using OrchardCore.ContentManagement.Metadata;
 using OrchardCore.ContentManagement.Metadata.Settings;
 using OrchardCore.Data.Migration;
