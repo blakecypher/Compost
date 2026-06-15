@@ -8,6 +8,7 @@
     <PackageReference Include="OrchardCore.ContentManagement" Version="1.8.2" />
     <PackageReference Include="OrchardCore.ContentManagement.Display" Version="1.8.2" />
     <PackageReference Include="OrchardCore.Title" Version="1.8.2" />
+    <PackageReference Include="System.Text.Json" Version="10.0.9" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Compost.Core\Compost.Core.csproj" />

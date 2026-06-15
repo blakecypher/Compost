@@ -11,6 +11,7 @@
     <PackageReference Include="OrchardCore.ContentFields" Version="1.8.2" />
     <PackageReference Include="OrchardCore.DisplayManagement" Version="1.8.2" />
     <PackageReference Include="OrchardCore.ResourceManagement" Version="1.8.2" />
+    <PackageReference Include="System.Text.Json" Version="10.0.9" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Compost.Core\Compost.Core.csproj" />
