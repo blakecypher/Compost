@@ -22,12 +22,10 @@ public class ProjectPartHandler : ContentPartHandler<ProjectPart>
     public override Task UpdatedAsync(UpdateContentContext project, ProjectPart instance)
     {
         // When a project is deactivated, add session time to total
-        if (instance is { IsActive: false, CurrentSessionStartedAt: not null })
-        {
-            var sessionDuration = DateTime.UtcNow - instance.CurrentSessionStartedAt.Value;
-            instance.TotalTimeSpentSeconds += (long)sessionDuration.TotalSeconds;
-            instance.CurrentSessionStartedAt = null;
-        }
+        if (instance is not { IsActive: false, CurrentSessionStartedAt: not null }) return Task.CompletedTask;
+        var sessionDuration = DateTime.UtcNow - instance.CurrentSessionStartedAt.Value;
+        instance.TotalTimeSpentSeconds += (long)sessionDuration.TotalSeconds;
+        instance.CurrentSessionStartedAt = null;
 
         return Task.CompletedTask;
     }

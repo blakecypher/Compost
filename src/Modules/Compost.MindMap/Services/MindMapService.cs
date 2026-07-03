@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Compost.Core.Interfaces;
 using Compost.Core.Models;
-using Compost.MindMap.Models;
 using Microsoft.Extensions.Logging;
 using MindMapNode = Compost.Core.Models.MindMapNode;
 
@@ -532,7 +531,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         return (cleanText.Trim(), type, level);
     }
     
-    private List<ParsedSegment> ExtractSegments(string text)
+    private static List<ParsedSegment> ExtractSegments(string text)
     {
         var segments = new List<ParsedSegment>();
         
@@ -883,7 +882,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         }
     }
 
-    private void CreateBrainstormingTemplate(MindMapCollection mindMap)
+    private static void CreateBrainstormingTemplate(MindMapCollection mindMap)
     {
         var root = new MindMapNode
         {
@@ -920,7 +919,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         }
     }
 
-    private void CreateDecisionTreeTemplate(MindMapCollection mindMap)
+    private static void CreateDecisionTreeTemplate(MindMapCollection mindMap)
     {
         var root = new MindMapNode
         {
@@ -1144,7 +1143,7 @@ public class MindMapService : Core.Interfaces.IMindMapService, IMindMapService
         return mindMapNodes;
     }
     
-    private string GetCategoryName(string nodeTypeStr)
+    private static string GetCategoryName(string nodeTypeStr)
     {
         _ = Enum.TryParse<MindMapNodeType>(nodeTypeStr, true, out var nodeType);
         return nodeType switch

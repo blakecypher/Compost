@@ -38,13 +38,14 @@ public class KanbanCardPartDisplayDriver : ContentPartDisplayDriver<KanbanCardPa
         return Edit(part, context);
     }
 
-    private void BuildViewModel(KanbanCardPartViewModel model, KanbanCardPart part)
+    private static void BuildViewModel(KanbanCardPartViewModel model, KanbanCardPart part)
     {
         model.Status = part.Status;
         model.StoryPoints = part.StoryPoints;
         model.WorkContextId = part.WorkContextId;
         model.IsBlocked = part.IsBlocked;
         model.BlockedReason = part.BlockedReason;
+        model.CompletedDate = part.CompletedDate;
         model.ContentItem = part.ContentItem;
     }
 }

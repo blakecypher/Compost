@@ -226,7 +226,7 @@ public class ContextCorpusDictionary
     /// Hardcoded fallback corpus for domain keywords.
     /// Used when corpus.json is not found or fails to load.
     /// </summary>
-    private Dictionary<string, Dictionary<string, double>> InitializeDefaultDomainKeywords()
+    private static Dictionary<string, Dictionary<string, double>> InitializeDefaultDomainKeywords()
     {
         var corpus = new Dictionary<string, Dictionary<string, double>>
         {
@@ -691,7 +691,7 @@ public class ContextCorpusDictionary
     /// Hardcoded fallback stop words.
     /// Used when corpus.json is not found or fails to load.
     /// </summary>
-    private HashSet<string> InitializeDefaultStopWords()
+    private static HashSet<string> InitializeDefaultStopWords()
     {
         return
         [

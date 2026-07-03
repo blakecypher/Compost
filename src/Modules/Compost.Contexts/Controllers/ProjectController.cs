@@ -384,7 +384,7 @@ public class ProjectController(IProjectManager projectManager, ITimeTrackingServ
         {
             try
             {
-                var result = await gitService.PullAsync(project.GitLocalPath);
+                var result = project.GitLocalPath != null && await gitService.PullAsync(project.GitLocalPath);
                 if (result)
                 {
                     project.LastSyncAt = DateTime.UtcNow;

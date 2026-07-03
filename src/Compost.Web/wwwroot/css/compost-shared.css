@@ -31,6 +31,7 @@ body.css-loaded { visibility: visible; }
 [data-bs-theme="light"] {
     /* Module accent colours */
     --theme-dashboard:    #198754;
+    --theme-analytics:    #198754;
     --theme-contexts:     #6629d9;
     --theme-mindmaps:     #ff6b35;
     --theme-kanban:       #ffc107;
@@ -48,6 +49,7 @@ body.css-loaded { visibility: visible; }
 [data-bs-theme="dark"] {
     /* Module accent colours - same in dark */
     --theme-dashboard:    #198754;
+    --theme-analytics:    #198754;
     --theme-contexts:     #6629d9;
     --theme-mindmaps:     #ff6b35;
     --theme-kanban:       #ffc107;
@@ -405,6 +407,7 @@ main {
     box-shadow: none !important;
 }
 [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-dashboard    { color: var(--theme-dashboard) !important; }
+[data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-analytics    { color: var(--theme-analytics) !important; }
 [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-contexts     { color: var(--theme-contexts) !important; }
 [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-mindmaps     { color: var(--theme-mindmaps) !important; }
 [data-bs-theme="dark"] .sidebar .nav-link.active.bg-theme-kanban       { color: var(--theme-kanban) !important; }
@@ -432,6 +435,7 @@ main {
    8.  Module theme utility classes
    --------------------------------------------------------------------------- */
 .bg-theme-dashboard    { background-color: var(--theme-dashboard)    !important; }
+.bg-theme-analytics    { background-color: var(--theme-analytics)    !important; }
 .bg-theme-contexts     { background-color: var(--theme-contexts)     !important; }
 .bg-theme-mindmaps     { background-color: var(--theme-mindmaps)     !important; }
 .bg-theme-kanban       { background-color: var(--theme-kanban)       !important; }
@@ -440,6 +444,7 @@ main {
 .bg-theme-patterns     { background-color: var(--theme-patterns)     !important; }
 
 .text-theme-dashboard    { color: var(--theme-dashboard)    !important; }
+.text-theme-analytics    { color: var(--theme-analytics)    !important; }
 .text-theme-contexts     { color: var(--theme-contexts)     !important; }
 .text-theme-mindmaps     { color: var(--theme-mindmaps)     !important; }
 .text-theme-kanban       { color: var(--theme-kanban)       !important; }
@@ -448,6 +453,7 @@ main {
 .text-theme-patterns     { color: var(--theme-patterns)     !important; }
 
 .text-on-theme-dashboard,
+.text-on-theme-analytics,
 .text-on-theme-contexts,
 .text-on-theme-mindmaps,
 .text-on-theme-transcription,

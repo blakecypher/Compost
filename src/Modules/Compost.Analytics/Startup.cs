@@ -22,19 +22,28 @@ public class Startup : StartupBase
 
     public override void Configure(IApplicationBuilder builder, IEndpointRouteBuilder routes, IServiceProvider serviceProvider)
     {
-        // Add Analytics routes
+        // Main Analytics Dashboard route (accessible from main site)
         routes.MapAreaControllerRoute(
-            name: "AnalyticsAPI",
+            name: "AnalyticsDashboard",
             areaName: "Compost.Analytics",
-            pattern: "Analytics/Api/{action}",
+            pattern: "Analytics",
+            defaults: new { controller = "Analytics", action = "Index" }
+        );
+
+        // Analytics sub-pages
+        routes.MapAreaControllerRoute(
+            name: "AnalyticsPages",
+            areaName: "Compost.Analytics",
+            pattern: "Analytics/{action}",
             defaults: new { controller = "Analytics" }
         );
 
+        // API routes for JSON data
         routes.MapAreaControllerRoute(
-            name: "Analytics",
+            name: "AnalyticsApi",
             areaName: "Compost.Analytics",
-            pattern: "Analytics/{action}/{id?}",
-            defaults: new { controller = "Analytics", action = "Index" }
+            pattern: "api/analytics/{action}",
+            defaults: new { controller = "Analytics" }
         );
     }
 }
@@ -45,13 +54,25 @@ public class AnalyticsMenu(IStringLocalizer<AnalyticsMenu> localizer) : INavigat
 
     public Task BuildNavigationAsync(string name, NavigationBuilder builder)
     {
-        if (!string.Equals(name, "admin", StringComparison.OrdinalIgnoreCase))
+        // Support both admin and main site menus
+        var isAdmin = string.Equals(name, "admin", StringComparison.OrdinalIgnoreCase);
+        var isMainMenu = string.Equals(name, "main-menu", StringComparison.OrdinalIgnoreCase);
+        
+        if (!isAdmin && !isMainMenu)
         {
             return Task.CompletedTask;
         }
 
-        builder
-            .Add(_s["Analytics"], "after:Kanban", analytics => analytics
+        // For main menu, add simple link
+        if (isMainMenu)
+        {
+            builder.Add(_s["Analytics"], "10", analytics => analytics
+                .Action("Index", "Analytics", new { area = "Compost.Analytics" }));
+        }
+        else
+        {
+            // For admin, add submenu
+            builder.Add(_s["Analytics"], "10", analytics => analytics
                 .Add(_s["Dashboard"], "1", dashboard => dashboard
                     .Action("Index", "Analytics", new { area = "Compost.Analytics" })
                     .LocalNav()
@@ -65,6 +86,7 @@ public class AnalyticsMenu(IStringLocalizer<AnalyticsMenu> localizer) : INavigat
                     .LocalNav()
                 )
             );
+        }
 
         return Task.CompletedTask;
     }

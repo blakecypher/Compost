@@ -5,8 +5,8 @@
 
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">
-            <i class="fas fa-chart-line me-2"></i>
+        <h1 class="h1 mb-0">
+            <i class="fas fa-chart-line me-2 text-theme-analytics"></i>
             Analytics Dashboard
         </h1>
         <div class="d-flex gap-2">
@@ -21,192 +21,161 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-left-primary">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h5 class="text-uppercase text-muted text-xs font-weight-bold">Mind Maps</h5>
-                            <div class="h2 mb-0 font-weight-bold text-primary">@Model.SummaryStats.TotalMindMaps</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-project-diagram fa-2x text-primary"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-left-success">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h5 class="text-uppercase text-muted text-xs font-weight-bold">Kanban Cards</h5>
-                            <div class="h2 mb-0 font-weight-bold text-success">@Model.SummaryStats.TotalKanbanCards</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-columns fa-2x text-success"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-left-info">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h5 class="text-uppercase text-muted text-xs font-weight-bold">Code Snippets</h5>
-                            <div class="h2 mb-0 font-weight-bold text-info">@Model.SummaryStats.TotalSnippets</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-code fa-2x text-info"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-left-warning">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h5 class="text-uppercase text-muted text-xs font-weight-bold">Patterns</h5>
-                            <div class="h2 mb-0 font-weight-bold text-warning">@Model.SummaryStats.TotalPatterns</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-shapes fa-2x text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Row -->
-    <div class="row mb-4">
-        <!-- Velocity Chart -->
-        <div class="col-lg-8 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold">Team Velocity</h6>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline dropdown-toggle" type="button" id="velocity-period" data-bs-toggle="dropdown">
-                            Last 12 Weeks
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-period="4">Last 4 Weeks</a></li>
-                            <li><a class="dropdown-item" href="#" data-period="8">Last 8 Weeks</a></li>
-                            <li><a class="dropdown-item" href="#" data-period="12">Last 12 Weeks</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <canvas id="velocityChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Pattern Usage Chart -->
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold">Pattern Usage</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="patternUsageChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Module Usage and Activity -->
-    <div class="row mb-4">
-        <!-- Module Usage Chart -->
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold">Module Usage</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="moduleUsageChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Activity Chart -->
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold">Daily Activity (Last 30 Days)</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="activityChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Detailed Tables -->
+    <!-- Main Content Row with Right Sidebar -->
     <div class="row">
-        <!-- Top Patterns Table -->
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold">Top Used Patterns</h6>
+        <!-- Left Content Column -->
+        <div class="col-lg-9">
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-primary">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h5 class="text-uppercase text-muted text-xs font-weight-bold">Mind Map Nodes</h5>
+                                    <div class="h2 mb-0 font-weight-bold text-primary">@Model.SummaryStats.TotalMindMapNodes</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-project-diagram fa-2x text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Pattern</th>
-                                    <th>Category</th>
-                                    <th>Usage Count</th>
-                                    <th>Trend</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var pattern in Model.PatternUsageData.Patterns.Take(10))
-                                {
-                                    <tr>
-                                        <td>@pattern.PatternName</td>
-                                        <td><span class="badge bg-secondary">@pattern.Category</span></td>
-                                        <td>@pattern.UsageCount</td>
-                                        <td>
-                                            <i class="fas fa-arrow-up text-success"></i>
-                                            <span class="text-success">+@(pattern.UsageCount / 10)</span>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-success">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h5 class="text-uppercase text-muted text-xs font-weight-bold">Kanban Cards</h5>
+                                    <div class="h2 mb-0 font-weight-bold text-success">@Model.SummaryStats.TotalKanbanCards</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-columns fa-2x text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-info">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h5 class="text-uppercase text-muted text-xs font-weight-bold">Code Snippets</h5>
+                                    <div class="h2 mb-0 font-weight-bold text-info">@Model.SummaryStats.TotalSnippets</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-code fa-2x text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-warning">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h5 class="text-uppercase text-muted text-xs font-weight-bold">Patterns</h5>
+                                    <div class="h2 mb-0 font-weight-bold text-warning">@Model.SummaryStats.TotalPatterns</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-shapes fa-2x text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <!-- Velocity Chart -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold">Team Velocity</h6>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline dropdown-toggle" type="button" id="velocity-period" data-bs-toggle="dropdown">
+                                    Last 12 Weeks
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" data-period="4">Last 4 Weeks</a></li>
+                                    <li><a class="dropdown-item" href="#" data-period="8">Last 8 Weeks</a></li>
+                                    <li><a class="dropdown-item" href="#" data-period="12">Last 12 Weeks</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="velocityChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pattern Usage Chart -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold">Pattern Usage</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="patternUsageChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Chart -->
+            <div class="row mb-4">
+                <div class="col-lg-12 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold">Daily Activity (Last 30 Days)</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="activityChart" height="300"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Recent Activity Table -->
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold">Recent Activity</h6>
-                </div>
-                <div class="card-body">
+
+        <!-- Right Sidebar - Recent Activity -->
+        <div class="col-lg-3">
+            <div class="sticky-top" style="top: 70px; z-index: 100;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold"><i class="fas fa-clock me-2"></i>Recent Activity</h6>
+                    </div>
+                    <div class="card-body p-3">
                     <div class="timeline">
-                        @for (int i = 0; i < 5; i++)
+                        @if (Model.RecentActivities.Any())
                         {
-                            <div class="timeline-item">
-                                <div class="timeline-marker bg-primary"></div>
-                                <div class="timeline-content">
-                                    <h6 class="mb-1">Sample Activity</h6>
-                                    <p class="text-muted mb-0">@DateTime.Now.AddDays(-i).ToString("MMM dd, yyyy")</p>
+                            foreach (var activity in Model.RecentActivities)
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-marker" style="background-color: @activity.Color; border-color: var(--bg-card);">
+                                        <i class="fas @activity.Icon" style="font-size: 0.5rem; color: white;"></i>
+                                    </div>
+                                    <div class="timeline-content" style="border-left-color: @activity.Color;">
+                                        <h6 class="mb-1">@activity.Title</h6>
+                                        <p class="text-muted mb-0">
+                                            <span class="badge bg-secondary">@activity.Type</span>
+                                            @activity.Timestamp.ToString("MMM dd, yyyy HH:mm")
+                                        </p>
+                                    </div>
                                 </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>No recent activity</p>
                             </div>
                         }
                     </div>
@@ -279,28 +248,6 @@
             options: chartDefaults
         });
 
-        // Module Usage Chart
-        const moduleCtx = document.getElementById('moduleUsageChart').getContext('2d');
-        const moduleChart = new Chart(moduleCtx, {
-            type: 'bar',
-            data: {
-                labels: @Html.Raw(Json.Serialize(Model.ModuleUsageData.ModuleStats.Select(m => m.ModuleName))),
-                datasets: [{
-                    label: 'Content Count',
-                    data: @Html.Raw(Json.Serialize(Model.ModuleUsageData.ModuleStats.Select(m => m.ContentCount))),
-                    backgroundColor: @Html.Raw(Json.Serialize(Model.ModuleUsageData.ModuleStats.Select(m => m.Color)))
-                }]
-            },
-            options: {
-                ...chartDefaults,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
         // Activity Chart
         const activityCtx = document.getElementById('activityChart').getContext('2d');
         const activityChart = new Chart(activityCtx, {
@@ -308,7 +255,7 @@
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.ActivityData.DailyActivities.Select(a => a.Date))),
                 datasets: [{
-                    label: 'Mind Maps',
+                    label: 'Mind Map Nodes',
                     data: @Html.Raw(Json.Serialize(Model.ActivityData.DailyActivities.Select(a => a.MindMaps))),
                     borderColor: 'rgb(37, 99, 235)',
                     backgroundColor: 'rgba(37, 99, 235, 0.1)',
@@ -364,7 +311,6 @@
                 summary: @Html.Raw(Json.Serialize(Model.SummaryStats)),
                 velocity: @Html.Raw(Json.Serialize(Model.VelocityData)),
                 patterns: @Html.Raw(Json.Serialize(Model.PatternUsageData)),
-                modules: @Html.Raw(Json.Serialize(Model.ModuleUsageData)),
                 activity: @Html.Raw(Json.Serialize(Model.ActivityData)),
                 exportedAt: new Date().toISOString()
             };
@@ -382,14 +328,22 @@
 
         // Period selector for velocity chart
         document.querySelectorAll('#velocity-period + .dropdown-menu a').forEach(item => {
-            item.addEventListener('click', function(e) {
+            item.addEventListener('click', async function(e) {
                 e.preventDefault();
                 const period = this.dataset.period;
                 document.getElementById('velocity-period').textContent = `Last ${period} Weeks`;
-                
-                // Update chart data based on period
-                // This would require an API call to get filtered data
-                console.log(`Loading velocity data for last ${period} weeks`);
+
+                try {
+                    const response = await fetch(`/Analytics/Velocity?weeks=${period}`);
+                    const data = await response.json();
+
+                    velocityChart.data.labels = data.weeklyVelocities.map(v => v.week);
+                    velocityChart.data.datasets[0].data = data.weeklyVelocities.map(v => v.storyPoints);
+                    velocityChart.data.datasets[1].data = data.weeklyVelocities.map(v => v.completedCards);
+                    velocityChart.update();
+                } catch (error) {
+                    console.error('Failed to load velocity data:', error);
+                }
             });
         });
     </script>
@@ -449,6 +403,20 @@
     border-left: 3px solid #2563eb;
 }
 
+/* Dark mode timeline styles */
+[data-bs-theme="dark"] .timeline::before {
+    background: #475569;
+}
+
+[data-bs-theme="dark"] .timeline-marker {
+    border-color: #1e293b;
+}
+
+[data-bs-theme="dark"] .timeline-content {
+    background: #334155;
+    border-left-color: #3b82f6;
+}
+
 @@media (max-width: 768px) {
     .container-fluid {
         padding: 0 10px;
@@ -463,3 +431,4 @@
     }
 }
 </style>
+</div>

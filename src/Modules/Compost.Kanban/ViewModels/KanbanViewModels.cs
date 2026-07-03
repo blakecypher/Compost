@@ -7,7 +7,7 @@ namespace Compost.Kanban.ViewModels;
 public class KanbanBoardViewModel
 {
     public List<Project> Contexts { get; set; } = [];
-    public string? SelectedContextId { get; set; }
+    public string SelectedContextId { get; set; }
     public List<ContentItem> Cards { get; set; } = [];
 }
 

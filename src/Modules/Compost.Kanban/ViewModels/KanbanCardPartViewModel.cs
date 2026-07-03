@@ -1,3 +1,4 @@
+using System;
 using Compost.Core.Models;
 using OrchardCore.ContentManagement;
 
@@ -10,6 +11,7 @@ public class KanbanCardPartViewModel
     public string WorkContextId { get; set; }
     public bool IsBlocked { get; set; }
     public string BlockedReason { get; set; }
+    public DateTime? CompletedDate { get; set; }
 
     public ContentItem ContentItem { get; set; }
 }

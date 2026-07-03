@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Compost.Core.Interfaces;
 using Compost.Core.Models;
@@ -63,7 +64,7 @@ public class RefinementController(
         return Json(new { success = true, count = cards.Count });
     }
 
-    private string BuildRefinementPrompt(string userMessage, string? requirementTitle, TreeNodePart? part)
+    private static string BuildRefinementPrompt(string userMessage, string requirementTitle, TreeNodePart part)
     {
         var context = "";
         if (part != null)
@@ -74,10 +75,7 @@ public class RefinementController(
             if (part.AcceptanceCriteria?.Count > 0)
             {
                 context += "Existing Acceptance Criteria:\n";
-                foreach (var criteria in part.AcceptanceCriteria)
-                {
-                    context += $"- {criteria}\n";
-                }
+                context = part.AcceptanceCriteria.Aggregate(context, (current, criteria) => current + $"- {criteria}\n");
             }
         }
 

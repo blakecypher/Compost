@@ -27,6 +27,7 @@
     
     /* Module Theme Colors - Light Mode */
     --theme-dashboard: #198754;       /* Success Green */
+    --theme-analytics: #198754;         /* Success Green - Same as dashboard */
     --theme-contexts: #7c3aed;        /* Electric Violet - Highly Vibrant */
     --theme-mindmaps: #ff6b35;        /* Orange */
     --theme-kanban: #ffc107;          /* Warning Yellow */
@@ -99,6 +100,7 @@
         
         /* Module Theme Colors - Dark Mode */
         --theme-dashboard: #198754;       /* Success Green (Matches bootstrap) */
+        --theme-analytics: #198754;         /* Success Green - Same as dashboard */
         --theme-contexts: #8b5cf6;        /* Primary Purple - Vibrant for Dark Mode */
         --theme-mindmaps: #ff6b35;        /* Orange */
         --theme-kanban: #ffc107;          /* Warning Yellow */
@@ -145,6 +147,7 @@
     
     /* Module Theme Colors - Dark Mode */
     --theme-dashboard: #198754;       /* Success Green */
+    --theme-analytics: #198754;         /* Success Green - Same as dashboard */
     --theme-contexts: #8b5cf6;        /* Primary Purple - Vibrant for Dark Mode */
     --theme-mindmaps: #ff6b35;        /* Orange */
     --theme-kanban: #ffc107;          /* Warning Yellow */
@@ -929,6 +932,7 @@ a:hover {
 
 /* Theme-specific background utility classes */
 .bg-theme-dashboard { background-color: var(--theme-dashboard) !important; }
+.bg-theme-analytics { background-color: var(--theme-analytics) !important; }
 .bg-theme-contexts { background-color: var(--theme-contexts) !important; }
 .bg-theme-mindmaps { background-color: var(--theme-mindmaps) !important; }
 .bg-theme-kanban { background-color: var(--theme-kanban) !important; }
@@ -938,6 +942,7 @@ a:hover {
 
 /* Theme-specific text color utility classes */
 .text-theme-dashboard { color: var(--theme-dashboard) !important; }
+.text-theme-analytics { color: var(--theme-analytics) !important; }
 .text-theme-contexts { color: var(--theme-contexts) !important; }
 .text-theme-mindmaps { color: var(--theme-mindmaps) !important; }
 .text-theme-kanban { color: var(--theme-kanban) !important; }

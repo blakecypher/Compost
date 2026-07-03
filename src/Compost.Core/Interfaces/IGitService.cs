@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace Compost.Core.Interfaces;
 
 /// <summary>

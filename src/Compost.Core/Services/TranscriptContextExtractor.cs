@@ -129,7 +129,7 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
         return Task.FromResult(nodes);
     }
     
-    private MindMapNode CreateNodeFromSegment(ContextualSegment segment)
+    private static MindMapNode CreateNodeFromSegment(ContextualSegment segment)
     {
         return new MindMapNode
         {
@@ -386,7 +386,7 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
         }
     }
 
-    private string BuildEnhancementPrompt(List<ContextualSegment> segments)
+    private static string BuildEnhancementPrompt(List<ContextualSegment> segments)
     {
         var sb = new StringBuilder();
         sb.AppendLine("Analyze these transcript segments and provide semantic classification enhancements.");
@@ -547,7 +547,7 @@ public class TranscriptContextExtractor : ITranscriptContextExtractor
         return themes;
     }
 
-    private ContextualTheme? CreateThemeFromCluster(List<ContextualSegment> cluster)
+    private static ContextualTheme? CreateThemeFromCluster(List<ContextualSegment> cluster)
     {
         var keywords = cluster.SelectMany(s => s.Keywords).ToList();
         var commonKeywords = keywords

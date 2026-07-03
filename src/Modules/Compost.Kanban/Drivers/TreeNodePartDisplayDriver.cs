@@ -39,7 +39,7 @@ public class TreeNodePartDisplayDriver : ContentPartDisplayDriver<TreeNodePart>
         return Edit(part, context);
     }
 
-    private void BuildViewModel(TreeNodePartViewModel model, TreeNodePart part)
+    private static void BuildViewModel(TreeNodePartViewModel model, TreeNodePart part)
     {
         model.WorkContextId = part.WorkContextId;
         model.Complexity = part.Complexity;
